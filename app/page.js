@@ -9,43 +9,35 @@ import { AgentRegistration } from '@/components/AgentRegistration';
 import { UserDashboard } from '@/components/UserDashboard';
 import { Login } from '@/components/Login';
 import { Header } from '@/components/Header';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-
-// Mock Data
-const INITIAL_LEADS = [
-  { id: 1, name: "Chioma Adebayo", location: "Yaba, Lagos", type: "2 Bedroom", budget: "KSh 1.5M", whatsapp: "2348012345678" },
-  { id: 2, name: "Emmanuel Okonkwo", location: "Lekki Phase 1", type: "3 Bedroom", budget: "KSh 4.5M", whatsapp: "2348087654321" },
-  { id: 3, name: "Sarah Johnson", location: "Surulere", type: "Mini Flat", budget: "KSh 800k", whatsapp: "2348123456789" },
-  { id: 4, name: "Tunde Bakare", location: "Ikeja GRA", type: "Self Contain", budget: "KSh 600k", whatsapp: "2348098765432" },
-];
+import { getUser, updateUser, createUser } from '@/lib/firestore';
+import { useLeads, useSubscription } from '@/lib/hooks';
 
 export default function RentalLeadApp() {
   const [view, setView] = useState('landing');
-  const [currentUser, setCurrentUser] = useState(null); // null | { name, type: 'tenant'|'agent', ... }
-  const [agentStatus, setAgentStatus] = useState('free'); // 'free' | 'premium'
-  const [leads, setLeads] = useState(INITIAL_LEADS);
+  const [currentUser, setCurrentUser] = useState(null);
   const [prefilledData, setPrefilledData] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Use custom hooks for data management
+  const { leads } = useLeads();
+  const { isPremium } = useSubscription(currentUser?.uid);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // User is signed in, fetch additional profile data from Firestore
         try {
-          const userDocRef = doc(db, "users", user.uid);
-          const userDoc = await getDoc(userDocRef);
+          const userResult = await getUser(user.uid);
           
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
+          if (userResult.success) {
+            const userData = userResult.data;
             setCurrentUser({
               uid: user.uid,
               email: user.email,
               ...userData
             });
             
-            // Redirect based on role if on login page
             if (view === 'login') {
               if (userData.type === 'agent') {
                 setView('agent-dashboard');
@@ -54,24 +46,22 @@ export default function RentalLeadApp() {
               }
             }
           } else {
-            // User exists in Auth but not in Firestore (e.g. first time Google Login)
-            // We'll handle this by keeping them on the current view or redirecting to a setup page
-            // For now, let's assume they are a tenant if no profile exists, or let Login component handle it
             setCurrentUser({
               uid: user.uid,
               email: user.email,
               name: user.displayName,
               avatar: user.photoURL,
-              type: 'tenant' // Default or temporary
+              type: 'tenant'
             });
           }
         } catch (error) {
           console.error("Error fetching user profile:", error);
         }
       } else {
-        // User is signed out
         setCurrentUser(null);
-        setView('landing');
+        if (view !== 'landing' && view !== 'login' && view !== 'tenant-form' && view !== 'agent-registration') {
+          setView('landing');
+        }
       }
       setLoading(false);
     });
@@ -79,10 +69,22 @@ export default function RentalLeadApp() {
     return () => unsubscribe();
   }, [view]);
 
-  const handleLogin = (user) => {
-    // This is now mostly handled by the useEffect, but can be used for immediate state updates if needed
-    // or to handle the "first time setup" flow passed from Login component
+  const handleLogin = async (user) => {
     setCurrentUser(user);
+    
+    // Create user in Firestore if doesn't exist
+    const userResult = await getUser(user.uid);
+    if (!userResult.success) {
+      await createUser(user.uid, {
+        email: user.email,
+        name: user.name,
+        type: user.type,
+        avatar: user.avatar || null,
+        phone: user.phone || null,
+        location: user.location || null
+      });
+    }
+    
     if (user.type === 'agent') {
       setView('agent-dashboard');
     } else {
@@ -100,26 +102,52 @@ export default function RentalLeadApp() {
     }
   };
 
-  const handleUpdateUser = (updatedUser) => {
-    setCurrentUser(prev => ({ ...prev, ...updatedUser }));
+  const handleUpdateUser = async (updatedData) => {
+    if (currentUser?.uid) {
+      const result = await updateUser(currentUser.uid, updatedData);
+      if (result.success) {
+        setCurrentUser(prev => ({ ...prev, ...updatedData }));
+      }
+    }
   };
 
-  const handleTenantSubmit = (formData) => {
-    const newLead = {
-      id: leads.length + 1,
-      ...formData
-    };
-    setLeads([newLead, ...leads]);
-    // Auto-login as tenant after submission for demo
-    setCurrentUser({
-      name: formData.name || 'New User',
-      type: 'tenant',
-      email: formData.email || 'user@example.com',
-      phone: formData.phone || '',
-      city: formData.location || 'Lagos'
-    });
-    alert("Request posted successfully! Agents will contact you soon.");
-    setView('user-dashboard');
+  const handleTenantSubmit = async (formData) => {
+    try {
+      const { createLead } = await import('@/lib/firestore');
+      const { sendEmailNotification, EMAIL_TEMPLATES } = await import('@/lib/notifications');
+      
+      const leadData = {
+        tenantId: currentUser?.uid || 'guest',
+        name: formData.name,
+        location: formData.location,
+        type: formData.type,
+        budget: formData.budget,
+        whatsapp: formData.whatsapp,
+        email: formData.email || currentUser?.email,
+        phone: formData.phone || formData.whatsapp
+      };
+      
+      const result = await createLead(leadData);
+      
+      if (result.success) {
+        // Send confirmation email to tenant
+        if (leadData.email) {
+          const emailContent = EMAIL_TEMPLATES.TENANT_CONFIRMATION(leadData.name, leadData);
+          await sendEmailNotification(leadData.email, 'Request Submitted - RentConnect', emailContent);
+        }
+        
+        alert("Request posted successfully! Agents will contact you soon.");
+        
+        if (currentUser) {
+          setView('user-dashboard');
+        } else {
+          setView('landing');
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting tenant form:', error);
+      alert('Error submitting request. Please try again.');
+    }
   };
 
   const handleSearch = (searchData) => {
@@ -127,26 +155,55 @@ export default function RentalLeadApp() {
     setView('tenant-form');
   };
 
-  const handleAgentRegistration = (formData) => {
-    // Auto-login as agent after registration
-    setCurrentUser({
-      name: formData.fullName || 'New Agent',
-      type: 'agent',
-      email: formData.email || 'agent@example.com',
-      agencyName: formData.agencyName,
-      phone: formData.phone,
-      location: formData.location || 'Lagos',
-      experience: '0 Years'
-    });
-    setView('agent-dashboard');
+  const handleAgentRegistration = async (formData) => {
+    try {
+      const agentData = {
+        name: formData.fullName,
+        type: 'agent',
+        email: formData.email,
+        agencyName: formData.agencyName,
+        phone: formData.phone,
+        location: formData.location,
+        experience: '0 Years',
+        isPremium: false
+      };
+      
+      setCurrentUser({
+        ...agentData,
+        uid: auth.currentUser?.uid || 'temp'
+      });
+      
+      setView('agent-dashboard');
+    } catch (error) {
+      console.error('Error registering agent:', error);
+    }
   };
 
-  const handleSubscribe = () => {
-    // Simulate payment processing
-    setTimeout(() => {
-      setAgentStatus('premium');
-      setView('agent-dashboard');
-    }, 1000);
+  const handleSubscribe = async (paymentData) => {
+    try {
+      const { initializePayment } = await import('@/lib/paystack');
+      const { SUBSCRIPTION_PLANS } = await import('@/lib/paystack');
+      
+      const result = await initializePayment(
+        currentUser.email,
+        SUBSCRIPTION_PLANS.PREMIUM.amount,
+        {
+          agentId: currentUser.uid,
+          agentName: currentUser.name,
+          plan: 'premium'
+        }
+      );
+      
+      if (result.success) {
+        // Redirect to Paystack payment page
+        window.location.href = result.authorizationUrl;
+      } else {
+        alert('Error initializing payment. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error subscribing:', error);
+      alert('Error processing subscription. Please try again.');
+    }
   };
 
   const renderView = () => {
@@ -167,13 +224,13 @@ export default function RentalLeadApp() {
             onLogout={handleLogout}
           />
         );
-      case 'profile': // Generic profile route, redirects based on user type
+      case 'profile':
         return currentUser?.type === 'agent' 
           ? (
             <AgentDashboard 
               onNavigate={setView} 
               leads={leads} 
-              isPremium={agentStatus === 'premium'} 
+              isPremium={isPremium}
               onUnlock={() => setView('subscription')} 
               initialTab="profile"
               currentUser={currentUser}
@@ -197,8 +254,8 @@ export default function RentalLeadApp() {
           <AgentDashboard 
             onNavigate={setView} 
             leads={leads} 
-            isPremium={agentStatus === 'premium'}
-            onUnlock={() => setView('subscription')}
+            isPremium={isPremium}
+            onUnlock={() => setView('subscription')} 
             initialTab="leads"
             currentUser={currentUser}
             onUpdateUser={handleUpdateUser}

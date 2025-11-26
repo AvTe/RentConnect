@@ -1,0 +1,39 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidImage() {
+      return request.resource.size < 5 * 1024 * 1024 // 5MB
+             && request.resource.contentType.matches('image/.*');
+    }
+    
+    // Profile images
+    match /profiles/{userId}/{imageId} {
+      // Anyone can read profile images
+      allow read: if true;
+      // Only the user can upload their profile image
+      allow write: if isOwner(userId) && isValidImage();
+      // Only the user can delete their profile image
+      allow delete: if isOwner(userId);
+    }
+    
+    // Property images
+    match /properties/{propertyId}/{imageId} {
+      // Anyone can read property images
+      allow read: if true;
+      // Only authenticated agents can upload property images
+      allow write: if isAuthenticated() && isValidImage();
+      // Only the property owner can delete
+      allow delete: if isAuthenticated();
+    }
+  }
+}

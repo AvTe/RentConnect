@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAgent() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.type == 'agent';
+    }
+    
+    function isPremiumAgent() {
+      return isAgent() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isPremium == true;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Anyone can read user profiles (for displaying agent info)
+      allow read: if true;
+      // Only the user can create their own profile
+      allow create: if isOwner(userId);
+      // Only the user can update their own profile
+      allow update: if isOwner(userId);
+      // No one can delete profiles (soft delete only)
+      allow delete: if false;
+    }
+    
+    // Leads collection
+    match /leads/{leadId} {
+      // Any authenticated user can read leads
+      allow read: if isAuthenticated();
+      // Only authenticated users can create leads
+      allow create: if isAuthenticated();
+      // Only the lead creator can update their lead
+      allow update: if isAuthenticated() && 
+                       (resource.data.tenantId == request.auth.uid || isAgent());
+      // Only the lead creator can delete
+      allow delete: if isAuthenticated() && resource.data.tenantId == request.auth.uid;
+    }
+    
+    // Properties collection
+    match /properties/{propertyId} {
+      // Anyone can read properties (public listings)
+      allow read: if true;
+      // Only agents can create properties
+      allow create: if isAgent();
+      // Only the property owner (agent) can update
+      allow update: if isAgent() && resource.data.agentId == request.auth.uid;
+      // Only the property owner can delete
+      allow delete: if isAgent() && resource.data.agentId == request.auth.uid;
+    }
+    
+    // Subscriptions collection
+    match /subscriptions/{subscriptionId} {
+      // Only the agent can read their own subscriptions
+      allow read: if isAuthenticated() && resource.data.agentId == request.auth.uid;
+      // Only authenticated users can create (via payment webhook)
+      allow create: if isAuthenticated();
+      // Only system can update (via webhook)
+      allow update: if isAuthenticated();
+      // No deletion
+      allow delete: if false;
+    }
+    
+    // Contact History collection
+    match /contactHistory/{historyId} {
+      // Users can only read their own contact history
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create their own history
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // No updates or deletes
+      allow update, delete: if false;
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      // Users can only read their own notifications
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // System can create notifications
+      allow create: if isAuthenticated();
+      // Users can mark their own notifications as read
+      allow update: if isAuthenticated() && 
+                       resource.data.userId == request.auth.uid &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
+      // Users can delete their own notifications
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

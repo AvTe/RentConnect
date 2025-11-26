@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Mail, Lock, ArrowRight, User, Building2, Chrome } from 'lucide-react';
 import { Button } from './ui/Button';
-import { auth, googleProvider, db } from '@/lib/firebase';
+import { auth, googleProvider } from '@/lib/firebase';
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 export const Login = ({ onNavigate, onLogin }) => {
   const [userType, setUserType] = useState('tenant'); // 'tenant' | 'agent'
@@ -24,24 +23,24 @@ export const Login = ({ onNavigate, onLogin }) => {
       const user = result.user;
       
       // Check if user exists in Firestore
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
+      const { getUser, createUser } = await import('@/lib/firestore');
+      const userResult = await getUser(user.uid);
 
-      if (!userDoc.exists()) {
+      if (!userResult.success) {
         // Create new user profile
         const userData = {
-          uid: user.uid,
           email: user.email,
           name: user.displayName,
           avatar: user.photoURL,
-          type: userType, // Use currently selected type
-          createdAt: new Date().toISOString()
+          type: userType,
+          phone: null,
+          location: null
         };
-        await setDoc(userDocRef, userData);
-        onLogin(userData);
+        await createUser(user.uid, userData);
+        onLogin({ ...userData, uid: user.uid });
       } else {
         // User exists, use their profile
-        onLogin({ ...userDoc.data(), uid: user.uid });
+        onLogin({ ...userResult.data, uid: user.uid });
       }
     } catch (err) {
       setError(err.message);
@@ -75,31 +74,33 @@ export const Login = ({ onNavigate, onLogin }) => {
     setSuccessMessage('');
 
     try {
+      const { getUser, createUser } = await import('@/lib/firestore');
       let userCredential;
+      
       if (isRegistering) {
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
         // Create user profile in Firestore
         const userData = {
-          uid: user.uid,
           email: user.email,
           name: name || (userType === 'tenant' ? 'New Tenant' : 'New Agent'),
           type: userType,
-          createdAt: new Date().toISOString()
+          phone: null,
+          location: null,
+          avatar: null
         };
-        await setDoc(doc(db, "users", user.uid), userData);
-        onLogin(userData);
+        await createUser(user.uid, userData);
+        onLogin({ ...userData, uid: user.uid });
       } else {
         userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
         // Fetch user profile
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          onLogin({ ...userDoc.data(), uid: user.uid });
+        const userResult = await getUser(user.uid);
+        if (userResult.success) {
+          onLogin({ ...userResult.data, uid: user.uid });
         } else {
-          // Fallback if auth exists but no profile (shouldn't happen normally)
           onLogin({ 
             uid: user.uid, 
             email: user.email, 
