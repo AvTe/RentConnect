@@ -35,5 +35,14 @@ service firebase.storage {
       // Only the property owner can delete
       allow delete: if isAuthenticated();
     }
+
+    // Verification documents
+    match /verification_docs/{userId}/{documentId} {
+      // Only the user can read their own documents
+      allow read: if isOwner(userId);
+      // Only the user can upload their verification document
+      allow write: if isOwner(userId) 
+                   && request.resource.size < 5 * 1024 * 1024; // 5MB limit
+    }
   }
 }

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutGrid, Home, User, Settings, LogOut, Plus, Search, 
-  Bell, Phone, MessageCircle, Lock, Edit, Eye, Filter, Inbox, Image as ImageIcon, Crown
+  Bell, Phone, MessageCircle, Lock, Edit, Eye, Filter, Inbox, Image as ImageIcon, Crown, Coins, ShieldCheck, ShieldAlert, Share2, Copy
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import { AgentProfile } from './AgentProfile';
+import { getWalletBalance, deductCredits } from '@/lib/firestore';
 
 // Mock Properties Data
 const MOCK_PROPERTIES = [
@@ -14,17 +15,76 @@ const MOCK_PROPERTIES = [
   { id: 3, name: "4 Bedroom Duplex", price: "₦ 8,000,000/yr", status: "Sold", location: "Ikoyi" },
 ];
 
-export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initialTab = 'leads', currentUser, onUpdateUser, onLogout }) => {
-  const [activeTab, setActiveTab] = useState(initialTab); // leads, properties, profile
+export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'leads', currentUser, onUpdateUser, onLogout }) => {
+  const [activeTab, setActiveTab] = useState(initialTab); // leads, properties, profile, referrals
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [unlockedLeads, setUnlockedLeads] = useState([]);
+  const [referralCode, setReferralCode] = useState('');
   
+  const isVerified = currentUser?.verificationStatus === 'verified';
+  const isPending = currentUser?.verificationStatus === 'pending';
+
   const agent = currentUser || {
+    id: 'mock-agent-id',
     name: 'John Doe',
     agencyName: 'Lagos Premier Homes',
     email: 'john@lagoshomes.com',
     phone: '+234 809 876 5432',
     experience: '5 Years',
-    location: 'Lekki, Lagos'
+    location: 'Lekki, Lagos',
+    referralCode: 'JOH1234'
   };
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      const result = await getWalletBalance(currentUser.id);
+      if (result.success) {
+        setWalletBalance(result.balance);
+      }
+    };
+
+    if (currentUser?.id) {
+      fetchBalance();
+      if (currentUser.referralCode) {
+        setReferralCode(currentUser.referralCode);
+      }
+    }
+  }, [currentUser]);
+
+  const handleUnlockLead = async (lead) => {
+    if (!isVerified) {
+      alert("Your account is pending verification. You cannot unlock leads yet.");
+      return;
+    }
+
+    const LEAD_COST = 1; // 1 credit per lead
+    
+    if (walletBalance >= LEAD_COST) {
+      // In a real app, you'd call the API here
+      // For now, we simulate the deduction locally if no backend connected
+      if (currentUser?.id) {
+        const result = await deductCredits(currentUser.id, LEAD_COST);
+        if (result.success) {
+          setWalletBalance(result.newBalance);
+          setUnlockedLeads([...unlockedLeads, lead.id]);
+          // Call the parent handler if needed for other side effects
+          if (onUnlock) onUnlock(lead);
+        } else {
+          alert("Failed to unlock lead: " + result.error);
+        }
+      } else {
+        // Mock mode
+        setWalletBalance(prev => prev - LEAD_COST);
+        setUnlockedLeads([...unlockedLeads, lead.id]);
+        if (onUnlock) onUnlock(lead);
+      }
+    } else {
+      // Redirect to buy credits
+      onNavigate('subscription'); // We'll reuse this route for the Credit Bundle page
+    }
+  };
+
+  const isLeadUnlocked = (leadId) => unlockedLeads.includes(leadId);
 
   const handleSaveProfile = (updatedAgent) => {
     onUpdateUser(updatedAgent);
@@ -46,6 +106,76 @@ export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initial
   );
 
   const renderContent = () => {
+    if (activeTab === 'referrals') {
+      return (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-8 text-white relative overflow-hidden">
+            <div className="relative z-10 max-w-xl">
+              <h2 className="text-3xl font-bold mb-4">Invite Agents, Get Free Credits</h2>
+              <p className="text-emerald-100 text-lg mb-8">
+                Share your referral code with other agents. When they sign up, you both get 5 free credits!
+              </p>
+              
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 flex flex-col sm:flex-row items-center gap-4">
+                <div className="flex-1 text-center sm:text-left">
+                  <p className="text-sm text-emerald-200 mb-1">Your Referral Code</p>
+                  <p className="text-3xl font-mono font-bold tracking-wider">{referralCode || 'GEN123'}</p>
+                </div>
+                <Button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(referralCode || 'GEN123');
+                    alert('Code copied to clipboard!');
+                  }}
+                  className="bg-white text-emerald-600 hover:bg-emerald-50 border-0"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Code
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="bg-transparent border-white text-white hover:bg-white/10"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share
+                </Button>
+              </div>
+            </div>
+            
+            {/* Decorative circles */}
+            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-48 h-48 bg-emerald-500/20 rounded-full blur-2xl"></div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="font-bold text-gray-900 mb-4">How it works</h3>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto mb-4">
+                  <Share2 className="w-6 h-6" />
+                </div>
+                <h4 className="font-semibold mb-2">1. Share Code</h4>
+                <p className="text-sm text-gray-500">Send your unique code to fellow real estate agents.</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto mb-4">
+                  <User className="w-6 h-6" />
+                </div>
+                <h4 className="font-semibold mb-2">2. They Sign Up</h4>
+                <p className="text-sm text-gray-500">They enter your code during their registration process.</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto mb-4">
+                  <Coins className="w-6 h-6" />
+                </div>
+                <h4 className="font-semibold mb-2">3. Earn Credits</h4>
+                <p className="text-sm text-gray-500">You get 5 credits instantly. They get a welcome bonus too!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (activeTab === 'profile') {
       return <AgentProfile agent={agent} onSave={handleSaveProfile} onCancel={() => setActiveTab('leads')} />;
     }
@@ -154,7 +284,7 @@ export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initial
                   </div>
                 </div>
 
-                {isPremium ? (
+                {isLeadUnlocked(lead.id) ? (
                   <div className="grid grid-cols-2 gap-3">
                     <a 
                       href={`tel:${lead.tenant_info?.phone || lead.phone || lead.whatsapp}`}
@@ -175,12 +305,12 @@ export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initial
                   </div>
                 ) : (
                   <Button 
-                    onClick={onUnlock}
+                    onClick={() => handleUnlockLead(lead)}
                     variant="outline" 
                     className="w-full border-dashed border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-emerald-600 hover:border-emerald-500"
                   >
                     <Lock className="w-4 h-4 mr-2" />
-                    Unlock Contact Info
+                    Unlock (1 Credit)
                   </Button>
                 )}
               </div>
@@ -206,10 +336,34 @@ export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initial
             <Badge className="ml-auto bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] px-1.5">Agent</Badge>
           </div>
 
+          {/* Wallet Balance Card */}
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 mb-6 text-white shadow-lg">
+            <div className="flex items-center gap-2 mb-2 opacity-80">
+              <Coins className="w-4 h-4" />
+              <span className="text-xs font-medium uppercase tracking-wider">Wallet Balance</span>
+            </div>
+            <div className="flex items-end justify-between">
+              <span className="text-2xl font-bold">{walletBalance} Credits</span>
+            </div>
+            <button 
+              onClick={() => {
+                if (!isVerified) {
+                  alert("Please wait for verification before buying credits.");
+                  return;
+                }
+                onNavigate('subscription');
+              }}
+              className="mt-3 w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus className="w-3 h-3" /> Top Up
+            </button>
+          </div>
+
           {/* Navigation */}
           <div className="space-y-1">
             <SidebarItem icon={LayoutGrid} label="Leads Dashboard" id="leads" active={activeTab === 'leads'} />
             <SidebarItem icon={Home} label="My Properties" id="properties" active={activeTab === 'properties'} />
+            <SidebarItem icon={Share2} label="Refer & Earn" id="referrals" active={activeTab === 'referrals'} />
           </div>
 
           <div className="mt-8">
@@ -227,17 +381,6 @@ export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initial
               </button>
             </div>
           </div>
-          
-          {!isPremium && (
-            <div className="mt-auto mb-6 mx-2">
-               <Button onClick={onUnlock} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md border-0">
-                <div className="flex items-center justify-center gap-2">
-                  <Crown className="w-4 h-4" />
-                  <span>Go Premium</span>
-                </div>
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* User Profile Snippet at Bottom */}
@@ -247,8 +390,13 @@ export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initial
               {agent.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{agent.name}</p>
+              <div className="flex items-center gap-1">
+                <p className="text-sm font-medium text-gray-900 truncate">{agent.name}</p>
+                {isVerified && <ShieldCheck className="w-3 h-3 text-emerald-500" />}
+                {isPending && <ShieldAlert className="w-3 h-3 text-yellow-500" />}
+              </div>
               <p className="text-xs text-gray-500 truncate">{agent.agencyName}</p>
+              {isPending && <p className="text-[10px] text-yellow-600">Verification Pending</p>}
             </div>
           </div>
         </div>
@@ -256,6 +404,22 @@ export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initial
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Verification Banner */}
+        {isPending && (
+          <div className="bg-yellow-50 border-b border-yellow-200 px-8 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ShieldAlert className="w-5 h-5 text-yellow-600" />
+              <div>
+                <p className="text-sm font-medium text-yellow-800">Verification Pending</p>
+                <p className="text-xs text-yellow-600">Your account is under review. You cannot unlock leads or buy credits until verified.</p>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" className="text-yellow-700 border-yellow-300 hover:bg-yellow-100">
+              Check Status
+            </Button>
+          </div>
+        )}
+
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
           <div className="flex items-center gap-2 text-sm text-gray-500">

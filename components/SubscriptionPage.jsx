@@ -1,11 +1,39 @@
 import React from 'react';
-import { ArrowLeft, Check, Shield, Zap } from 'lucide-react';
+import { ArrowLeft, Check, Zap, Shield, Coins } from 'lucide-react';
 import { Button } from './ui/Button';
 
-export const SubscriptionPage = ({ onNavigate, onSubscribe }) => {
+export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
+  const bundles = [
+    {
+      id: 'starter',
+      name: 'Starter Pack',
+      credits: 10,
+      price: '₦ 5,000',
+      perLead: '₦ 500/lead',
+      features: ['Perfect for new agents', 'Unlock 10 leads', 'No expiration']
+    },
+    {
+      id: 'pro',
+      name: 'Pro Bundle',
+      credits: 50,
+      price: '₦ 20,000',
+      perLead: '₦ 400/lead',
+      popular: true,
+      features: ['Best value', 'Unlock 50 leads', 'Priority support', 'Verified Badge']
+    },
+    {
+      id: 'agency',
+      name: 'Agency Bulk',
+      credits: 200,
+      price: '₦ 70,000',
+      perLead: '₦ 350/lead',
+      features: ['For teams', 'Unlock 200 leads', 'Dedicated account manager', 'API Access']
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <button 
           onClick={() => onNavigate('agent-dashboard')} 
           className="mb-8 flex items-center text-gray-500 hover:text-gray-700"
@@ -16,75 +44,85 @@ export const SubscriptionPage = ({ onNavigate, onSubscribe }) => {
 
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-4">
-            Unlock Unlimited Leads
+            Get Credits, Get Leads
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Stop chasing ghost listings. Get direct access to tenants who are actively looking for properties right now.
+            Pay only for the leads you want. No monthly fees. Credits never expire.
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-emerald-100 max-w-md mx-auto">
-          <div className="p-8 bg-emerald-50 border-b border-emerald-100 text-center">
-            <h3 className="text-lg font-semibold text-emerald-800 mb-2">Premium Agent</h3>
-            <div className="flex justify-center items-baseline mb-4">
-              <span className="text-5xl font-extrabold text-gray-900">KSh 15,000</span>
-              <span className="text-gray-500 ml-2">/month</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {bundles.map((bundle) => (
+            <div key={bundle.id} className={`bg-white rounded-2xl shadow-xl overflow-hidden border ${bundle.popular ? 'border-emerald-500 ring-2 ring-emerald-500 ring-opacity-50' : 'border-gray-200'} relative flex flex-col`}>
+              {bundle.popular && (
+                <div className="absolute top-0 right-0 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wide">
+                  Most Popular
+                </div>
+              )}
+              
+              <div className="p-8 text-center border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{bundle.name}</h3>
+                <div className="flex justify-center items-baseline mb-1">
+                  <span className="text-4xl font-extrabold text-gray-900">{bundle.price}</span>
+                </div>
+                <p className="text-emerald-600 font-medium text-sm mb-4">{bundle.credits} Credits</p>
+                <div className="inline-block bg-gray-100 rounded-full px-3 py-1 text-xs text-gray-500 font-medium">
+                  {bundle.perLead}
+                </div>
+              </div>
+
+              <div className="p-8 flex-1 flex flex-col">
+                <ul className="space-y-4 mb-8 flex-1">
+                  {bundle.features.map((feature, index) => (
+                    <li key={index} className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <Check className="w-5 h-5 text-emerald-500" />
+                      </div>
+                      <p className="ml-3 text-gray-600 text-sm">{feature}</p>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button 
+                  onClick={() => onBuyCredits(bundle)}
+                  className={`w-full py-3 text-lg shadow-lg ${bundle.popular ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200' : 'bg-gray-900 hover:bg-gray-800'}`}
+                >
+                  Buy {bundle.credits} Credits
+                </Button>
+              </div>
             </div>
-            <p className="text-emerald-700 text-sm">7-day free trial included</p>
-          </div>
-
-          <div className="p-8">
-            <ul className="space-y-4 mb-8">
-              {[
-                'Unlimited access to tenant contacts',
-                'Direct WhatsApp & Phone integration',
-                'Real-time lead notifications',
-                'Verified Agent badge',
-                'Priority support'
-              ].map((feature, index) => (
-                <li key={index} className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="w-5 h-5 text-emerald-500" />
-                  </div>
-                  <p className="ml-3 text-gray-600">{feature}</p>
-                </li>
-              ))}
-            </ul>
-
-            <Button 
-              onClick={onSubscribe}
-              className="w-full py-4 text-lg shadow-lg shadow-emerald-200"
-            >
-              Start 7-Day Free Trial
-            </Button>
-            
-            <p className="mt-4 text-center text-xs text-gray-400">
-              Cancel anytime. No hidden fees. Secure payment via Paystack.
-            </p>
-          </div>
+          ))}
         </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <Zap className="w-8 h-8 text-emerald-500" />
+        <div className="mt-16 bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div>
+              <div className="flex justify-center mb-4">
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <Coins className="w-6 h-6 text-emerald-600" />
+                </div>
+              </div>
+              <h4 className="font-semibold text-gray-900">Pay As You Go</h4>
+              <p className="text-sm text-gray-500 mt-2">1 Credit = 1 Lead Unlock. You are in full control of your spending.</p>
             </div>
-            <h4 className="font-semibold text-gray-900">Instant Access</h4>
-            <p className="text-sm text-gray-500 mt-2">Connect with tenants the moment they post.</p>
-          </div>
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <Shield className="w-8 h-8 text-emerald-500" />
+            <div>
+              <div className="flex justify-center mb-4">
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-emerald-600" />
+                </div>
+              </div>
+              <h4 className="font-semibold text-gray-900">Verified Leads Only</h4>
+              <p className="text-sm text-gray-500 mt-2">We screen every request. If a lead is fake, we refund your credit.</p>
             </div>
-            <h4 className="font-semibold text-gray-900">Verified Leads</h4>
-            <p className="text-sm text-gray-500 mt-2">We screen every request to ensure quality.</p>
-          </div>
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <Check className="w-8 h-8 text-emerald-500" />
+            <div>
+              <div className="flex justify-center mb-4">
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <Zap className="w-6 h-6 text-emerald-600" />
+                </div>
+              </div>
+              <h4 className="font-semibold text-gray-900">Instant Reveal</h4>
+              <p className="text-sm text-gray-500 mt-2">Get the tenant&apos;s WhatsApp number immediately after unlocking.</p>
             </div>
-            <h4 className="font-semibold text-gray-900">Higher Conversion</h4>
-            <p className="text-sm text-gray-500 mt-2">Close more deals with serious tenants.</p>
           </div>
         </div>
       </div>

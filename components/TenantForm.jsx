@@ -12,6 +12,12 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
     whatsapp: ''
   });
 
+  const calculateProgress = () => {
+    const fields = ['location', 'type', 'budget', 'name', 'whatsapp'];
+    const filled = fields.filter(field => formData[field] && formData[field].length > 0).length;
+    return (filled / fields.length) * 100;
+  };
+
   useEffect(() => {
     if (initialData) {
       setFormData(prev => ({
@@ -42,6 +48,20 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
         </div>
 
         <div className="max-w-md w-full mx-auto mt-20 md:mt-0">
+          {/* Progress Bar */}
+          <div className="mb-8">
+            <div className="flex justify-between text-xs font-medium text-gray-500 mb-2">
+              <span>Request Completion</span>
+              <span>{Math.round(calculateProgress())}%</span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-emerald-500 transition-all duration-500 ease-out"
+                style={{ width: `${calculateProgress()}%` }}
+              ></div>
+            </div>
+          </div>
+
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Post Your Request</h2>
           <p className="text-gray-500 mb-8">Tell us what you need, and we&apos;ll connect you with top-rated agents.</p>
 

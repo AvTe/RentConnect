@@ -144,7 +144,7 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
                   </span>
                 )}
               </div>
-              {agent.verified && (
+              {(agent.verified || agent.verificationStatus === 'verified') && (
                 <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-2 border-4 border-white">
                   <CheckCircle className="w-6 h-6 text-white" />
                 </div>
@@ -155,7 +155,7 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold">{agent.name}</h1>
-                {agent.verified && (
+                {(agent.verified || agent.verificationStatus === 'verified') && (
                   <Badge className="bg-white text-emerald-600">Verified</Badge>
                 )}
               </div>

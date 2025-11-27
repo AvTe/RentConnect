@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Building2, User, Phone, Mail, MapPin } from 'lucide-react';
+import { ArrowLeft, Building2, User, Phone, Mail, MapPin, Lock, Upload } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export const AgentRegistration = ({ onNavigate, onSubmit }) => {
@@ -8,7 +8,10 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
     agencyName: '',
     email: '',
     phone: '',
-    location: ''
+    location: '',
+    password: '',
+    referralCode: '',
+    idDocument: null
   });
 
   const handleSubmit = (e) => {
@@ -99,6 +102,21 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="password"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -110,6 +128,44 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                   value={formData.location}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Referral Code (Optional)</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                  placeholder="e.g. JOH1234"
+                  value={formData.referralCode}
+                  onChange={(e) => setFormData({...formData, referralCode: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Government ID (NIN, Passport, or Driver&apos;s License)</label>
+              <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-emerald-500 transition-colors text-center cursor-pointer">
+                <input
+                  type="file"
+                  required
+                  accept="image/*,.pdf"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={(e) => setFormData({...formData, idDocument: e.target.files[0]})}
+                />
+                <div className="flex flex-col items-center justify-center space-y-2">
+                  <Upload className="w-8 h-8 text-gray-400" />
+                  <p className="text-sm text-gray-500">
+                    {formData.idDocument ? (
+                      <span className="text-emerald-600 font-medium">{formData.idDocument.name}</span>
+                    ) : (
+                      <span>Click to upload or drag and drop</span>
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-400">PDF, JPG, PNG up to 5MB</p>
+                </div>
               </div>
             </div>
 

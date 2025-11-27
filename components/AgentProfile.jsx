@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Save, Building } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Camera, Save, Building, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export const AgentProfile = ({ agent, onSave, onCancel }) => {
@@ -12,6 +12,9 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
     location: agent?.location || agent?.city || ''
   });
 
+  const isVerified = agent?.verificationStatus === 'verified';
+  const isPending = agent?.verificationStatus === 'pending';
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
@@ -21,6 +24,18 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="p-6 border-b border-gray-100 flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-900">Edit Agent Profile</h2>
+        {isVerified && (
+          <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium">
+            <ShieldCheck className="w-4 h-4" />
+            Verified Agent
+          </div>
+        )}
+        {isPending && (
+          <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full text-sm font-medium">
+            <ShieldAlert className="w-4 h-4" />
+            Verification Pending
+          </div>
+        )}
       </div>
       
       <form onSubmit={handleSubmit} className="p-6 space-y-6">

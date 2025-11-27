@@ -13,8 +13,9 @@ import { AgentsListingPage } from '@/components/AgentsListingPage';
 import { AgentDetailPage } from '@/components/AgentDetailPage';
 import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/firestore';
+import { uploadImage } from '@/lib/storage';
 import { useLeads, useSubscription } from '@/lib/hooks';
 
 export default function RentalLeadApp() {
@@ -169,6 +170,23 @@ export default function RentalLeadApp() {
 
   const handleAgentRegistration = async (formData) => {
     try {
+      setLoading(true);
+      // 1. Create Auth User
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
+
+      // 2. Upload ID Document
+      let idDocumentUrl = null;
+      if (formData.idDocument) {
+        const uploadResult = await uploadImage(
+          formData.idDocument, 
+          `verification_docs/${user.uid}/${formData.idDocument.name}`
+        );
+        if (uploadResult.success) {
+          idDocumentUrl = uploadResult.url;
+        }
+      }
+
       const agentData = {
         name: formData.fullName,
         type: 'agent',
@@ -177,17 +195,26 @@ export default function RentalLeadApp() {
         phone: formData.phone,
         location: formData.location,
         experience: '0 Years',
-        isPremium: false
+        isPremium: false,
+        verificationStatus: 'pending',
+        idDocumentUrl: idDocumentUrl,
+        walletBalance: 0,
+        referredBy: formData.referralCode || null
       };
+      
+      await createUser(user.uid, agentData);
       
       setCurrentUser({
         ...agentData,
-        uid: auth.currentUser?.uid || 'temp'
+        uid: user.uid
       });
       
       setView('agent-dashboard');
     } catch (error) {
       console.error('Error registering agent:', error);
+      alert('Registration failed: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -213,8 +240,26 @@ export default function RentalLeadApp() {
         } else {
           alert('Error initializing payment. Please try again.');
         }
+      } else if (paymentData.credits) {
+        // Agent buying credits
+        const result = await initializePayment(
+          currentUser.email,
+          parseInt(paymentData.price.replace(/[^0-9]/g, '')), // Extract amount from string like "₦ 5,000"
+          {
+            agentId: currentUser.uid,
+            agentName: currentUser.name,
+            credits: paymentData.credits,
+            type: 'credit_purchase'
+          }
+        );
+        
+        if (result.success) {
+          window.location.href = result.authorizationUrl;
+        } else {
+          alert('Error initializing payment. Please try again.');
+        }
       } else {
-        // Agent subscription for viewing leads
+        // Fallback for legacy subscription calls (if any)
         const { SUBSCRIPTION_PLANS } = await import('@/lib/paystack');
         const result = await initializePayment(
           currentUser.email,
@@ -303,7 +348,7 @@ export default function RentalLeadApp() {
         return (
           <SubscriptionPage 
             onNavigate={setView} 
-            onSubscribe={handleSubscribe} 
+            onBuyCredits={handleSubscribe} 
           />
         );
       case 'agents-listing':
