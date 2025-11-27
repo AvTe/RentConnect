@@ -21,7 +21,6 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="p-6 border-b border-gray-100 flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-900">Edit Agent Profile</h2>
-        <button onClick={onCancel} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
       </div>
       
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -95,11 +94,13 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Experience</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Experience (Years)</label>
             <div className="relative">
               <User className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
               <input
-                type="text"
+                type="number"
+                min="0"
+                placeholder="e.g. 5"
                 value={formData.experience}
                 onChange={(e) => setFormData({...formData, experience: e.target.value})}
                 className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
@@ -113,6 +114,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
               <MapPin className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
               <input
                 type="text"
+                placeholder="e.g. Lekki, Lagos"
                 value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
                 className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"

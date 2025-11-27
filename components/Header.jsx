@@ -36,13 +36,11 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <div 
-            className="flex items-center gap-2 cursor-pointer" 
+            className="flex items-center gap-1 cursor-pointer" 
             onClick={() => handleNavigate('landing')}
           >
-            <div className="bg-black p-1.5 rounded-lg">
-              <Building2 className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">RentConnect</span>
+            <span className="text-xl font-bold text-gray-900 tracking-tight">Rent-</span>
+            <span className="text-xl font-bold text-[#8B5CF6] tracking-tight">Connect</span>
           </div>
 
           {/* Desktop Navigation */}

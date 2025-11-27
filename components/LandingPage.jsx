@@ -1,81 +1,121 @@
-import React from 'react';
-import { Building2, Users, ShieldCheck } from 'lucide-react';
-import { Button } from './ui/Button';
-import { Header } from './Header';
-import { SearchFilter } from './SearchFilter';
+/* eslint-disable @next/next/no-img-element */
+import React, { useState } from 'react';
+import { MapPin } from 'lucide-react';
 
-export const LandingPage = ({ onNavigate, onSearch }) => {
+export const LandingPage = ({ onNavigate, onSearch, currentUser }) => {
+  const [location, setLocation] = useState('');
+  const [pincode, setPincode] = useState('');
+
+  const handleSearch = () => {
+    onSearch({ location, pincode });
+  };
+
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="h-screen w-screen bg-white font-sans overflow-hidden relative flex flex-col">
       
-      {/* Hero Section */}
-      <div className="relative bg-[#E6F4F1] min-h-[600px] lg:min-h-[700px] overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full relative">
-          <div className="grid lg:grid-cols-2 gap-12 h-full items-center pt-20 pb-32">
-            
-            {/* Left Content */}
-            <div className="relative z-10 max-w-2xl">
-              <h1 className="text-5xl lg:text-7xl font-extrabold text-gray-900 leading-[1.1] mb-6 tracking-tight">
-                Let&apos;s find your <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-700">Dream Home!</span>
-              </h1>
-              <p className="text-xl text-gray-600 mb-10 leading-relaxed max-w-lg">
-                We can help you rent, sell, or buy accommodation, take a mortgage, invest in real estate, and a lot more.
-              </p>
-              
-              {/* Search Filter - Desktop Position */}
-              <div className="hidden lg:block relative z-20">
-                <SearchFilter onSearch={onSearch} />
-              </div>
-            </div>
-
-            {/* Right Image */}
-            <div className="relative h-full min-h-[400px] lg:min-h-[600px] flex items-end justify-end">
-              <div className="absolute top-0 right-0 w-[150%] h-full bg-gradient-to-l from-white/20 to-transparent pointer-events-none" />
-              <img 
-                src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1000" 
-                alt="Modern Apartment Building" 
-                className="object-cover object-center w-full h-full rounded-tl-[100px] shadow-2xl shadow-emerald-900/10"
-                style={{ maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)' }}
-              />
-            </div>
+      {/* Floating Header */}
+      <div className="absolute top-0 left-0 right-0 z-50 px-4 pt-6">
+        <div className="max-w-7xl mx-auto bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 px-8 py-4 flex justify-between items-center">
+          {/* Logo */}
+          <div className="text-xl font-bold tracking-tight cursor-pointer" onClick={() => onNavigate('landing')}>
+            <span className="text-gray-900">Rent-</span>
+            <span className="text-[#8B5CF6]">Connect</span>
           </div>
 
-          {/* Search Filter - Mobile Position */}
-          <div className="lg:hidden relative z-20 -mt-20 px-2 mb-12">
-            <SearchFilter onSearch={onSearch} />
+          {/* Right Actions */}
+          <div className="flex items-center gap-4">
+            {currentUser ? (
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('profile')}>
+                <span className="text-gray-700 font-medium">Hi 👋 {(currentUser.name || 'User').split(' ')[0]}</span>
+                <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm">
+                  {currentUser.avatar ? (
+                    <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] flex items-center justify-center text-white font-bold">
+                      {(currentUser.name || 'U').charAt(0)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                <button 
+                  onClick={() => onNavigate('tenant-form')}
+                  className="hidden md:block px-6 py-2.5 rounded-full bg-white border border-[#8B5CF6] text-[#8B5CF6] font-medium hover:bg-purple-50 transition-all"
+                >
+                  I Need a place to rent
+                </button>
+                <button 
+                  onClick={() => onNavigate('login')}
+                  className="px-6 py-2.5 rounded-full bg-[#8B5CF6] text-white font-medium hover:bg-[#7C3AED] transition-all shadow-lg shadow-purple-200"
+                >
+                  I am an Agent
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Features */}
-      <section className="pt-40 pb-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-12">
-            <div className="text-center p-6 rounded-2xl hover:bg-gray-50 transition-colors duration-300">
-              <div className="bg-emerald-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3 hover:rotate-6 transition-transform">
-                <Users className="w-8 h-8 text-emerald-600" />
+      {/* Hero Section */}
+      <div className="flex-1 relative flex flex-col items-center justify-center">
+        
+        {/* Background Circles/Gradient */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+           <div className="w-[500px] h-[500px] bg-emerald-50/80 rounded-full blur-3xl absolute -top-20"></div>
+           <div className="w-[800px] h-[800px] border border-emerald-50 rounded-full absolute"></div>
+           <div className="w-[1100px] h-[1100px] border border-emerald-50 rounded-full absolute"></div>
+           <div className="w-[1400px] h-[1400px] border border-emerald-50 rounded-full absolute"></div>
+           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 to-white"></div>
+        </div>
+
+        <div className="relative z-10 text-center max-w-5xl mx-auto px-4 mt-10">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black mb-4 tracking-tight leading-tight">
+            Find Your Perfect Home.
+          </h1>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-16 tracking-tight">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#A78BFA] to-[#8B5CF6]">Without the Hassle</span>
+          </h2>
+
+          {/* Search Bar */}
+          <div className="bg-white p-2 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 max-w-3xl mx-auto flex flex-col md:flex-row items-center gap-2 relative z-20">
+            
+            {/* Location Input */}
+            <div className="flex-1 w-full flex items-center px-6 py-3 border-b md:border-b-0 md:border-r border-gray-100">
+              <div className="bg-emerald-100/50 p-2 rounded-full mr-4">
+                <MapPin className="w-5 h-5 text-emerald-600" />
               </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-900">Direct Connection</h3>
-              <p className="text-gray-600 leading-relaxed">Connect directly with verified agents who have properties matching your needs.</p>
+              <input 
+                id="location-input"
+                type="text" 
+                placeholder="Search Location" 
+                className="w-full outline-none text-gray-700 placeholder-gray-400 bg-transparent text-lg"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
             </div>
-            <div className="text-center p-6 rounded-2xl hover:bg-gray-50 transition-colors duration-300">
-              <div className="bg-emerald-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 -rotate-3 hover:-rotate-6 transition-transform">
-                <ShieldCheck className="w-8 h-8 text-emerald-600" />
-              </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-900">Verified Agents</h3>
-              <p className="text-gray-600 leading-relaxed">All agents are vetted to ensure a safe and secure house hunting experience.</p>
+
+            {/* Pincode Input */}
+            <div className="flex-1 w-full flex items-center px-6 py-3">
+              <input 
+                type="text" 
+                placeholder="Search By Pincode..." 
+                className="w-full outline-none text-gray-700 placeholder-gray-400 bg-transparent text-lg"
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value)}
+              />
             </div>
-            <div className="text-center p-6 rounded-2xl hover:bg-gray-50 transition-colors duration-300">
-              <div className="bg-emerald-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3 hover:rotate-6 transition-transform">
-                <Building2 className="w-8 h-8 text-emerald-600" />
-              </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-900">No Ghost Listings</h3>
-              <p className="text-gray-600 leading-relaxed">Stop wasting time on unavailable properties. Get real options from active agents.</p>
-            </div>
+
+            {/* Search Button */}
+            <button 
+              onClick={handleSearch}
+              className="w-full md:w-auto bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-10 py-4 rounded-full font-medium transition-all duration-200 shadow-lg shadow-purple-200 text-lg"
+            >
+              Search
+            </button>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 };

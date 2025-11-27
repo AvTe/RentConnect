@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Phone, MessageCircle, Lock, Home, User, LayoutDashboard, Plus, Edit, Eye } from 'lucide-react';
+import { 
+  LayoutGrid, Home, User, Settings, LogOut, Plus, Search, 
+  Bell, Phone, MessageCircle, Lock, Edit, Eye, Filter, Inbox, Image as ImageIcon, Crown
+} from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import { AgentProfile } from './AgentProfile';
 
 // Mock Properties Data
 const MOCK_PROPERTIES = [
-  { id: 1, name: "Luxury 3 Bedroom Apartment", price: "KSh 3,500,000/yr", status: "Active", location: "Lekki Phase 1" },
-  { id: 2, name: "Cozy Studio Flat", price: "KSh 800,000/yr", status: "Pending", location: "Yaba" },
-  { id: 3, name: "4 Bedroom Duplex", price: "KSh 8,000,000/yr", status: "Sold", location: "Ikoyi" },
+  { id: 1, name: "Luxury 3 Bedroom Apartment", price: "₦ 3,500,000/yr", status: "Active", location: "Lekki Phase 1" },
+  { id: 2, name: "Cozy Studio Flat", price: "₦ 800,000/yr", status: "Pending", location: "Yaba" },
+  { id: 3, name: "4 Bedroom Duplex", price: "₦ 8,000,000/yr", status: "Sold", location: "Ikoyi" },
 ];
 
 export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initialTab = 'leads', currentUser, onUpdateUser, onLogout }) => {
@@ -28,6 +31,20 @@ export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initial
     setActiveTab('leads');
   };
 
+  const SidebarItem = ({ icon: Icon, label, id, active }) => (
+    <button
+      onClick={() => setActiveTab(id)}
+      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+        active 
+          ? 'bg-emerald-50 text-emerald-700 shadow-sm' 
+          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+      }`}
+    >
+      <Icon className={`w-4 h-4 ${active ? 'text-emerald-600' : 'text-gray-500'}`} />
+      {label}
+    </button>
+  );
+
   const renderContent = () => {
     if (activeTab === 'profile') {
       return <AgentProfile agent={agent} onSave={handleSaveProfile} onCancel={() => setActiveTab('leads')} />;
@@ -37,8 +54,11 @@ export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initial
       return (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-900">My Properties</h2>
-            <Button className="flex items-center gap-2">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">My Properties</h2>
+              <p className="text-gray-500 text-sm">Manage your property listings</p>
+            </div>
+            <Button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700">
               <Plus className="w-4 h-4" />
               Add New Property
             </Button>
@@ -46,30 +66,31 @@ export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initial
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {MOCK_PROPERTIES.map((property) => (
-              <div key={property.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                <div className="h-48 bg-gray-200 relative">
+              <div key={property.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow group">
+                <div className="h-48 bg-gray-100 relative flex items-center justify-center">
+                  <ImageIcon className="w-12 h-12 text-gray-300" />
                   <div className="absolute top-4 right-4">
                     <Badge className={
-                      property.status === 'Active' ? 'bg-green-100 text-green-800' :
-                      property.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
+                      property.status === 'Active' ? 'bg-green-100 text-green-800 border-green-200' :
+                      property.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                      'bg-gray-100 text-gray-800 border-gray-200'
                     }>
                       {property.status}
                     </Badge>
                   </div>
                 </div>
-                <div className="p-6">
+                <div className="p-5">
                   <h3 className="font-semibold text-lg text-gray-900 mb-1">{property.name}</h3>
                   <p className="text-gray-500 text-sm mb-4">{property.location}</p>
                   <div className="flex justify-between items-center mb-6">
-                    <span className="font-bold text-emerald-600">{property.price}</span>
+                    <span className="font-bold text-emerald-600 text-lg">{property.price}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <Button variant="outline" className="flex items-center justify-center gap-2">
-                      <Edit className="w-4 h-4" /> Edit
+                    <Button className="flex items-center justify-center gap-2 text-xs h-9 bg-emerald-600 hover:bg-emerald-700 text-white">
+                      <Edit className="w-3 h-3" /> Edit
                     </Button>
-                    <Button variant="ghost" className="flex items-center justify-center gap-2">
-                      <Eye className="w-4 h-4" /> View
+                    <Button variant="outline" className="flex items-center justify-center gap-2 text-xs h-9">
+                      <Eye className="w-3 h-3" /> View
                     </Button>
                   </div>
                 </div>
@@ -82,131 +103,194 @@ export const AgentDashboard = ({ onNavigate, leads, isPremium, onUnlock, initial
 
     // Leads Tab (Default)
     return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {leads.map((lead) => (
-          <div key={lead.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900">{lead.type}</h3>
-                  <p className="text-gray-500 text-sm">{lead.location}</p>
-                </div>
-                <Badge>{lead.budget}</Badge>
-              </div>
-              
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-medium">
-                  {lead.name.charAt(0)}
-                </div>
-                <span className="text-gray-700 font-medium">{lead.name}</span>
-              </div>
-
-              {isPremium ? (
-                <div className="grid grid-cols-2 gap-3">
-                  <a 
-                    href={`tel:${lead.whatsapp}`}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-900 rounded-lg hover:bg-gray-200 font-medium transition-colors"
-                  >
-                    <Phone className="w-4 h-4" />
-                    Call
-                  </a>
-                  <a 
-                    href={`https://wa.me/${lead.whatsapp}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium transition-colors"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    Chat
-                  </a>
-                </div>
-              ) : (
-                <Button 
-                  onClick={onUnlock}
-                  variant="outline" 
-                  className="w-full border-dashed border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-emerald-600 hover:border-emerald-500"
-                >
-                  <Lock className="w-4 h-4 mr-2" />
-                  Unlock Contact Info
-                </Button>
-              )}
-            </div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Leads Dashboard</h2>
+            <p className="text-gray-500 text-sm">Potential tenants matching your criteria</p>
           </div>
-        ))}
+          <div className="flex gap-2">
+             <button className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">
+                <Filter className="w-4 h-4" />
+                Filter
+              </button>
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {leads.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                <Inbox className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-1">No leads found yet</h3>
+              <p className="text-gray-500 text-sm mb-6 text-center max-w-sm">
+                Once potential tenants match your criteria, they will appear here.
+              </p>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Update Criteria
+              </Button>
+            </div>
+          ) : (
+            leads.map((lead) => (
+            <div key={lead.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-900">{lead.requirements?.property_type || lead.type}</h3>
+                    <p className="text-gray-500 text-sm">{lead.requirements?.location || lead.location}</p>
+                  </div>
+                  <Badge className="bg-gray-100 text-gray-700 border-gray-200">{lead.requirements?.budget || lead.budget}</Badge>
+                </div>
+                
+                <div className="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold">
+                    {(lead.tenant_info?.name || lead.name || '?').charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{lead.tenant_info?.name || lead.name}</p>
+                    <p className="text-xs text-gray-500">Looking for rent</p>
+                  </div>
+                </div>
+
+                {isPremium ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    <a 
+                      href={`tel:${lead.tenant_info?.phone || lead.phone || lead.whatsapp}`}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors text-sm"
+                    >
+                      <Phone className="w-4 h-4" />
+                      Call
+                    </a>
+                    <a 
+                      href={lead.tenant_info?.whatsapp_link || `https://wa.me/${lead.tenant_info?.whatsapp || lead.whatsapp}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors text-sm"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Chat
+                    </a>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={onUnlock}
+                    variant="outline" 
+                    className="w-full border-dashed border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-emerald-600 hover:border-emerald-500"
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    Unlock Contact Info
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Sidebar */}
-          <aside className="w-full md:w-64 flex-shrink-0">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 mx-auto bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-2xl font-bold mb-3">
-                  {agent.name.charAt(0)}
+    <div className="flex h-screen bg-[#F3F4F6] font-sans overflow-hidden">
+      {/* Sidebar */}
+      <aside className="w-64 bg-[#F9FAFB] border-r border-gray-200 flex flex-col flex-shrink-0">
+        <div className="p-4">
+          {/* App Switcher / Logo */}
+          <div className="flex items-center gap-3 px-2 mb-6">
+            <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold">
+              R
+            </div>
+            <span className="font-bold text-gray-900">RentConnect</span>
+            <Badge className="ml-auto bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] px-1.5">Agent</Badge>
+          </div>
+
+          {/* Navigation */}
+          <div className="space-y-1">
+            <SidebarItem icon={LayoutGrid} label="Leads Dashboard" id="leads" active={activeTab === 'leads'} />
+            <SidebarItem icon={Home} label="My Properties" id="properties" active={activeTab === 'properties'} />
+          </div>
+
+          <div className="mt-8">
+            <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Account
+            </h3>
+            <div className="space-y-1">
+              <SidebarItem icon={Settings} label="Profile Settings" id="profile" active={activeTab === 'profile'} />
+              <button
+                onClick={onLogout}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                Log Out
+              </button>
+            </div>
+          </div>
+          
+          {!isPremium && (
+            <div className="mt-auto mb-6 mx-2">
+               <Button onClick={onUnlock} className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md border-0">
+                <div className="flex items-center justify-center gap-2">
+                  <Crown className="w-4 h-4" />
+                  <span>Go Premium</span>
                 </div>
-                <h2 className="font-bold text-gray-900">{agent.name}</h2>
-                <p className="text-sm text-gray-500">{agent.agencyName}</p>
-                {isPremium && (
-                  <Badge variant="default" className="mt-2 bg-emerald-100 text-emerald-800">
-                    Premium Agent
-                  </Badge>
-                )}
-              </div>
-              
-              <nav className="space-y-2">
-                <button 
-                  onClick={() => setActiveTab('leads')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'leads' ? 'bg-emerald-50 text-emerald-600 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                >
-                  <LayoutDashboard className="w-5 h-5" />
-                  Leads Dashboard
-                </button>
-                <button 
-                  onClick={() => setActiveTab('properties')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'properties' ? 'bg-emerald-50 text-emerald-600 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                >
-                  <Home className="w-5 h-5" />
-                  My Properties
-                </button>
-                <button 
-                  onClick={() => setActiveTab('profile')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeTab === 'profile' ? 'bg-emerald-50 text-emerald-600 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-                >
-                  <User className="w-5 h-5" />
-                  My Profile
-                </button>
-              </nav>
-
-              <div className="mt-8 pt-8 border-t border-gray-100">
-                {!isPremium && (
-                  <Button onClick={onUnlock} className="w-full mb-4">
-                    Upgrade to Premium
-                  </Button>
-                )}
-                <Button variant="outline" className="w-full" onClick={onLogout}>
-                  Log Out
-                </Button>
-              </div>
+              </Button>
             </div>
-          </aside>
-
-          {/* Main Content */}
-          <main className="flex-1">
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-900">
-                {activeTab === 'leads' ? 'Leads Dashboard' : 
-                 activeTab === 'properties' ? 'My Properties' : 'Agent Profile'}
-              </h1>
-              <p className="text-gray-500">Manage your leads and listings</p>
-            </div>
-            {renderContent()}
-          </main>
+          )}
         </div>
-      </div>
+
+        {/* User Profile Snippet at Bottom */}
+        <div className="p-4 border-t border-gray-200 mt-auto">
+          <div className="flex items-center gap-3 px-2">
+            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">
+              {agent.name.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{agent.name}</p>
+              <p className="text-xs text-gray-500 truncate">{agent.agencyName}</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Header */}
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span className="font-medium text-gray-900">Agent Portal</span>
+            <span>/</span>
+            <span className="text-gray-900">
+              {activeTab === 'leads' ? 'Leads' : 
+               activeTab === 'properties' ? 'Properties' : 'Profile'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Search leads..." 
+                className="pl-9 pr-12 py-2 bg-gray-100 border-transparent rounded-lg text-sm focus:bg-white focus:border-gray-300 focus:ring-0 transition-all w-64"
+              />
+            </div>
+            <button className="p-2 text-gray-400 hover:text-gray-600 relative">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+            </button>
+          </div>
+        </header>
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-auto p-8">
+          <div className="max-w-6xl mx-auto">
+            {renderContent()}
+          </div>
+        </div>
+      </main>
     </div>
   );
 };
+

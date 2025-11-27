@@ -9,9 +9,12 @@ import { AgentRegistration } from '@/components/AgentRegistration';
 import { UserDashboard } from '@/components/UserDashboard';
 import { Login } from '@/components/Login';
 import { Header } from '@/components/Header';
+import { AgentsListingPage } from '@/components/AgentsListingPage';
+import { AgentDetailPage } from '@/components/AgentDetailPage';
+import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { getUser, updateUser, createUser } from '@/lib/firestore';
+import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/firestore';
 import { useLeads, useSubscription } from '@/lib/hooks';
 
 export default function RentalLeadApp() {
@@ -19,6 +22,7 @@ export default function RentalLeadApp() {
   const [currentUser, setCurrentUser] = useState(null);
   const [prefilledData, setPrefilledData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedAgentId, setSelectedAgentId] = useState(null);
   
   // Use custom hooks for data management
   const { leads } = useLeads();
@@ -117,23 +121,31 @@ export default function RentalLeadApp() {
       const { sendEmailNotification, EMAIL_TEMPLATES } = await import('@/lib/notifications');
       
       const leadData = {
-        tenantId: currentUser?.uid || 'guest',
-        name: formData.name,
-        location: formData.location,
-        type: formData.type,
-        budget: formData.budget,
-        whatsapp: formData.whatsapp,
-        email: formData.email || currentUser?.email,
-        phone: formData.phone || formData.whatsapp
+        tenant_info: {
+          name: formData.name,
+          phone: formData.phone || formData.whatsapp,
+          whatsapp_link: `https://wa.me/${formData.whatsapp}`,
+          whatsapp: formData.whatsapp, // Keeping raw number for easy access
+          email: formData.email || currentUser?.email,
+          id: currentUser?.uid || 'guest'
+        },
+        requirements: {
+          location: formData.location,
+          pincode: formData.pincode,
+          property_type: formData.type,
+          budget: formData.budget,
+          currency: 'NGN',
+          move_in_date: 'ASAP' // Defaulting for now
+        }
       };
       
       const result = await createLead(leadData);
       
       if (result.success) {
         // Send confirmation email to tenant
-        if (leadData.email) {
-          const emailContent = EMAIL_TEMPLATES.TENANT_CONFIRMATION(leadData.name, leadData);
-          await sendEmailNotification(leadData.email, 'Request Submitted - RentConnect', emailContent);
+        if (leadData.tenant_info.email) {
+          const emailContent = EMAIL_TEMPLATES.TENANT_CONFIRMATION(leadData.tenant_info.name, leadData);
+          await sendEmailNotification(leadData.tenant_info.email, 'Request Submitted - RentConnect', emailContent);
         }
         
         alert("Request posted successfully! Agents will contact you soon.");
@@ -182,23 +194,43 @@ export default function RentalLeadApp() {
   const handleSubscribe = async (paymentData) => {
     try {
       const { initializePayment } = await import('@/lib/paystack');
-      const { SUBSCRIPTION_PLANS } = await import('@/lib/paystack');
       
-      const result = await initializePayment(
-        currentUser.email,
-        SUBSCRIPTION_PLANS.PREMIUM.amount,
-        {
-          agentId: currentUser.uid,
-          agentName: currentUser.name,
-          plan: 'premium'
+      // Determine if this is agent or user subscription
+      if (paymentData.userId) {
+        // User subscription for viewing agent contacts
+        const result = await initializePayment(
+          currentUser.email,
+          paymentData.amount,
+          {
+            userId: paymentData.userId,
+            planType: paymentData.planType,
+            subscriptionType: 'user'
+          }
+        );
+        
+        if (result.success) {
+          window.location.href = result.authorizationUrl;
+        } else {
+          alert('Error initializing payment. Please try again.');
         }
-      );
-      
-      if (result.success) {
-        // Redirect to Paystack payment page
-        window.location.href = result.authorizationUrl;
       } else {
-        alert('Error initializing payment. Please try again.');
+        // Agent subscription for viewing leads
+        const { SUBSCRIPTION_PLANS } = await import('@/lib/paystack');
+        const result = await initializePayment(
+          currentUser.email,
+          SUBSCRIPTION_PLANS.PREMIUM.amount,
+          {
+            agentId: currentUser.uid,
+            agentName: currentUser.name,
+            plan: 'premium'
+          }
+        );
+        
+        if (result.success) {
+          window.location.href = result.authorizationUrl;
+        } else {
+          alert('Error initializing payment. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error subscribing:', error);
@@ -206,10 +238,15 @@ export default function RentalLeadApp() {
     }
   };
 
+  const handleViewAgentProfile = (agent) => {
+    setSelectedAgentId(agent.id);
+    setView('agent-detail');
+  };
+
   const renderView = () => {
     switch (view) {
       case 'landing':
-        return <LandingPage onNavigate={setView} onSearch={handleSearch} />;
+        return <LandingPage onNavigate={setView} onSearch={handleSearch} currentUser={currentUser} />;
       case 'login':
         return <Login onNavigate={setView} onLogin={handleLogin} />;
       case 'tenant-form':
@@ -269,6 +306,31 @@ export default function RentalLeadApp() {
             onSubscribe={handleSubscribe} 
           />
         );
+      case 'agents-listing':
+        return (
+          <AgentsListingPage
+            currentUser={currentUser}
+            onNavigate={setView}
+            onViewAgentProfile={handleViewAgentProfile}
+          />
+        );
+      case 'agent-detail':
+        return (
+          <AgentDetailPage
+            agentId={selectedAgentId}
+            currentUser={currentUser}
+            onNavigate={setView}
+            onBack={() => setView('agents-listing')}
+          />
+        );
+      case 'user-subscription':
+        return (
+          <UserSubscriptionPage
+            currentUser={currentUser}
+            onNavigate={setView}
+            onSubscribe={handleSubscribe}
+          />
+        );
       default:
         return <LandingPage onNavigate={setView} onSearch={handleSearch} />;
     }
@@ -276,11 +338,13 @@ export default function RentalLeadApp() {
 
   return (
     <main className="min-h-screen bg-white">
-      <Header 
-        onNavigate={setView} 
-        currentUser={currentUser} 
-        onLogout={handleLogout} 
-      />
+      {view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && (
+        <Header 
+          onNavigate={setView} 
+          currentUser={currentUser} 
+          onLogout={handleLogout} 
+        />
+      )}
       {renderView()}
     </main>
   );
