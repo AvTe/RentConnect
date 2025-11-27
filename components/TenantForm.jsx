@@ -1,22 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Home, Banknote, User, Phone, Building2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Home, Banknote, User, Phone, Check, ChevronRight, Building2, Mail, Loader2 } from 'lucide-react';
 import { Button } from './ui/Button';
+import confetti from 'canvas-confetti';
+
+const PROPERTY_TYPES = [
+  { id: '1 Bedroom', label: '1 Bedroom', icon: '🛏️' },
+  { id: '2 Bedroom', label: '2 Bedroom', icon: '🏡' },
+  { id: '3 Bedroom', label: '3 Bedroom', icon: '🏰' },
+  { id: 'Self Contain', label: 'Self Contain', icon: '🏠' },
+  { id: 'Mini Flat', label: 'Mini Flat', icon: '🏢' },
+  { id: 'Duplex', label: 'Duplex', icon: '🏘️' }
+];
 
 export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     location: '',
     pincode: '',
     type: '',
     budget: '',
     name: '',
+    email: '',
     whatsapp: ''
   });
-
-  const calculateProgress = () => {
-    const fields = ['location', 'type', 'budget', 'name', 'whatsapp'];
-    const filled = fields.filter(field => formData[field] && formData[field].length > 0).length;
-    return (filled / fields.length) * 100;
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -27,10 +36,302 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
     }
   }, [initialData]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
+  const handleNext = () => {
+    if (step < 4) setStep(step + 1);
   };
+
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+    else onNavigate('landing');
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await response.json();
+          const city = data.address.city || data.address.town || data.address.village || data.address.suburb;
+          const state = data.address.state;
+          const locationString = city && state ? `${city}, ${state}` : data.display_name;
+          
+          setFormData(prev => ({ ...prev, location: locationString }));
+        } catch (error) {
+          console.error('Error fetching location:', error);
+          setFormData(prev => ({ ...prev, location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` }));
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        alert('Unable to retrieve your location');
+        setIsLocating(false);
+      }
+    );
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    // Simulate API call delay for effect
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const result = await onSubmit(formData);
+    setIsSubmitting(false);
+
+    if (result && result.success) {
+      setIsSuccess(true);
+      triggerConfetti();
+    } else {
+      alert(result?.error || 'Something went wrong. Please try again.');
+    }
+  };
+
+  const triggerConfetti = () => {
+    const duration = 3 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+    const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+    const interval = setInterval(function() {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+    }, 250);
+  };
+
+  const renderStep1 = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+      <div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Where do you want to live?</h3>
+        <p className="text-gray-500 mb-6">Enter the location where you are looking to rent.</p>
+        <div className="relative">
+          <button 
+            type="button"
+            onClick={handleUseCurrentLocation}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors"
+            title="Use current location"
+          >
+            {isLocating ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
+          </button>
+          <input
+            type="text"
+            autoFocus
+            className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-emerald-500 focus:ring-0 outline-none transition-all shadow-sm"
+            placeholder="e.g. Yaba, Lagos"
+            value={formData.location}
+            onChange={(e) => setFormData({...formData, location: e.target.value})}
+            onKeyDown={(e) => e.key === 'Enter' && formData.location && handleNext()}
+          />
+        </div>
+      </div>
+      <Button 
+        onClick={handleNext} 
+        disabled={!formData.location}
+        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+      >
+        Next Step <ChevronRight className="w-5 h-5" />
+      </Button>
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+      <div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">What type of property?</h3>
+        <p className="text-gray-500 mb-6">Select the type of apartment you are interested in.</p>
+        <div className="grid grid-cols-2 gap-4">
+          {PROPERTY_TYPES.map((type) => (
+            <button
+              key={type.id}
+              type="button"
+              onClick={() => {
+                setFormData({...formData, type: type.id});
+                // Optional: Auto advance after selection
+                // setTimeout(handleNext, 300); 
+              }}
+              className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col gap-2 ${
+                formData.type === type.id
+                  ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500'
+                  : 'border-gray-100 hover:border-emerald-200 hover:bg-gray-50'
+              }`}
+            >
+              <span className="text-2xl">{type.icon}</span>
+              <span className={`font-medium ${formData.type === type.id ? 'text-emerald-900' : 'text-gray-700'}`}>
+                {type.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <Button 
+        onClick={handleNext} 
+        disabled={!formData.type}
+        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+      >
+        Next Step <ChevronRight className="w-5 h-5" />
+      </Button>
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+      <div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">What is your budget?</h3>
+        <p className="text-gray-500 mb-6">Enter your annual budget for rent.</p>
+        <div className="relative">
+          <Banknote className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            autoFocus
+            className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-emerald-500 focus:ring-0 outline-none transition-all shadow-sm"
+            placeholder="e.g. 1,500,000"
+            value={formData.budget}
+            onChange={(e) => setFormData({...formData, budget: e.target.value})}
+            onKeyDown={(e) => e.key === 'Enter' && formData.budget && handleNext()}
+          />
+        </div>
+      </div>
+      <Button 
+        onClick={handleNext} 
+        disabled={!formData.budget}
+        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+      >
+        Next Step <ChevronRight className="w-5 h-5" />
+      </Button>
+    </div>
+  );
+
+  const isValidEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const isValidPhone = (phone) => {
+    return phone.length >= 10;
+  };
+
+  const renderStep4 = () => (
+    <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+      <div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Contact Details</h3>
+        <p className="text-gray-500 mb-6">How can agents reach you?</p>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                required
+                className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-emerald-500 focus:ring-0 outline-none transition-all shadow-sm"
+                placeholder="John Doe"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="email"
+                required
+                className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-emerald-500 focus:ring-0 outline-none transition-all shadow-sm"
+                placeholder="john@example.com"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
+            <div className="relative">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="tel"
+                required
+                className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-emerald-500 focus:ring-0 outline-none transition-all shadow-sm"
+                placeholder="+234..."
+                value={formData.whatsapp}
+                onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Button 
+        type="submit" 
+        disabled={!formData.name || !isValidEmail(formData.email) || !isValidPhone(formData.whatsapp) || isSubmitting}
+        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+      >
+        {isSubmitting ? (
+          <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <>Submit Request <Check className="w-5 h-5" /></>
+        )}
+      </Button>
+    </form>
+  );
+
+  const renderSuccess = () => (
+    <div className="text-center py-12 animate-in zoom-in duration-500">
+      <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 shadow-xl shadow-green-100">
+        <Check className="w-12 h-12 stroke-[3]" />
+      </div>
+      <h2 className="text-3xl font-bold text-gray-900 mb-4">Congratulations! 🎉</h2>
+      <p className="text-gray-500 text-lg mb-8 max-w-md mx-auto">
+        Your request has been submitted successfully. Top-rated agents in {formData.location} will contact you shortly.
+      </p>
+      <div className="flex flex-col gap-3 max-w-xs mx-auto">
+        <Button 
+          onClick={() => onNavigate('landing')} 
+          className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium"
+        >
+          Back to Home
+        </Button>
+        <Button 
+          onClick={() => {
+            setStep(1);
+            setFormData({ location: '', pincode: '', type: '', budget: '', name: '', whatsapp: '' });
+            setIsSuccess(false);
+          }}
+          variant="ghost"
+          className="w-full"
+        >
+          Post Another Request
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (isSuccess) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-white p-4">
+        {renderSuccess()}
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen w-screen flex overflow-hidden bg-white font-sans">
@@ -39,7 +340,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
         {/* Logo/Back */}
         <div className="absolute top-8 left-8 sm:left-12 lg:left-24 flex items-center gap-4">
           <button 
-            onClick={() => onNavigate('landing')} 
+            onClick={handleBack} 
             className="flex items-center text-gray-500 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -49,114 +350,23 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
 
         <div className="max-w-md w-full mx-auto mt-20 md:mt-0">
           {/* Progress Bar */}
-          <div className="mb-8">
-            <div className="flex justify-between text-xs font-medium text-gray-500 mb-2">
-              <span>Request Completion</span>
-              <span>{Math.round(calculateProgress())}%</span>
+          <div className="mb-10">
+            <div className="flex justify-between text-xs font-medium text-gray-500 mb-3">
+              <span>Step {step} of 4</span>
+              <span>{Math.round((step / 4) * 100)}%</span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-emerald-500 transition-all duration-500 ease-out"
-                style={{ width: `${calculateProgress()}%` }}
+                style={{ width: `${(step / 4) * 100}%` }}
               ></div>
             </div>
           </div>
 
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Post Your Request</h2>
-          <p className="text-gray-500 mb-8">Tell us what you need, and we&apos;ll connect you with top-rated agents.</p>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Where do you want to live?</label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                  placeholder="e.g. Yaba, Lagos"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
-                <div className="relative">
-                  <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <select
-                    required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all appearance-none bg-white"
-                    value={formData.type}
-                    onChange={(e) => setFormData({...formData, type: e.target.value})}
-                  >
-                    <option value="">Select...</option>
-                    <option value="1 Bedroom">1 Bedroom</option>
-                    <option value="2 Bedroom">2 Bedroom</option>
-                    <option value="3 Bedroom">3 Bedroom</option>
-                    <option value="Self Contain">Self Contain</option>
-                    <option value="Mini Flat">Mini Flat</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Budget (Annual)</label>
-                <div className="relative">
-                  <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                    placeholder="e.g. 1.5M"
-                    value={formData.budget}
-                    onChange={(e) => setFormData({...formData, budget: e.target.value})}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Contact Details</h3>
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      required
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                      placeholder="John Doe"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="tel"
-                      required
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                      placeholder="+234..."
-                      value={formData.whatsapp}
-                      onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-lg shadow-emerald-100 transition-all mt-4">
-              Post Request
-            </Button>
-          </form>
+          {step === 1 && renderStep1()}
+          {step === 2 && renderStep2()}
+          {step === 3 && renderStep3()}
+          {step === 4 && renderStep4()}
         </div>
       </div>
 

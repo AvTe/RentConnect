@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
+    "@smileid/web-components": "^11.0.3",
+    "canvas-confetti": "^1.9.4",
     "firebase": "^12.6.0",
     "lucide-react": "^0.460.0",
     "next": "14.2.15",

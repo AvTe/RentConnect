@@ -6,7 +6,8 @@ import {
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import { AgentProfile } from './AgentProfile';
-import { getWalletBalance, deductCredits } from '@/lib/firestore';
+import { getWalletBalance, deductCredits, unlockLead, getUnlockedLeads } from '@/lib/firestore';
+import { SmileIDVerification } from './SmileIDVerification';
 
 // Mock Properties Data
 const MOCK_PROPERTIES = [
@@ -20,6 +21,7 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
   const [walletBalance, setWalletBalance] = useState(0);
   const [unlockedLeads, setUnlockedLeads] = useState([]);
   const [referralCode, setReferralCode] = useState('');
+  const [showVerification, setShowVerification] = useState(false);
   
   const isVerified = currentUser?.verificationStatus === 'verified';
   const isPending = currentUser?.verificationStatus === 'pending';
@@ -43,8 +45,16 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
       }
     };
 
+    const fetchUnlockedLeads = async () => {
+      const result = await getUnlockedLeads(currentUser.id);
+      if (result.success) {
+        setUnlockedLeads(result.data);
+      }
+    };
+
     if (currentUser?.id) {
       fetchBalance();
+      fetchUnlockedLeads();
       if (currentUser.referralCode) {
         setReferralCode(currentUser.referralCode);
       }
@@ -60,15 +70,16 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
     const LEAD_COST = 1; // 1 credit per lead
     
     if (walletBalance >= LEAD_COST) {
-      // In a real app, you'd call the API here
-      // For now, we simulate the deduction locally if no backend connected
       if (currentUser?.id) {
-        const result = await deductCredits(currentUser.id, LEAD_COST);
+        const result = await unlockLead(currentUser.id, lead.id);
         if (result.success) {
-          setWalletBalance(result.newBalance);
+          setWalletBalance(prev => prev - LEAD_COST); // Optimistic update
           setUnlockedLeads([...unlockedLeads, lead.id]);
-          // Call the parent handler if needed for other side effects
           if (onUnlock) onUnlock(lead);
+          
+          // Refresh balance to be sure
+          const balanceResult = await getWalletBalance(currentUser.id);
+          if (balanceResult.success) setWalletBalance(balanceResult.balance);
         } else {
           alert("Failed to unlock lead: " + result.error);
         }
@@ -414,10 +425,29 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
                 <p className="text-xs text-yellow-600">Your account is under review. You cannot unlock leads or buy credits until verified.</p>
               </div>
             </div>
-            <Button size="sm" variant="outline" className="text-yellow-700 border-yellow-300 hover:bg-yellow-100">
-              Check Status
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+              onClick={() => setShowVerification(true)}
+            >
+              Verify Identity
             </Button>
           </div>
+        )}
+
+        {showVerification && (
+          <SmileIDVerification 
+            userId={currentUser?.id}
+            onClose={() => setShowVerification(false)}
+            onComplete={(result) => {
+              if (result.success) {
+                onUpdateUser({ verificationStatus: 'verified' });
+                setShowVerification(false);
+                alert('Verification submitted successfully!');
+              }
+            }}
+          />
         )}
 
         {/* Top Header */}

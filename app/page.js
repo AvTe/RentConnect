@@ -12,6 +12,7 @@ import { Header } from '@/components/Header';
 import { AgentsListingPage } from '@/components/AgentsListingPage';
 import { AgentDetailPage } from '@/components/AgentDetailPage';
 import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
+import { AdminDashboard } from '@/components/AdminDashboard';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/firestore';
@@ -26,7 +27,8 @@ export default function RentalLeadApp() {
   const [selectedAgentId, setSelectedAgentId] = useState(null);
   
   // Use custom hooks for data management
-  const { leads } = useLeads();
+  // Only fetch leads if user is logged in (to avoid permission errors)
+  const { leads } = useLeads({}, !!currentUser);
   const { isPremium } = useSubscription(currentUser?.uid);
 
   useEffect(() => {
@@ -36,15 +38,25 @@ export default function RentalLeadApp() {
           const userResult = await getUser(user.uid);
           
           if (userResult.success) {
-            const userData = userResult.data;
+            let userData = userResult.data;
+
+            // Auto-promote specific email to admin
+            if (user.email === 'kartikamit171@gmail.com' && userData.role !== 'admin') {
+              await updateUser(user.uid, { role: 'admin' });
+              userData.role = 'admin';
+            }
+
             setCurrentUser({
               uid: user.uid,
               email: user.email,
               ...userData
             });
             
-            if (view === 'login') {
-              if (userData.type === 'agent') {
+            // Redirect based on role if on landing or login page
+            if (view === 'landing' || view === 'login') {
+              if (userData.role === 'admin') {
+                setView('admin-dashboard');
+              } else if (userData.type === 'agent' || userData.role === 'agent') {
                 setView('agent-dashboard');
               } else {
                 setView('user-dashboard');
@@ -72,7 +84,15 @@ export default function RentalLeadApp() {
     });
 
     return () => unsubscribe();
-  }, [view]);
+  }, []); // Removed view dependency to prevent re-running on view change
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
 
   const handleLogin = async (user) => {
     setCurrentUser(user);
@@ -80,14 +100,34 @@ export default function RentalLeadApp() {
     // Create user in Firestore if doesn't exist
     const userResult = await getUser(user.uid);
     if (!userResult.success) {
-      await createUser(user.uid, {
+      const newUser = {
         email: user.email,
         name: user.name,
         type: user.type,
+        role: user.email === 'kartikamit171@gmail.com' ? 'admin' : user.type,
         avatar: user.avatar || null,
         phone: user.phone || null,
-        location: user.location || null
-      });
+        location: user.location || null,
+        status: 'active'
+      };
+
+      await createUser(user.uid, newUser);
+
+      if (newUser.role === 'admin') {
+        setView('admin-dashboard');
+        return;
+      }
+    } else {
+      // If user exists, check if admin
+      if (user.email === 'kartikamit171@gmail.com' && userResult.data.role !== 'admin') {
+        await updateUser(user.uid, { role: 'admin' });
+        userResult.data.role = 'admin';
+      }
+
+      if (userResult.data.role === 'admin') {
+        setView('admin-dashboard');
+        return;
+      }
     }
     
     if (user.type === 'agent') {
@@ -149,17 +189,13 @@ export default function RentalLeadApp() {
           await sendEmailNotification(leadData.tenant_info.email, 'Request Submitted - RentConnect', emailContent);
         }
         
-        alert("Request posted successfully! Agents will contact you soon.");
-        
-        if (currentUser) {
-          setView('user-dashboard');
-        } else {
-          setView('landing');
-        }
+        // Let the form component handle the success UI
+        return { success: true };
       }
+      return { success: false, error: 'Failed to create lead' };
     } catch (error) {
       console.error('Error submitting tenant form:', error);
-      alert('Error submitting request. Please try again.');
+      return { success: false, error: error.message };
     }
   };
 
@@ -190,6 +226,7 @@ export default function RentalLeadApp() {
       const agentData = {
         name: formData.fullName,
         type: 'agent',
+        role: 'agent', // Added role field for consistency
         email: formData.email,
         agencyName: formData.agencyName,
         phone: formData.phone,
@@ -199,7 +236,8 @@ export default function RentalLeadApp() {
         verificationStatus: 'pending',
         idDocumentUrl: idDocumentUrl,
         walletBalance: 0,
-        referredBy: formData.referralCode || null
+        referredBy: formData.referralCode || null,
+        status: 'active'
       };
       
       await createUser(user.uid, agentData);
@@ -376,6 +414,14 @@ export default function RentalLeadApp() {
             onSubscribe={handleSubscribe}
           />
         );
+      case 'admin-dashboard':
+        return (
+          <AdminDashboard
+            currentUser={currentUser}
+            onNavigate={setView}
+            onLogout={handleLogout}
+          />
+        );
       default:
         return <LandingPage onNavigate={setView} onSearch={handleSearch} />;
     }
@@ -383,7 +429,7 @@ export default function RentalLeadApp() {
 
   return (
     <main className="min-h-screen bg-white">
-      {view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && (
+      {view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && view !== 'admin-dashboard' && (
         <Header 
           onNavigate={setView} 
           currentUser={currentUser} 

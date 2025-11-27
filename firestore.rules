@@ -10,24 +10,67 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
+    
+    // Check if user is admin (requires reading the user doc)
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Collection: users (The Agents & Tenants)
+    match /users/{userId} {
+      // Allow authenticated users to read profiles (needed for Admin Dashboard & Agent Listings)
+      allow read: if isAuthenticated();
+      // Users can write their own data; Admins can write any user data
+      allow write: if isOwner(userId) || isAdmin();
+    }
 
     // Collection: requests (The Leads)
-    // Stores the housing needs submitted by tenants.
     match /requests/{requestId} {
-      // "Ensure only authenticated users can read the requests collection."
       allow read: if isAuthenticated();
-      
-      // Tenants submit requests (Public access for creation as tenants might not be logged in)
       allow create: if true;
-      
-      // No updates or deletes defined in the guide for now
+      allow update, delete: if isAuthenticated();
     }
     
-    // Collection: users (The Agents)
-    // Stores agent profiles and subscription status.
-    match /users/{userId} {
-      // Agents can read and write their own profiles
-      allow read, write: if isOwner(userId);
+    // Collection: properties
+    match /properties/{propertyId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Collection: transactions
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+    }
+    
+    // Collection: subscriptions
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // Collection: credit_bundles
+    match /credit_bundles/{bundleId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Collection: support_tickets
+    match /support_tickets/{ticketId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Collection: notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    
+    // Catch-all for other collections during development
+    match /{document=**} {
+      allow read, write: if isAuthenticated();
     }
   }
 }
