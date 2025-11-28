@@ -148,7 +148,7 @@ export const SmileIDVerification = ({ onClose, onComplete, userId }) => {
                 <X className="w-10 h-10" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900">Verification Failed</h3>
-              <p className="text-gray-500 mt-2 mb-8">We couldn't verify your identity. Please try again.</p>
+              <p className="text-gray-500 mt-2 mb-8">We couldn&apos;t verify your identity. Please try again.</p>
               <div className="flex gap-4 justify-center">
                 <Button onClick={onClose} variant="outline">Close</Button>
                 <Button onClick={() => setStep('intro')} className="bg-blue-600 text-white">Try Again</Button>
