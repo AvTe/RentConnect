@@ -20,10 +20,24 @@ import { SupportManagement } from './admin/SupportManagement';
 import { SystemConfiguration } from './admin/SystemConfiguration';
 import { Settings } from './admin/Settings';
 
+const SidebarItem = ({ icon: Icon, label, id, active, onClick }) => (
+  <button
+    onClick={() => onClick(id)}
+    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+      active 
+        ? 'bg-blue-50 text-blue-700 shadow-sm' 
+        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+    }`}
+  >
+    <Icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
+    {label}
+  </button>
+);
+
 export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [pendingAgents, setPendingAgents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'verifications') {
@@ -71,20 +85,6 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
     }
   };
 
-  const SidebarItem = ({ icon: Icon, label, id, active }) => (
-    <button
-      onClick={() => setActiveTab(id)}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-        active 
-          ? 'bg-blue-50 text-blue-700 shadow-sm' 
-          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
-      }`}
-    >
-      <Icon className={`w-4 h-4 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
-      {label}
-    </button>
-  );
-
   const renderContent = () => {
     if (activeTab === 'overview') {
       return <AdminOverview />;
@@ -106,11 +106,10 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
       return <Settings user={currentUser} />;
     }
 
-    if (loading) {
-      return <div className="flex items-center justify-center h-64">Loading...</div>;
-    }
-
     if (activeTab === 'verifications') {
+      if (loading) {
+        return <div className="flex items-center justify-center h-64">Loading...</div>;
+      }
       return (
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-gray-900">Pending Verifications</h2>
@@ -190,16 +189,16 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
           </div>
 
           <div className="space-y-1">
-            <SidebarItem icon={LayoutDashboard} label="Overview" id="overview" active={activeTab === 'overview'} />
-            <SidebarItem icon={Users} label="Agents" id="agents" active={activeTab === 'agents'} />
-            <SidebarItem icon={User} label="Renters" id="renters" active={activeTab === 'renters'} />
-            <SidebarItem icon={ShieldCheck} label="Verifications" id="verifications" active={activeTab === 'verifications'} />
-            <SidebarItem icon={DollarSign} label="Finance" id="finance" active={activeTab === 'finance'} />
-            <SidebarItem icon={CreditCard} label="Subscriptions" id="subscriptions" active={activeTab === 'subscriptions'} />
-            <SidebarItem icon={ShieldAlert} label="Support" id="support" active={activeTab === 'support'} />
-            <SidebarItem icon={Activity} label="System Config" id="system_config" active={activeTab === 'system_config'} />
-            <SidebarItem icon={FileText} label="All Leads" id="leads" active={activeTab === 'leads'} />
-            <SidebarItem icon={SettingsIcon} label="Settings" id="settings" active={activeTab === 'settings'} />
+            <SidebarItem icon={LayoutDashboard} label="Overview" id="overview" active={activeTab === 'overview'} onClick={setActiveTab} />
+            <SidebarItem icon={Users} label="Agents" id="agents" active={activeTab === 'agents'} onClick={setActiveTab} />
+            <SidebarItem icon={User} label="Renters" id="renters" active={activeTab === 'renters'} onClick={setActiveTab} />
+            <SidebarItem icon={ShieldCheck} label="Verifications" id="verifications" active={activeTab === 'verifications'} onClick={setActiveTab} />
+            <SidebarItem icon={DollarSign} label="Finance" id="finance" active={activeTab === 'finance'} onClick={setActiveTab} />
+            <SidebarItem icon={CreditCard} label="Subscriptions" id="subscriptions" active={activeTab === 'subscriptions'} onClick={setActiveTab} />
+            <SidebarItem icon={ShieldAlert} label="Support" id="support" active={activeTab === 'support'} onClick={setActiveTab} />
+            <SidebarItem icon={Activity} label="System Config" id="system_config" active={activeTab === 'system_config'} onClick={setActiveTab} />
+            <SidebarItem icon={FileText} label="All Leads" id="leads" active={activeTab === 'leads'} onClick={setActiveTab} />
+            <SidebarItem icon={SettingsIcon} label="Settings" id="settings" active={activeTab === 'settings'} onClick={setActiveTab} />
           </div>
 
           <div className="mt-auto pt-6 border-t border-gray-100">
