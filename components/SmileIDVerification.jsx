@@ -46,6 +46,7 @@ export const SmileIDVerification = ({ onClose, onComplete, userId }) => {
         idElement.removeEventListener('images-computed', handleIDSuccess);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
   const processVerification = async (idImage) => {

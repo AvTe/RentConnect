@@ -156,9 +156,9 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="font-bold text-gray-900 mb-4">Contact Information</h3>
             <div className="space-y-3 text-sm">
-              <p><span className="text-gray-500">Name:</span> {lead.tenant_info?.name || 'Anonymous'}</p>
-              <p><span className="text-gray-500">Email:</span> {lead.tenant_info?.email || 'N/A'}</p>
-              <p><span className="text-gray-500">Phone:</span> {lead.tenant_info?.phone || 'N/A'}</p>
+              <p><span className="text-gray-500">Name:</span> {lead.tenant_info?.name || lead.name || 'Anonymous'}</p>
+              <p><span className="text-gray-500">Email:</span> {lead.tenant_info?.email || lead.email || 'N/A'}</p>
+              <p><span className="text-gray-500">Phone:</span> {lead.tenant_info?.phone || lead.phone || lead.whatsapp || 'N/A'}</p>
             </div>
           </div>
         </div>

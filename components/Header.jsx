@@ -46,8 +46,8 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
             <button onClick={() => handleNavigate('landing')} className="text-sm font-medium text-gray-600 hover:text-black transition-colors">Home</button>
-            <button className="text-sm font-medium text-gray-600 hover:text-black transition-colors">Properties</button>
-            <button className="text-sm font-medium text-gray-600 hover:text-black transition-colors">Agents</button>
+            <button onClick={() => handleNavigate('properties')} className="text-sm font-medium text-gray-600 hover:text-black transition-colors">Properties</button>
+            <button onClick={() => handleNavigate('agents-listing')} className="text-sm font-medium text-gray-600 hover:text-black transition-colors">Agents</button>
             
             {currentUser ? (
               <div className="relative ml-4" ref={dropdownRef}>

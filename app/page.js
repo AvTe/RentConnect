@@ -13,6 +13,7 @@ import { AgentsListingPage } from '@/components/AgentsListingPage';
 import { AgentDetailPage } from '@/components/AgentDetailPage';
 import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
 import { AdminDashboard } from '@/components/AdminDashboard';
+import { PropertiesPage } from '@/components/PropertiesPage';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/firestore';
@@ -84,6 +85,7 @@ export default function RentalLeadApp() {
     });
 
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Removed view dependency to prevent re-running on view change
 
   if (loading) {
@@ -474,6 +476,14 @@ export default function RentalLeadApp() {
             currentUser={currentUser}
             onNavigate={setView}
             onLogout={handleLogout}
+          />
+        );
+      case 'properties':
+        return (
+          <PropertiesPage
+            onNavigate={setView}
+            currentUser={currentUser}
+            isPremium={isPremium}
           />
         );
       default:

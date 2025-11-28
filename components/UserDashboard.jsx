@@ -6,12 +6,14 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { UserProfile } from './UserProfile';
-import { getAllAgents } from '@/lib/firestore';
+import { getAllAgents, getAllLeads } from '@/lib/firestore';
 
 export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUser, onUpdateUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [agents, setAgents] = useState([]);
+  const [myRequests, setMyRequests] = useState([]);
   const [loadingAgents, setLoadingAgents] = useState(false);
+  const [loadingRequests, setLoadingRequests] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Use currentUser if available, otherwise fallback
@@ -26,7 +28,10 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
   useEffect(() => {
     if (activeTab === 'agents') {
       fetchAgents();
+    } else if (activeTab === 'requests') {
+      fetchMyRequests();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   const fetchAgents = async () => {
@@ -40,6 +45,23 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
       console.error("Error fetching agents:", error);
     } finally {
       setLoadingAgents(false);
+    }
+  };
+
+  const fetchMyRequests = async () => {
+    if (!currentUser?.uid) return;
+    setLoadingRequests(true);
+    try {
+      // Fetch all leads for this tenant, including closed ones if needed
+      // For now, let's just get active ones or pass status: 'all' if supported
+      const result = await getAllLeads({ tenantId: currentUser.uid, status: 'all' });
+      if (result.success) {
+        setMyRequests(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+    } finally {
+      setLoadingRequests(false);
     }
   };
 
@@ -130,6 +152,70 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
   const renderContent = () => {
     if (activeTab === 'profile') {
       return <UserProfile user={user} onSave={handleSaveProfile} onCancel={() => setActiveTab('dashboard')} />;
+    }
+
+    if (activeTab === 'requests') {
+      return (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">My Requests</h2>
+              <p className="text-gray-500 text-sm">Manage your property requests.</p>
+            </div>
+            <Button onClick={() => onNavigate('tenant-form')}>
+              <Plus className="w-4 h-4 mr-2" />
+              New Request
+            </Button>
+          </div>
+
+          {loadingRequests ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+            </div>
+          ) : myRequests.length > 0 ? (
+            <div className="grid gap-4">
+              {myRequests.map(request => (
+                <div key={request.id} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold text-lg text-gray-900">{request.requirements?.property_type}</h3>
+                      <p className="text-gray-500 text-sm flex items-center gap-1 mt-1">
+                        <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-medium text-gray-600">
+                          {request.requirements?.location}
+                        </span>
+                        <span className="text-gray-300">•</span>
+                        <span>{request.requirements?.budget ? `₦${parseInt(request.requirements.budget).toLocaleString()}` : 'Budget N/A'}</span>
+                      </p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      request.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {request.status?.toUpperCase()}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center text-sm text-gray-500">
+                    <div className="flex gap-4">
+                      <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {request.views || 0} Views</span>
+                      <span className="flex items-center gap-1"><FileText className="w-4 h-4" /> {request.contacts || 0} Contacts</span>
+                    </div>
+                    <span>Posted {request.createdAt?.toDate ? request.createdAt.toDate().toLocaleDateString() : 'Recently'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-white rounded-xl border border-gray-200 border-dashed">
+              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900">No requests yet</h3>
+              <p className="text-gray-500 mb-6">Post a request to let agents know what you&apos;re looking for.</p>
+              <Button onClick={() => onNavigate('tenant-form')}>
+                Post a Request
+              </Button>
+            </div>
+          )}
+        </div>
+      );
     }
 
     if (activeTab === 'agents') {
