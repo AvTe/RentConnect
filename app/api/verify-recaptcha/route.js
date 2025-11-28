@@ -15,7 +15,19 @@ export async function POST(request) {
     const projectID = "we-drive-468503";
     const recaptchaKey = "6LfThBosAAAAALZ06Y7e9jaFROeO_hSgiGdzQok1";
 
-    const client = new RecaptchaEnterpriseServiceClient();
+    // Initialize client with credentials from env var if available (for Netlify)
+    // Otherwise falls back to GOOGLE_APPLICATION_CREDENTIALS file path (for local)
+    let clientConfig = {};
+    if (process.env.GCP_CREDENTIALS_JSON) {
+      try {
+        const credentials = JSON.parse(process.env.GCP_CREDENTIALS_JSON);
+        clientConfig.credentials = credentials;
+      } catch (e) {
+        console.error("Failed to parse GCP_CREDENTIALS_JSON", e);
+      }
+    }
+
+    const client = new RecaptchaEnterpriseServiceClient(clientConfig);
     const projectPath = client.projectPath(projectID);
 
     const requestData = {
