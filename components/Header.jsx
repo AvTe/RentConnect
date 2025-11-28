@@ -56,10 +56,10 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
                   className="flex items-center gap-3 p-1.5 pr-3 rounded-full border border-gray-200 hover:border-black hover:bg-gray-50 transition-all group"
                 >
                   <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-white font-semibold">
-                    {currentUser.avatar || currentUser.name.charAt(0)}
+                    {currentUser.avatar || (currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U')}
                   </div>
                   <span className="text-sm font-medium text-gray-700 group-hover:text-black">
-                    {currentUser.name}
+                    {currentUser.name || 'User'}
                   </span>
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -146,10 +146,10 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
             <div className="space-y-1 border-t border-gray-100 pt-4">
               <div className="flex items-center gap-3 px-3 py-3 mb-2">
                 <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white font-semibold">
-                  {currentUser.avatar || currentUser.name.charAt(0)}
+                  {currentUser.avatar || (currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U')}
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">{currentUser.name}</p>
+                  <p className="font-medium text-gray-900">{currentUser.name || 'User'}</p>
                   <p className="text-xs text-gray-500">{currentUser.email}</p>
                 </div>
               </div>

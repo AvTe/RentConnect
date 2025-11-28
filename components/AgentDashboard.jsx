@@ -398,11 +398,11 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
         <div className="p-4 border-t border-gray-200 mt-auto">
           <div className="flex items-center gap-3 px-2">
             <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">
-              {agent.name.charAt(0)}
+              {(agent.name || 'A').charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1">
-                <p className="text-sm font-medium text-gray-900 truncate">{agent.name}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">{agent.name || 'Agent'}</p>
                 {isVerified && <ShieldCheck className="w-3 h-3 text-emerald-500" />}
                 {isPending && <ShieldAlert className="w-3 h-3 text-yellow-500" />}
               </div>

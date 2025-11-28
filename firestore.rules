@@ -20,8 +20,9 @@ service cloud.firestore {
 
     // Collection: users (The Agents & Tenants)
     match /users/{userId} {
-      // Allow authenticated users to read profiles (needed for Admin Dashboard & Agent Listings)
-      allow read: if isAuthenticated();
+      // Allow read for everyone to enable phone number uniqueness check during signup
+      // In production, consider using a Cloud Function or Admin SDK for this check to improve security
+      allow read: if true;
       // Users can write their own data; Admins can write any user data
       allow write: if isOwner(userId) || isAdmin();
     }

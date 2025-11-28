@@ -14,7 +14,7 @@ import { AgentDetailPage } from '@/components/AgentDetailPage';
 import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/firestore';
 import { uploadImage } from '@/lib/storage';
 import { useLeads, useSubscription } from '@/lib/hooks';
@@ -161,6 +161,52 @@ export default function RentalLeadApp() {
       const { createLead } = await import('@/lib/firestore');
       const { sendEmailNotification, EMAIL_TEMPLATES } = await import('@/lib/notifications');
       
+      // 1. Ensure User Account Exists
+      // If phone verification was successful, auth.currentUser should be set (via Phone Auth)
+      let user = auth.currentUser;
+      let userId = user?.uid;
+
+      if (user) {
+        // Check if profile exists
+        const userResult = await getUser(user.uid);
+        
+        if (!userResult.success) {
+           // Create new profile
+           const userData = {
+            name: formData.name || 'Valued Tenant',
+            email: formData.email,
+            phone: formData.whatsapp,
+            type: 'tenant',
+            role: 'tenant',
+            status: 'active',
+            avatar: null
+          };
+          await createUser(user.uid, userData);
+          
+          setCurrentUser({
+            uid: user.uid,
+            ...userData
+          });
+        } else {
+          // Profile exists: Update it with the latest form data (Name/Email)
+          // This ensures the account reflects the name entered in the form
+          const updates = {
+            name: formData.name,
+            email: formData.email
+          };
+          await updateUser(user.uid, updates);
+          
+          setCurrentUser(prev => ({
+            ...prev,
+            ...updates
+          }));
+        }
+      } else {
+        // Fallback (Should not happen if verification is enforced)
+        console.error("User not authenticated after verification");
+        return { success: false, error: 'Authentication failed. Please verify your phone number.' };
+      }
+
       const leadData = {
         tenant_info: {
           name: formData.name,
@@ -168,7 +214,7 @@ export default function RentalLeadApp() {
           whatsapp_link: `https://wa.me/${formData.whatsapp}`,
           whatsapp: formData.whatsapp, // Keeping raw number for easy access
           email: formData.email || currentUser?.email,
-          id: currentUser?.uid || 'guest'
+          id: userId
         },
         requirements: {
           location: formData.location,
@@ -333,7 +379,15 @@ export default function RentalLeadApp() {
       case 'login':
         return <Login onNavigate={setView} onLogin={handleLogin} />;
       case 'tenant-form':
-        return <TenantForm onNavigate={setView} onSubmit={handleTenantSubmit} initialData={prefilledData} />;
+        return (
+          <TenantForm 
+            onNavigate={setView} 
+            onSubmit={handleTenantSubmit} 
+            initialData={prefilledData}
+            currentUser={currentUser}
+            onUpdateUser={(data) => setCurrentUser(prev => prev ? ({ ...prev, ...data }) : prev)}
+          />
+        );
       case 'user-dashboard':
         return (
           <UserDashboard 

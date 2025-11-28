@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Home, Banknote, User, Phone, Check, ChevronRight, Building2, Mail, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Home, Banknote, User, Phone, Check, ChevronRight, Building2, Mail, Loader2, ShieldCheck } from 'lucide-react';
 import { Button } from './ui/Button';
 import confetti from 'canvas-confetti';
+import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { checkPhoneNumberExists } from '@/lib/firestore';
 
 const PROPERTY_TYPES = [
   { id: '1 Bedroom', label: '1 Bedroom', icon: '🛏️' },
@@ -12,7 +17,7 @@ const PROPERTY_TYPES = [
   { id: 'Duplex', label: 'Duplex', icon: '🏘️' }
 ];
 
-export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
+export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onUpdateUser }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     location: '',
@@ -23,9 +28,26 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
     email: '',
     whatsapp: ''
   });
+
+  // Sync name with currentUser when they log in (verify phone)
+  useEffect(() => {
+    if (currentUser && formData.name && onUpdateUser) {
+      // If the user is logged in but the name in the header doesn't match the form, update it
+      if (currentUser.name !== formData.name) {
+        onUpdateUser({ name: formData.name });
+      }
+    }
+  }, [currentUser, formData.name, onUpdateUser]);
+  const [defaultCountry, setDefaultCountry] = useState('NG');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  
+  // Verification State
+  const [verificationStep, setVerificationStep] = useState('idle'); // idle, sending, sent, verified
+  const [otp, setOtp] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [verificationError, setVerificationError] = useState('');
 
   useEffect(() => {
     if (initialData) {
@@ -35,6 +57,107 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
       }));
     }
   }, [initialData]);
+
+  const setupRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response) => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+        }
+      });
+    }
+  };
+
+  const executeEnterpriseRecaptcha = async (action) => {
+    if (window.grecaptcha && window.grecaptcha.enterprise) {
+      try {
+        await new Promise(resolve => window.grecaptcha.enterprise.ready(resolve));
+        const token = await window.grecaptcha.enterprise.execute('6LfThBosAAAAALZ06Y7e9jaFROeO_hSgiGdzQok1', { action });
+        console.log(`reCAPTCHA Enterprise token for ${action}:`, token);
+        return token;
+      } catch (error) {
+        console.error('reCAPTCHA Enterprise error:', error);
+      }
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (!formData.whatsapp || !isValidPhoneNumber(formData.whatsapp)) {
+      setVerificationError('Please enter a valid phone number.');
+      return;
+    }
+
+    setVerificationStep('sending');
+    setVerificationError('');
+
+    try {
+      // 0. Execute Enterprise reCAPTCHA for spam protection
+      const token = await executeEnterpriseRecaptcha('SEND_OTP');
+      
+      if (token) {
+        const verifyResponse = await fetch('/api/verify-recaptcha', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, action: 'SEND_OTP' }),
+        });
+        
+        if (!verifyResponse.ok) {
+           // If the backend is not configured (e.g. missing credentials), we might want to fail open or closed.
+           // For now, let's log it and proceed, but in production you should enforce it.
+           console.warn('reCAPTCHA verification failed on server. Proceeding with caution.');
+        } else {
+            const verifyResult = await verifyResponse.json();
+            if (!verifyResult.success || !verifyResult.isHuman) {
+               throw new Error('Security check failed. We detected unusual activity.');
+            }
+        }
+      }
+
+      // 1. Check if number already exists
+      const exists = await checkPhoneNumberExists(formData.whatsapp);
+      if (exists) {
+        setVerificationError('This phone number is already registered. Please login instead.');
+        setVerificationStep('idle');
+        return;
+      }
+
+      // 2. Setup Recaptcha (Firebase)
+      setupRecaptcha();
+      const appVerifier = window.recaptchaVerifier;
+
+      // 3. Send OTP
+      const confirmation = await signInWithPhoneNumber(auth, formData.whatsapp, appVerifier);
+      setConfirmationResult(confirmation);
+      setVerificationStep('sent');
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      setVerificationError(error.message || 'Failed to send verification code.');
+      setVerificationStep('idle');
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
+      }
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp || otp.length < 6) {
+      setVerificationError('Please enter a valid 6-digit code.');
+      return;
+    }
+
+    setVerificationStep('sending'); // Re-use sending state for loading
+    try {
+      await confirmationResult.confirm(otp);
+      setVerificationStep('verified');
+      setVerificationError('');
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      setVerificationError('Invalid code. Please try again.');
+      setVerificationStep('sent');
+    }
+  };
 
   const handleNext = () => {
     if (step < 4) setStep(step + 1);
@@ -56,13 +179,18 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          // Use internal API route to avoid CORS and add User-Agent
+          const response = await fetch(`/api/geocode?lat=${latitude}&lon=${longitude}`);
+          if (!response.ok) throw new Error('Geocoding failed');
+          
           const data = await response.json();
           const city = data.address.city || data.address.town || data.address.village || data.address.suburb;
           const state = data.address.state;
+          const countryCode = data.address.country_code?.toUpperCase();
           const locationString = city && state ? `${city}, ${state}` : data.display_name;
           
           setFormData(prev => ({ ...prev, location: locationString }));
+          if (countryCode) setDefaultCountry(countryCode);
         } catch (error) {
           console.error('Error fetching location:', error);
           setFormData(prev => ({ ...prev, location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` }));
@@ -266,15 +394,90 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
             <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="tel"
-                required
-                className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-emerald-500 focus:ring-0 outline-none transition-all shadow-sm"
-                placeholder="+234..."
+              <PhoneInput
+                international
+                defaultCountry={defaultCountry}
                 value={formData.whatsapp}
-                onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
+                onChange={(value) => {
+                  setFormData({...formData, whatsapp: value});
+                  if (verificationStep !== 'idle') {
+                    setVerificationStep('idle'); // Reset verification if number changes
+                    setOtp('');
+                    setVerificationError('');
+                  }
+                }}
+                disabled={verificationStep === 'verified' || verificationStep === 'sent'}
+                className="w-full pl-4 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus-within:border-emerald-500 focus-within:ring-0 transition-all shadow-sm [&>input]:outline-none [&>input]:bg-transparent [&>input]:w-full [&>input]:ml-2"
               />
+              {verificationStep === 'verified' && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+              )}
+            </div>
+            
+            {/* Verification UI */}
+            <div className="mt-3">
+              <div id="recaptcha-container"></div>
+              
+              {verificationError && (
+                <p className="text-red-500 text-sm mb-2">{verificationError}</p>
+              )}
+
+              {verificationStep === 'idle' && formData.whatsapp && isValidPhoneNumber(formData.whatsapp) && (
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  className="text-sm font-medium text-emerald-600 hover:text-emerald-700 underline"
+                >
+                  Verify this number
+                </button>
+              )}
+
+              {verificationStep === 'sending' && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Processing...
+                </div>
+              )}
+
+              {verificationStep === 'sent' && (
+                <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                  <p className="text-sm text-gray-600">Enter the 6-digit code sent to your phone.</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                      placeholder="123456"
+                      className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-emerald-500 outline-none tracking-widest text-center font-mono text-lg"
+                    />
+                    <Button 
+                      type="button"
+                      onClick={handleVerifyOtp}
+                      disabled={otp.length !== 6}
+                      className="bg-emerald-600 text-white px-6 rounded-lg"
+                    >
+                      Verify
+                    </Button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVerificationStep('idle');
+                      setOtp('');
+                    }}
+                    className="text-xs text-gray-500 hover:text-gray-700 underline"
+                  >
+                    Change Number / Resend
+                  </button>
+                </div>
+              )}
+
+              {verificationStep === 'verified' && (
+                <p className="text-sm text-green-600 font-medium flex items-center gap-1">
+                  <Check className="w-4 h-4" /> Phone number verified
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -282,8 +485,8 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData }) => {
 
       <Button 
         type="submit" 
-        disabled={!formData.name || !isValidEmail(formData.email) || !isValidPhone(formData.whatsapp) || isSubmitting}
-        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+        disabled={!formData.name || !isValidEmail(formData.email) || verificationStep !== 'verified' || isSubmitting}
+        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting ? (
           <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
