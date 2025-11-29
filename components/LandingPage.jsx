@@ -85,11 +85,11 @@ export const LandingPage = ({ onNavigate, onSearch, currentUser }) => {
               <div className="bg-emerald-100/50 p-2 rounded-full mr-4">
                 <MapPin className="w-5 h-5 text-emerald-600" />
               </div>
-              <input 
+              <input
                 id="location-input"
-                type="text" 
-                placeholder="Search Location" 
-                className="w-full outline-none text-gray-700 placeholder-gray-400 bg-transparent text-lg"
+                type="text"
+                placeholder="Search Location"
+                className="w-full outline-none text-gray-900 placeholder-gray-400 bg-transparent text-lg"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
               />
@@ -97,10 +97,10 @@ export const LandingPage = ({ onNavigate, onSearch, currentUser }) => {
 
             {/* Pincode Input */}
             <div className="flex-1 w-full flex items-center px-6 py-3">
-              <input 
-                type="text" 
-                placeholder="Search By Pincode..." 
-                className="w-full outline-none text-gray-700 placeholder-gray-400 bg-transparent text-lg"
+              <input
+                type="text"
+                placeholder="Search By Pincode..."
+                className="w-full outline-none text-gray-900 placeholder-gray-400 bg-transparent text-lg"
                 value={pincode}
                 onChange={(e) => setPincode(e.target.value)}
               />

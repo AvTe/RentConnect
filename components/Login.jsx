@@ -4,6 +4,33 @@ import { Button } from './ui/Button';
 import { auth, googleProvider } from '@/lib/firebase';
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
+// Helper function to convert Firebase error codes to user-friendly messages
+const getAuthErrorMessage = (errorCode) => {
+  const errorMessages = {
+    'auth/invalid-credential': 'Invalid email or password. Please check your credentials and try again.',
+    'auth/user-not-found': 'No account found with this email. Please sign up first.',
+    'auth/wrong-password': 'Incorrect password. Please try again or reset your password.',
+    'auth/email-already-in-use': 'This email is already registered. Please sign in instead.',
+    'auth/weak-password': 'Password is too weak. Please use at least 6 characters.',
+    'auth/invalid-email': 'Please enter a valid email address.',
+    'auth/too-many-requests': 'Too many failed attempts. Please try again later or reset your password.',
+    'auth/network-request-failed': 'Network error. Please check your internet connection.',
+    'auth/user-disabled': 'This account has been disabled. Please contact support.',
+    'auth/operation-not-allowed': 'Email/password sign-in is not enabled. Please contact support.',
+    'auth/popup-closed-by-user': 'Sign-in popup was closed. Please try again.',
+    'auth/cancelled-popup-request': 'Sign-in was cancelled. Please try again.',
+    'auth/popup-blocked': 'Sign-in popup was blocked. Please allow popups for this site.',
+  };
+
+  return errorMessages[errorCode] || 'An error occurred during authentication. Please try again.';
+};
+
+// Email validation helper
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 // Google Logo SVG Component
 const GoogleLogo = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -41,10 +68,18 @@ export const Login = ({ onNavigate, onLogin }) => {
     setLoading(true);
     setError('');
     setSuccessMessage('');
+
+    // Check if Firebase auth is initialized
+    if (!auth || !googleProvider) {
+      setError('Authentication service is not available. Please refresh the page and try again.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
-      
+
       // Check if user exists in Firestore
       const { getUser, createUser } = await import('@/lib/firestore');
       const userResult = await getUser(user.uid);
@@ -66,25 +101,40 @@ export const Login = ({ onNavigate, onLogin }) => {
         onLogin({ ...userResult.data, uid: user.uid });
       }
     } catch (err) {
-      setError(err.message);
+      const errorCode = err.code || '';
+      setError(getAuthErrorMessage(errorCode));
     } finally {
       setLoading(false);
     }
   };
 
   const handlePasswordReset = async () => {
-    if (!email) {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
       setError('Please enter your email address to reset password.');
       return;
     }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    if (!auth) {
+      setError('Authentication service is not available. Please refresh the page.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     setSuccessMessage('');
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, trimmedEmail);
       setSuccessMessage('Password reset email sent! Check your inbox.');
     } catch (err) {
-      setError(err.message);
+      const errorCode = err.code || '';
+      setError(getAuthErrorMessage(errorCode));
     } finally {
       setLoading(false);
     }
@@ -92,22 +142,61 @@ export const Login = ({ onNavigate, onLogin }) => {
 
   const handleEmailAuth = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
     setSuccessMessage('');
+
+    // Trim inputs
+    const trimmedEmail = email.trim();
+    const trimmedName = name.trim();
+
+    // Validate email format
+    if (!trimmedEmail) {
+      setError('Please enter your email address.');
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    // Validate password
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    // Validate name for registration
+    if (isRegistering && !trimmedName) {
+      setError('Please enter your full name.');
+      return;
+    }
+
+    // Check if Firebase auth is initialized
+    if (!auth) {
+      setError('Authentication service is not available. Please refresh the page and try again.');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const { getUser, createUser } = await import('@/lib/firestore');
       let userCredential;
-      
+
       if (isRegistering) {
-        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
         const user = userCredential.user;
-        
+
         // Create user profile in Firestore
         const userData = {
           email: user.email,
-          name: name || (userType === 'tenant' ? 'New Tenant' : 'New Agent'),
+          name: trimmedName || (userType === 'tenant' ? 'New Tenant' : 'New Agent'),
           type: userType,
           phone: null,
           location: null,
@@ -116,23 +205,24 @@ export const Login = ({ onNavigate, onLogin }) => {
         await createUser(user.uid, userData);
         onLogin({ ...userData, uid: user.uid });
       } else {
-        userCredential = await signInWithEmailAndPassword(auth, email, password);
+        userCredential = await signInWithEmailAndPassword(auth, trimmedEmail, password);
         const user = userCredential.user;
-        
+
         // Fetch user profile
         const userResult = await getUser(user.uid);
         if (userResult.success) {
           onLogin({ ...userResult.data, uid: user.uid });
         } else {
-          onLogin({ 
-            uid: user.uid, 
-            email: user.email, 
-            type: userType 
+          onLogin({
+            uid: user.uid,
+            email: user.email,
+            type: userType
           });
         }
       }
     } catch (err) {
-      setError(err.message);
+      const errorCode = err.code || '';
+      setError(getAuthErrorMessage(errorCode));
     } finally {
       setLoading(false);
     }
@@ -208,7 +298,7 @@ export const Login = ({ onNavigate, onLogin }) => {
                        required={isRegistering}
                        value={name}
                        onChange={(e) => setName(e.target.value)}
-                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all"
+                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                        placeholder="Enter your name"
                      />
                    </div>
@@ -224,7 +314,7 @@ export const Login = ({ onNavigate, onLogin }) => {
                      required
                      value={email}
                      onChange={(e) => setEmail(e.target.value)}
-                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all"
+                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                      placeholder="Enter your email"
                    />
                  </div>
@@ -239,7 +329,7 @@ export const Login = ({ onNavigate, onLogin }) => {
                      required
                      value={password}
                      onChange={(e) => setPassword(e.target.value)}
-                     className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all"
+                     className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                      placeholder="Enter your password"
                    />
                    <button

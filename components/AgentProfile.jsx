@@ -64,7 +64,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>
@@ -77,7 +77,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 type="text"
                 value={formData.agencyName}
                 onChange={(e) => setFormData({...formData, agencyName: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>
@@ -90,7 +90,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>
@@ -103,7 +103,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>
@@ -118,7 +118,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 placeholder="e.g. 5"
                 value={formData.experience}
                 onChange={(e) => setFormData({...formData, experience: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>
@@ -132,7 +132,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 placeholder="e.g. Lekki, Lagos"
                 value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>

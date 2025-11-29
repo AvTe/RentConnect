@@ -38,21 +38,23 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
   };
 
   useEffect(() => {
+    const userId = currentUser?.uid || currentUser?.id;
+
     const fetchBalance = async () => {
-      const result = await getWalletBalance(currentUser.id);
+      const result = await getWalletBalance(userId);
       if (result.success) {
         setWalletBalance(result.balance);
       }
     };
 
     const fetchUnlockedLeads = async () => {
-      const result = await getUnlockedLeads(currentUser.id);
+      const result = await getUnlockedLeads(userId);
       if (result.success) {
         setUnlockedLeads(result.data);
       }
     };
 
-    if (currentUser?.id) {
+    if (userId) {
       fetchBalance();
       fetchUnlockedLeads();
       if (currentUser.referralCode) {
@@ -68,17 +70,18 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
     }
 
     const LEAD_COST = 1; // 1 credit per lead
-    
+    const userId = currentUser?.uid || currentUser?.id;
+
     if (walletBalance >= LEAD_COST) {
-      if (currentUser?.id) {
-        const result = await unlockLead(currentUser.id, lead.id);
+      if (userId) {
+        const result = await unlockLead(userId, lead.id);
         if (result.success) {
           setWalletBalance(prev => prev - LEAD_COST); // Optimistic update
           setUnlockedLeads([...unlockedLeads, lead.id]);
           if (onUnlock) onUnlock(lead);
-          
+
           // Refresh balance to be sure
-          const balanceResult = await getWalletBalance(currentUser.id);
+          const balanceResult = await getWalletBalance(userId);
           if (balanceResult.success) setWalletBalance(balanceResult.balance);
         } else {
           alert("Failed to unlock lead: " + result.error);
@@ -449,8 +452,8 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
         )}
 
         {showVerification && (
-          <SmileIDVerification 
-            userId={currentUser?.id}
+          <SmileIDVerification
+            userId={currentUser?.uid || currentUser?.id}
             onClose={() => setShowVerification(false)}
             onComplete={(result) => {
               if (result.success) {
@@ -476,10 +479,10 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
           <div className="flex items-center gap-4">
             <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search leads..." 
-                className="pl-9 pr-12 py-2 bg-gray-100 border-transparent rounded-lg text-sm focus:bg-white focus:border-gray-300 focus:ring-0 transition-all w-64"
+              <input
+                type="text"
+                placeholder="Search leads..."
+                className="pl-9 pr-12 py-2 bg-gray-100 border-transparent rounded-lg text-sm focus:bg-white focus:border-gray-300 focus:ring-0 transition-all w-64 text-gray-900 placeholder-gray-400"
               />
             </div>
             <button className="p-2 text-gray-400 hover:text-gray-600 relative">

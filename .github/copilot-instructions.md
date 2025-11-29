@@ -1,106 +1,125 @@
-<!-- Use this file to provide workspace-specific custom instructions to Copilot. For more details, visit https://code.visualstudio.com/docs/copilot/copilot-customization#_use-a-githubcopilotinstructionsmd-file -->
-- [x] Verify that the copilot-instructions.md file in the .github directory is created.
+﻿# RentConnect AI Coding Instructions
 
-- [x] Clarify Project Requirements
-	<!-- Ask for project type, language, and frameworks if not specified. Skip if already provided. -->
+## Project Overview
+**RentConnect** is a Next.js 14 rental marketplace connecting tenants with verified agents. It uses Firebase (Auth, Firestore, Storage), Paystack payments, and multi-channel notifications (Email, WhatsApp, In-App).
 
-- [x] Scaffold the Project
-	<!--
-	Ensure that the previous step has been marked as completed.
-	Call project setup tool with projectType parameter.
-	Run scaffolding command to create project files and folders.
-	Use '.' as the working directory.
-	If no appropriate projectType is available, search documentation using available tools.
-	Otherwise, create the project structure manually using available file creation tools.
-	-->
+## Architecture Essentials
 
-- [x] Customize the Project
-	<!--
-	Verify that all previous steps have been completed successfully and you have marked the step as completed.
-	Develop a plan to modify codebase according to user requirements.
-	Apply modifications using appropriate tools and user-provided references.
-	Skip this step for "Hello World" projects.
-	-->
+### Data Flow & Collections
+Core data flows through Firestore collections with real-time listeners:
+- **users**  Contains dual role data: `role: 'tenant'|'agent'`, `subscriptionStatus`, `walletBalance`, `referralCode`
+- **leads**  Tenant rental requests; agents subscribe via `subscribeToLeads(filters)` for real-time updates
+- **properties**  Agent listings; connected to users via `agentId` foreign key
+- **subscriptions**  Track premium access; webhook updates from Paystack on `/api/paystack/webhook`
+- **contactHistory**  Tracks every tenant-agent interaction for billing/metrics
 
-- [x] Install Required Extensions
-	<!-- ONLY install extensions provided mentioned in the get_project_setup_info. Skip this step otherwise and mark as completed. -->
+**Key Pattern**: All async operations return `{ success: boolean, data?: any, error?: string }` object (see `lib/firestore.js`).
 
-- [x] Compile the Project
-	<!--
-	Verify that all previous steps have been completed.
-	Install any missing dependencies.
-	Run diagnostics and resolve any issues.
-	Check for markdown files in project folder for relevant instructions on how to do this.
-	-->
+### Component Routing Pattern
+Single-page app (SPA) with routing via `app/page.js` state management:
+```javascript
+// All navigation is conditional rendering, NOT next/navigation
+const currentPage = user?.role === 'agent' ? 'agent-dashboard' : 'tenant-dashboard';
+```
+Components are pure presentational (no client-side routing library). Update `currentPage` state to change views.
 
-- [ ] Create and Run Task
-	<!--
-	Verify that all previous steps have been completed.
-	Check https://code.visualstudio.com/docs/debugtest/tasks to determine if the project needs a task. If so, use the create_and_run_task to create and launch a task based on package.json, README.md, and project structure.
-	Skip this step otherwise.
-	 -->
+### Firebase Integration Points
+- `lib/firebase.js`  Initializes SDK; exports `auth, db, storage, googleProvider`
+- `lib/firestore.js`  1727 lines of CRUD + real-time subscriptions; every mutation includes `serverTimestamp()`
+- `lib/storage.js`  Image uploads use `/images/$\{userId\}/$\{timestamp\}` path pattern; 5MB limit enforced
+- Real-time listeners in `lib/hooks.js` auto-unsubscribe on cleanup to prevent memory leaks
 
-- [ ] Launch the Project
-	<!--
-	Verify that all previous steps have been completed.
-	Prompt user for debug mode, launch only if confirmed.
-	 -->
+### Custom Hooks Architecture
+Hooks in `lib/hooks.js` follow this pattern:
+- Accept `filters` object + `enabled` boolean to control subscription
+- Use `useCallback` for query keys to optimize re-renders
+- Return `{ data, loading, error, [action functions] }`
+- Example: `useLeads({ agentId, status }, enabled)` subscribes only if `enabled=true`
 
-- [ ] Ensure Documentation is Complete
-	<!--
-	Verify that all previous steps have been completed.
-	Verify that README.md and the copilot-instructions.md file in the .github directory exists and contains current project information.
-	Clean up the copilot-instructions.md file in the .github directory by removing all HTML comments.
-	 -->
+### Payment & Subscription
+- **Paystack Integration** (`lib/paystack.js`):
+  - `SUBSCRIPTION_PLANS.PREMIUM.amount = 1500000` (kobo = 15,000)
+  - `initializePayment(email, amount, metadata)` returns auth URL; user redirected externally
+  - Webhook at `/api/paystack/webhook` verifies signature with `PAYSTACK_SECRET_KEY`
+  - Creates `subscriptions` doc with `expiresAt: serverTimestamp() + 30 days`
+- Verify subscription status: `checkSubscriptionStatus(userId)` returns boolean
 
-<!--
-## Execution Guidelines
-PROGRESS TRACKING:
-- If any tools are available to manage the above todo list, use it to track progress through this checklist.
-- After completing each step, mark it complete and add a summary.
-- Read current todo list status before starting each new step.
+### Notification System
+Multi-channel pattern in `lib/notifications.js`:
+1. **Email**: POST to `/api/send-email` (SendGrid backend)
+2. **WhatsApp**: `sendWhatsAppMessage(phoneNumber, text)` opens wa.me link; for automation, POST to `/api/whatsapp/send`
+3. **In-App**: Create `notifications` collection docs; UI subscribes via `useNotifications()`
 
-COMMUNICATION RULES:
-- Avoid verbose explanations or printing full command outputs.
-- If a step is skipped, state that briefly (e.g. "No extensions needed").
-- Do not explain project structure unless asked.
-- Keep explanations concise and focused.
+### Environment Variables
+Required in `.env.local`:
+```
+NEXT_PUBLIC_FIREBASE_API_KEY, AUTH_DOMAIN, PROJECT_ID, STORAGE_BUCKET
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
+PAYSTACK_SECRET_KEY
+SENDGRID_API_KEY (for email)
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (for geocoding)
+```
 
-DEVELOPMENT RULES:
-- Use '.' as the working directory unless user specifies otherwise.
-- Avoid adding media or external links unless explicitly requested.
-- Use placeholders only with a note that they should be replaced.
-- Use VS Code API tool only for VS Code extension projects.
-- Once the project is created, it is already opened in Visual Studio Code—do not suggest commands to open this project in Visual Studio again.
-- If the project setup information has additional rules, follow them strictly.
+## Common Workflows
 
-FOLDER CREATION RULES:
-- Always use the current directory as the project root.
-- If you are running any terminal commands, use the '.' argument to ensure that the current working directory is used ALWAYS.
-- Do not create a new folder unless the user explicitly requests it besides a .vscode folder for a tasks.json file.
-- If any of the scaffolding commands mention that the folder name is not correct, let the user know to create a new folder with the correct name and then reopen it again in vscode.
+### Adding a Database Feature
+1. Add function to `lib/firestore.js` following existing patterns
+2. Create hook in `lib/hooks.js` that wraps the function + manages state
+3. Use hook in component: `const { data, loading } = useLeads()`
+4. Include `serverTimestamp()` for any date fields
 
-EXTENSION INSTALLATION RULES:
-- Only install extension specified by the get_project_setup_info tool. DO NOT INSTALL any other extensions.
+### Creating an API Route
+- Store in `app/api/{feature}/route.js`
+- Use `NextResponse` from `next/server`
+- Validate auth via Firebase token if needed (existing pattern in email/webhook routes)
 
-PROJECT CONTENT RULES:
-- If the user has not specified project details, assume they want a "Hello World" project as a starting point.
-- Avoid adding links of any type (URLs, files, folders, etc.) or integrations that are not explicitly required.
-- Avoid generating images, videos, or any other media files unless explicitly requested.
-- If you need to use any media assets as placeholders, let the user know that these are placeholders and should be replaced with the actual assets later.
-- Ensure all generated components serve a clear purpose within the user's requested workflow.
-- If a feature is assumed but not confirmed, prompt the user for clarification before including it.
-- If you are working on a VS Code extension, use the VS Code API tool with a query to find relevant VS Code API references and samples related to that query.
+### Handling Real-time Data
+- Always unsubscribe in cleanup: `useEffect(() => { const unsub = onSnapshot(...); return unsub; }, [])`
+- Filter at Firestore level (cheaper): `where('agentId', '==', userId)` not post-query filtering
+- Pagination uses `limit()` + document snapshot cursors, not offset
 
-TASK COMPLETION RULES:
-- Your task is complete when:
-  - Project is successfully scaffolded and compiled without errors
-  - copilot-instructions.md file in the .github directory exists in the project
-  - README.md file exists and is up to date
-  - User is provided with clear instructions to debug/launch the project
+## Code Patterns
 
-Before starting a new task in the above plan, update progress in the plan.
--->
-- Work through each checklist item systematically.
-- Keep communication concise and focused.
-- Follow development best practices.
+### Error Handling
+```javascript
+// Always return structured response
+try {
+  // operation
+  return { success: true, data: result };
+} catch (error) {
+  console.error('Context:', error);
+  return { success: false, error: error.message };
+}
+```
+
+### Image Uploads
+```javascript
+// Path: /images/{userId}/{timestamp}
+// Use `uploadImage(file, userId)` from lib/storage.js
+// Returns { success, url } where url is public download link
+```
+
+### Queries with Sorting
+```javascript
+// Example: get user''s leads ordered by date
+const q = query(
+  collection(db, ''leads''),
+  where(''userId'', ''=='', userId),
+  orderBy(''createdAt'', ''desc''),
+  limit(10)
+);
+```
+
+## Testing & Running
+
+- **Dev**: `npm run dev`  http://localhost:3000
+- **Build**: `npm run build` (check for Firebase config before deploying)
+- **Linting**: `next lint`
+
+## Key Files Reference
+- **Entry**: `app/page.js` (contains auth state + page routing logic)
+- **Business Logic**: `lib/firestore.js` (all data operations)
+- **UI Components**: `components/*.jsx` (pure presentation, no API calls)
+- **Hooks**: `lib/hooks.js` (state management + subscriptions)
+- **API Routes**: `app/api/*/route.js` (webhooks, email, external integrations)

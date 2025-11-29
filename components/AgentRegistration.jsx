@@ -46,7 +46,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                 <input
                   type="text"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   placeholder="John Doe"
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
@@ -61,7 +61,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                 <input
                   type="text"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   placeholder="Lagos Homes Ltd."
                   value={formData.agencyName}
                   onChange={(e) => setFormData({...formData, agencyName: e.target.value})}
@@ -77,7 +77,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                   <input
                     type="email"
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                     placeholder="agent@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -92,7 +92,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                   <input
                     type="tel"
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                     placeholder="+234..."
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
@@ -108,7 +108,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                 <input
                   type="password"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -123,7 +123,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                 <input
                   type="text"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   placeholder="e.g. Lekki, Lagos"
                   value={formData.location}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
@@ -137,7 +137,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   placeholder="e.g. JOH1234"
                   value={formData.referralCode}
                   onChange={(e) => setFormData({...formData, referralCode: e.target.value})}

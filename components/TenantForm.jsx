@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Home, Banknote, User, Phone, Check, ChevronRight, Building2, Mail, Loader2, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, MapPin, Banknote, User, Check, ChevronRight, Building2, Mail, Loader2, ShieldCheck, RefreshCw } from 'lucide-react';
 import { Button } from './ui/Button';
+import { OTPInput } from './ui/OTPInput';
 import confetti from 'canvas-confetti';
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { checkPhoneNumberExists } from '@/lib/firestore';
 
 const PROPERTY_TYPES = [
@@ -44,10 +43,12 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
   const [isSuccess, setIsSuccess] = useState(false);
   
   // Verification State
-  const [verificationStep, setVerificationStep] = useState('idle'); // idle, sending, sent, verified
+  const [verificationStep, setVerificationStep] = useState('idle'); // idle, sending, sent, verifying, verified
   const [otp, setOtp] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState(null);
   const [verificationError, setVerificationError] = useState('');
+  const [otpExpiresIn, setOtpExpiresIn] = useState(0); // Countdown in seconds
+  const [canResend, setCanResend] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
 
   useEffect(() => {
     if (initialData) {
@@ -58,31 +59,47 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
     }
   }, [initialData]);
 
-  const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': (response) => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-        }
-      });
+  // Countdown timer for OTP expiration and resend
+  useEffect(() => {
+    let timer;
+    if (verificationStep === 'sent' && otpExpiresIn > 0) {
+      timer = setInterval(() => {
+        setOtpExpiresIn(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     }
+    return () => clearInterval(timer);
+  }, [verificationStep, otpExpiresIn]);
+
+  // Resend countdown timer
+  useEffect(() => {
+    let timer;
+    if (resendCountdown > 0) {
+      timer = setInterval(() => {
+        setResendCountdown(prev => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCountdown]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const executeEnterpriseRecaptcha = async (action) => {
-    if (window.grecaptcha && window.grecaptcha.enterprise) {
-      try {
-        await new Promise(resolve => window.grecaptcha.enterprise.ready(resolve));
-        const token = await window.grecaptcha.enterprise.execute('6LfThBosAAAAALZ06Y7e9jaFROeO_hSgiGdzQok1', { action });
-        console.log(`reCAPTCHA Enterprise token for ${action}:`, token);
-        return token;
-      } catch (error) {
-        console.error('reCAPTCHA Enterprise error:', error);
-      }
-    }
-  };
-
-  const handleSendOtp = async () => {
+  const handleSendOtp = useCallback(async () => {
     if (!formData.whatsapp || !isValidPhoneNumber(formData.whatsapp)) {
       setVerificationError('Please enter a valid phone number.');
       return;
@@ -92,29 +109,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
     setVerificationError('');
 
     try {
-      // 0. Execute Enterprise reCAPTCHA for spam protection
-      const token = await executeEnterpriseRecaptcha('SEND_OTP');
-      
-      if (token) {
-        const verifyResponse = await fetch('/api/verify-recaptcha', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, action: 'SEND_OTP' }),
-        });
-        
-        if (!verifyResponse.ok) {
-           // If the backend is not configured (e.g. missing credentials), we might want to fail open or closed.
-           // For now, let's log it and proceed, but in production you should enforce it.
-           console.warn('reCAPTCHA verification failed on server. Proceeding with caution.');
-        } else {
-            const verifyResult = await verifyResponse.json();
-            if (!verifyResult.success || !verifyResult.isHuman) {
-               throw new Error('Security check failed. We detected unusual activity.');
-            }
-        }
-      }
-
-      // 1. Check if number already exists
+      // 1. Check if number already exists in our system
       const exists = await checkPhoneNumberExists(formData.whatsapp);
       if (exists) {
         setVerificationError('This phone number is already registered. Please login instead.');
@@ -122,42 +117,67 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
         return;
       }
 
-      // 2. Setup Recaptcha (Firebase)
-      setupRecaptcha();
-      const appVerifier = window.recaptchaVerifier;
+      // 2. Send OTP via Twilio API
+      const response = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: formData.whatsapp }),
+      });
 
-      // 3. Send OTP
-      const confirmation = await signInWithPhoneNumber(auth, formData.whatsapp, appVerifier);
-      setConfirmationResult(confirmation);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send verification code.');
+      }
+
+      // Success - set timers
       setVerificationStep('sent');
+      setOtpExpiresIn(data.expiresIn || 300); // Default 5 minutes
+      setCanResend(false);
+      setResendCountdown(30); // 30 seconds before can resend
+
     } catch (error) {
       console.error('Error sending OTP:', error);
       setVerificationError(error.message || 'Failed to send verification code.');
       setVerificationStep('idle');
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = null;
-      }
     }
-  };
+  }, [formData.whatsapp]);
 
-  const handleVerifyOtp = async () => {
-    if (!otp || otp.length < 6) {
+  const handleVerifyOtp = useCallback(async (otpValue) => {
+    const codeToVerify = otpValue || otp;
+
+    if (!codeToVerify || codeToVerify.length < 6) {
       setVerificationError('Please enter a valid 6-digit code.');
       return;
     }
 
-    setVerificationStep('sending'); // Re-use sending state for loading
+    setVerificationStep('verifying');
+    setVerificationError('');
+
     try {
-      await confirmationResult.confirm(otp);
+      const response = await fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumber: formData.whatsapp,
+          otp: codeToVerify
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Invalid verification code.');
+      }
+
       setVerificationStep('verified');
       setVerificationError('');
     } catch (error) {
       console.error('Error verifying OTP:', error);
-      setVerificationError('Invalid code. Please try again.');
+      setVerificationError(error.message || 'Invalid code. Please try again.');
       setVerificationStep('sent');
     }
-  };
+  }, [otp, formData.whatsapp]);
 
   const handleNext = () => {
     if (step < 4) setStep(step + 1);
@@ -350,10 +370,6 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  const isValidPhone = (phone) => {
-    return phone.length >= 10;
-  };
-
   const renderStep4 = () => (
     <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
       <div>
@@ -418,10 +434,10 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
             
             {/* Verification UI */}
             <div className="mt-3">
-              <div id="recaptcha-container"></div>
-              
               {verificationError && (
-                <p className="text-red-500 text-sm mb-2">{verificationError}</p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+                  <p className="text-red-600 text-sm">{verificationError}</p>
+                </div>
               )}
 
               {verificationStep === 'idle' && formData.whatsapp && isValidPhoneNumber(formData.whatsapp) && (
@@ -436,47 +452,101 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
 
               {verificationStep === 'sending' && (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Processing...
+                  <Loader2 className="w-4 h-4 animate-spin" /> Sending verification code...
                 </div>
               )}
 
               {verificationStep === 'sent' && (
-                <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                  <p className="text-sm text-gray-600">Enter the 6-digit code sent to your phone.</p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
-                      placeholder="123456"
-                      className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-emerald-500 outline-none tracking-widest text-center font-mono text-lg"
-                    />
-                    <Button 
-                      type="button"
-                      onClick={handleVerifyOtp}
-                      disabled={otp.length !== 6}
-                      className="bg-emerald-600 text-white px-6 rounded-lg"
-                    >
-                      Verify
-                    </Button>
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600 mb-1">Enter the 6-digit code sent to</p>
+                    <p className="text-sm font-semibold text-gray-900">{formData.whatsapp}</p>
                   </div>
-                  <button
+
+                  {/* OTP Input Component */}
+                  <OTPInput
+                    length={6}
+                    value={otp}
+                    onChange={setOtp}
+                    onComplete={(code) => handleVerifyOtp(code)}
+                    disabled={verificationStep === 'verifying'}
+                    error={!!verificationError}
+                  />
+
+                  {/* Expiration Timer */}
+                  {otpExpiresIn > 0 && (
+                    <p className="text-center text-sm text-gray-500">
+                      Code expires in <span className="font-mono font-semibold text-gray-700">{formatTime(otpExpiresIn)}</span>
+                    </p>
+                  )}
+                  {otpExpiresIn === 0 && verificationStep === 'sent' && (
+                    <p className="text-center text-sm text-red-500">
+                      Code expired. Please request a new code.
+                    </p>
+                  )}
+
+                  {/* Verify Button */}
+                  <Button
                     type="button"
-                    onClick={() => {
-                      setVerificationStep('idle');
-                      setOtp('');
-                    }}
-                    className="text-xs text-gray-500 hover:text-gray-700 underline"
+                    onClick={() => handleVerifyOtp()}
+                    disabled={otp.length !== 6 || verificationStep === 'verifying'}
+                    className="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium"
                   >
-                    Change Number / Resend
-                  </button>
+                    {verificationStep === 'verifying' ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Verifying...
+                      </span>
+                    ) : (
+                      'Verify Code'
+                    )}
+                  </Button>
+
+                  {/* Resend / Change Number */}
+                  <div className="flex items-center justify-between text-sm">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVerificationStep('idle');
+                        setOtp('');
+                        setVerificationError('');
+                        setOtpExpiresIn(0);
+                      }}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      Change Number
+                    </button>
+
+                    {canResend ? (
+                      <button
+                        type="button"
+                        onClick={handleSendOtp}
+                        className="text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1"
+                      >
+                        <RefreshCw className="w-4 h-4" /> Resend Code
+                      </button>
+                    ) : resendCountdown > 0 ? (
+                      <span className="text-gray-400">
+                        Resend in {resendCountdown}s
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+
+              {verificationStep === 'verifying' && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <div className="text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">Verifying your code...</p>
+                  </div>
                 </div>
               )}
 
               {verificationStep === 'verified' && (
-                <p className="text-sm text-green-600 font-medium flex items-center gap-1">
-                  <Check className="w-4 h-4" /> Phone number verified
-                </p>
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3">
+                  <ShieldCheck className="w-5 h-5 text-green-600" />
+                  <p className="text-sm text-green-700 font-medium">Phone number verified successfully</p>
+                </div>
               )}
             </div>
           </div>
@@ -513,11 +583,14 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
         >
           Back to Home
         </Button>
-        <Button 
+        <Button
           onClick={() => {
             setStep(1);
-            setFormData({ location: '', pincode: '', type: '', budget: '', name: '', whatsapp: '' });
+            setFormData({ location: '', pincode: '', type: '', budget: '', name: '', email: '', whatsapp: '' });
             setIsSuccess(false);
+            setVerificationStep('idle');
+            setOtp('');
+            setVerificationError('');
           }}
           variant="ghost"
           className="w-full"
