@@ -1,0 +1,25 @@
+{
+  "name": "Yoombaa - Find Your Perfect Home",
+  "short_name": "Yoombaa",
+  "description": "Connect with trusted agents and find your perfect rental property.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1e2530",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/yoombaa-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/yoombaa-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

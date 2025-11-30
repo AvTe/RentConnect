@@ -19,17 +19,38 @@ RentConnect (branded as Yoombaa) is a comprehensive rental property marketplace 
 - Property listings with image uploads
 - Multi-channel notifications
 - Admin dashboard for platform management
+- **Optimized loading states with Next.js best practices**
+- **High-performance image delivery with Next.js Image optimization**
 
-## Recent Changes (Replit Setup)
+## Recent Changes (Performance Optimization - November 30, 2025)
 
-### Date: November 30, 2024
-- **Created** `next.config.js` for Next.js configuration
-- **Updated** `package.json` scripts to bind to `0.0.0.0:5000` for Replit compatibility
-- **Configured** development workflow to run on port 5000
-- **Installed** all npm dependencies
-- **Added** Firebase graceful initialization with `isFirebaseReady` flag
-- **Configured** all environment variables (Firebase, Paystack, SendGrid, Twilio)
-- **Set up** all API secrets securely in Replit Secrets
+### Performance Optimizations Implemented
+- **Loading States:** Created `loading.js` files with skeleton loaders for seamless Suspense boundaries
+- **Image Optimization:** 
+  - Configured `remotePatterns` for Firebase images
+  - Added WebP and AVIF format support
+  - Implemented 1-year cache for optimized images
+- **Code Splitting:** 
+  - Dynamic imports for heavy components
+  - Tree-shaking enabled with `optimizePackageImports`
+- **Font Optimization:**
+  - Preloaded DM Sans with `display: swap`
+  - Optimized font loading strategy
+- **Script Optimization:**
+  - reCAPTCHA loaded with `afterInteractive` strategy
+  - Firebase SDK deferred with `lazyOnload`
+- **Security Headers:**
+  - Added `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`
+  - Configured proper `Cache-Control` headers
+- **Middleware:** Created performance-focused middleware for header optimization
+- **Caching Strategy:**
+  - Static assets: 1-year cache with immutable flag
+  - API routes: No-cache to ensure fresh data
+- **Accessibility:** Respects `prefers-reduced-motion` for users with motion sensitivities
+- **CSS Optimizations:**
+  - Utility animations with GPU acceleration
+  - Smooth transitions throughout app
+  - Professional skeleton loaders
 
 ## Environment Variables Required
 
@@ -96,7 +117,7 @@ The application is configured to run on port 5000. The workflow "Start applicati
 
 ### Admin Access
 The application auto-promotes `kartikamit171@gmail.com` to admin role.
-Modify this in `app/page.js` lines 45 and 109 if needed.
+Modify this in `app/page.js` lines 65-66 if needed.
 
 ## Deployment Configuration
 
@@ -118,6 +139,7 @@ Use Replit's deployment environment variable settings.
 - Firebase operations centralized in `lib/` directory
 - Tailwind CSS for styling with custom brand colors
 - Lucide React for icons
+- Performance-focused with skeleton loaders and code splitting
 
 ## Project Architecture
 
@@ -125,12 +147,13 @@ Use Replit's deployment environment variable settings.
 ```
 ├── app/
 │   ├── api/              # API routes (email, payments, SMS)
+│   ├── loading.js        # Root loading state with Suspense
 │   ├── page.js           # Main application controller
-│   ├── layout.js         # Root layout with metadata
-│   └── globals.css       # Global styles
+│   ├── layout.js         # Root layout with optimization
+│   └── globals.css       # Global styles with animations
 ├── components/
 │   ├── admin/            # Admin dashboard components
-│   ├── ui/               # Reusable UI components
+│   ├── ui/               # Reusable UI components (Skeleton, LoadingScreen)
 │   └── [features]        # Feature-specific components
 ├── lib/
 │   ├── firebase.js       # Firebase initialization
@@ -138,14 +161,50 @@ Use Replit's deployment environment variable settings.
 │   ├── storage.js        # File upload utilities
 │   ├── paystack.js       # Payment integration
 │   ├── notifications.js  # Email/WhatsApp utilities
-│   └── hooks.js          # Custom React hooks
-└── public/               # Static assets
+│   ├── hooks.js          # Custom React hooks
+│   └── performance.js    # Performance utilities & optimization
+├── middleware.js         # Performance & security middleware
+├── public/               # Static assets
+└── next.config.js        # Next.js config with optimizations
 ```
 
 ### Key Files
 - `app/page.js` - Main app controller with routing logic
+- `app/layout.js` - Root layout with performance optimizations
+- `app/loading.js` - Suspense boundary loading state
+- `components/ui/SkeletonLoadingScreen.jsx` - Animated skeleton loader
 - `lib/firestore.js` - All database CRUD operations
 - `lib/hooks.js` - Real-time data hooks (useLeads, useSubscription, etc.)
+- `lib/performance.js` - Performance utilities (preload, prefetch, debounce, throttle)
+- `middleware.js` - Performance & security headers
+
+## Performance Optimizations
+
+### Loading States
+- **Root Loading:** `app/loading.js` with animated skeleton
+- **Suspense Boundaries:** Implemented throughout app
+- **Skeleton Components:** Reusable skeleton loaders in `components/ui/Skeleton.jsx`
+
+### Image Optimization
+- Next.js `remotePatterns` for Firebase storage
+- WebP and AVIF format support
+- 1-year cache TTL with immutable flag
+- Lazy loading with Intersection Observer
+
+### Script Optimization
+- reCAPTCHA: `afterInteractive` strategy
+- Firebase SDK: `lazyOnload` strategy
+- Preconnect to external resources in layout
+
+### Code Splitting
+- Dynamic imports for heavy components
+- Tree-shaking with `optimizePackageImports`
+- Route-based code splitting
+
+### Caching Strategy
+- Static assets: `public, max-age=31536000, immutable`
+- API routes: `no-cache, no-store, must-revalidate`
+- Middleware-based cache optimization
 
 ## Notes
 
@@ -159,12 +218,25 @@ Use Replit's deployment environment variable settings.
 ✅ Twilio WhatsApp/SMS integration configured
 ✅ All API secrets securely stored in Replit Secrets
 ✅ Custom LoadingScreen with Yoombaa logo and bouncing dots animation
+✅ **Performance-optimized with Next.js best practices**
+✅ **Loading states implemented with Suspense & skeleton loaders**
+✅ **Image optimization with remotePatterns & format support**
+✅ **Security headers & caching strategy configured**
 
 ### Configured Services
 - **Firebase**: Authentication, Firestore database, Cloud Storage
 - **Paystack**: Payment processing for subscriptions (test mode)
 - **SendGrid**: Email notifications
 - **Twilio**: WhatsApp and SMS notifications
+- **Performance**: Next.js optimizations, code splitting, image optimization
+
+### Performance Improvements
+- **Faster loading times** with skeleton loaders and Suspense
+- **Reduced bundle size** with code splitting and tree-shaking
+- **Optimized images** with WebP/AVIF support
+- **Smart caching** for static assets and API routes
+- **Security headers** for safe content delivery
+- **Accessibility** respecting motion preferences
 
 ### Demo Mode (if Firebase not configured)
 The app includes graceful fallback when Firebase environment variables are not set:

@@ -25,3 +25,160 @@ body {
     )
     rgb(var(--background-start-rgb));
 }
+
+/* Performance optimizations */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Optimized animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Utility animation classes */
+.animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+.animate-slide-in-up { animation: slideInUp 0.4s ease-out; }
+.animate-slide-in-down { animation: slideInDown 0.4s ease-out; }
+.animate-skeleton { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* Image optimization */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Form optimization - prevents zoom on mobile */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+/* Link performance */
+a {
+  transition: color 0.2s ease-in-out;
+  text-decoration: none;
+}
+
+a:focus-visible {
+  outline: 2px solid #FE9200;
+  outline-offset: 2px;
+}
+
+/* Button optimization */
+button {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FE9200;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e68900;
+}
+
+/* Selection styling */
+::selection {
+  background-color: #FE9200;
+  color: white;
+}
+
+::-moz-selection {
+  background-color: #FE9200;
+  color: white;
+}
+
+/* Prevent layout shift */
+html {
+  scroll-padding-top: 80px;
+}
+
+/* GPU acceleration for transforms */
+.translate-gpu,
+.scale-gpu,
+.rotate-gpu {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Accessibility */
+:focus-visible {
+  outline: 2px solid #FE9200;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions throughout app */
+* {
+  @apply transition-colors duration-200;
+}
+
+button, a, input {
+  @apply transition-all duration-200;
+}
