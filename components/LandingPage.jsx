@@ -1,22 +1,26 @@
 /* eslint-disable @next/next/no-img-element */
-import React, { useState, useEffect, useRef } from 'react';
+'use client';
 
-// Sample leads for carousel
-const sampleLeads = [
-  { id: 1, type: 'Mini Flat', location: 'Bengaluru, Karnataka', budget: '1500000', contactCount: 5 },
-  { id: 2, type: 'Mini Flat', location: 'Bengaluru, Karnataka', budget: '2500000', contactCount: 8 },
-  { id: 3, type: 'Mini Flat', location: 'Bengaluru, Karnataka', budget: '800000', contactCount: 3 },
-  { id: 4, type: 'Mini Flat', location: 'Bengaluru, Karnataka', budget: '1200000', contactCount: 6 },
-  { id: 5, type: 'Mini Flat', location: 'Bengaluru, Karnataka', budget: '3500000', contactCount: 2 },
-];
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useLeads } from '@/lib/hooks';
+import { SkeletonCard } from '@/components/ui/Skeleton';
 
-// Lead Card matching mockup EXACTLY
+// Lead Card matching mockup
 const LeadCard = ({ lead }) => {
   const formatBudget = (amount) => {
     const num = parseInt(amount?.toString().replace(/[^0-9]/g, '') || '0');
     if (num >= 100000) return `₦${(num / 100000).toFixed(1)}L`;
     return `₦${num.toLocaleString()}`;
   };
+
+  // Extract real data from database structure
+  const propertyType = lead?.requirements?.property_type || lead?.type || 'Property';
+  const location = lead?.requirements?.location || lead?.location || 'Location';
+  const budget = lead?.requirements?.budget || lead?.budget || '0';
+  const contactCount = lead?.contacts || lead?.contactCount || 0;
+  const tenantName = lead?.tenant_info?.name || 'Tenant';
+  const tenantPhone = lead?.tenant_info?.phone || '';
+  const tenantEmail = lead?.tenant_info?.email || '';
 
   return (
     <div className="bg-[#FFF5E6] rounded-[20px] p-2 w-[200px] flex-shrink-0">
@@ -26,38 +30,48 @@ const LeadCard = ({ lead }) => {
           {/* Badges at top */}
           <div className="flex items-center gap-2 mb-3">
             <span className="bg-[#E8F5E9] text-[#2E7D32] px-2.5 py-1 rounded-full text-[10px] font-medium">
-              {lead.contactCount} Contacts
+              {contactCount} Contacts
             </span>
             <span className="bg-[#FE9200] text-white px-2.5 py-1 rounded-full text-[10px] font-semibold">
-              {formatBudget(lead.budget)}
+              {formatBudget(budget)}
             </span>
           </div>
 
           {/* Title */}
-          <h3 className="text-base font-bold text-gray-900 mb-0.5">{lead.type}</h3>
-          <p className="text-xs text-gray-400 mb-3">{lead.location}</p>
+          <h3 className="text-base font-bold text-gray-900 mb-0.5">{propertyType}</h3>
+          <p className="text-xs text-gray-400 mb-3">{location}</p>
 
-          {/* 2x2 Specs Grid */}
+          {/* 2x2 Specs Grid - showing real requirements */}
           <div className="grid grid-cols-2 gap-2 mb-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-[#F8F8F8] rounded-xl px-2.5 py-2">
-                <p className="text-[9px] text-gray-500 mb-0.5">Specification:</p>
-                <p className="text-[9px] text-[#FE9200] font-medium">Housing type With</p>
-              </div>
-            ))}
+            <div className="bg-[#F8F8F8] rounded-xl px-2.5 py-2">
+              <p className="text-[9px] text-gray-500 mb-0.5">Property Type:</p>
+              <p className="text-[9px] text-[#FE9200] font-medium">{propertyType}</p>
+            </div>
+            <div className="bg-[#F8F8F8] rounded-xl px-2.5 py-2">
+              <p className="text-[9px] text-gray-500 mb-0.5">Budget:</p>
+              <p className="text-[9px] text-[#FE9200] font-medium">{formatBudget(budget)}</p>
+            </div>
+            <div className="bg-[#F8F8F8] rounded-xl px-2.5 py-2">
+              <p className="text-[9px] text-gray-500 mb-0.5">Location:</p>
+              <p className="text-[9px] text-[#FE9200] font-medium">{location}</p>
+            </div>
+            <div className="bg-[#F8F8F8] rounded-xl px-2.5 py-2">
+              <p className="text-[9px] text-gray-500 mb-0.5">Tenant:</p>
+              <p className="text-[9px] text-[#FE9200] font-medium">{tenantName.substring(0, 8)}</p>
+            </div>
           </div>
 
           {/* Contact Section */}
           <div className="bg-[#FFF5E6] rounded-xl p-2.5 border-2 border-[#FE9200] mt-auto">
             <div className="flex items-center justify-between">
               <div className="flex-1 text-center">
-                <p className="text-[8px] text-gray-600 font-medium">Leads Mobile Number</p>
-                <p className="text-[8px] text-gray-400">With Icons</p>
+                <p className="text-[8px] text-gray-600 font-medium">Phone</p>
+                <p className="text-[8px] text-[#FE9200] font-semibold">{tenantPhone ? '✓' : '—'}</p>
               </div>
               <div className="w-px h-6 bg-[#FE9200] mx-2" />
               <div className="flex-1 text-center">
-                <p className="text-[8px] text-gray-600 font-medium">Leads Email</p>
-                <p className="text-[8px] text-gray-400">With Icons</p>
+                <p className="text-[8px] text-gray-600 font-medium">Email</p>
+                <p className="text-[8px] text-[#FE9200] font-semibold">{tenantEmail ? '✓' : '—'}</p>
               </div>
             </div>
           </div>
@@ -73,32 +87,42 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
   const [isPaused, setIsPaused] = useState(false);
   const trackRef = useRef(null);
 
+  // Fetch real leads from database
+  const { leads, loading } = useLeads({}, true);
+
+  // Memoize processed leads to prevent unnecessary re-renders
+  const displayLeads = useMemo(() => {
+    return leads && leads.length > 0 ? leads : [];
+  }, [leads]);
+
   const cardWidth = 200;
   const gap = 16;
-  const totalCards = sampleLeads.length;
+  const totalCards = displayLeads.length || 1;
 
   // Create extended array for infinite loop (clone first few cards at end)
-  const extendedLeads = [...sampleLeads, ...sampleLeads.slice(0, 5)];
+  const extendedLeads = displayLeads.length > 0 
+    ? [...displayLeads, ...displayLeads.slice(0, Math.min(5, displayLeads.length))]
+    : [];
 
   // Auto-scroll every 3.5 seconds
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || displayLeads.length === 0) return;
 
     const timer = setInterval(() => {
       setCurrentIndex(prev => prev + 1);
     }, 3500);
 
     return () => clearInterval(timer);
-  }, [isPaused]);
+  }, [isPaused, displayLeads.length]);
 
   // Handle infinite loop reset
   useEffect(() => {
+    if (displayLeads.length === 0) return;
+    
     if (currentIndex >= totalCards) {
-      // Wait for transition to complete, then instantly reset
       const timeout = setTimeout(() => {
         setIsTransitioning(false);
         setCurrentIndex(0);
-        // Re-enable transition after reset
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             setIsTransitioning(true);
@@ -107,14 +131,14 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
       }, 500);
       return () => clearTimeout(timeout);
     }
-  }, [currentIndex, totalCards]);
+  }, [currentIndex, totalCards, displayLeads.length]);
 
   const translateX = -(currentIndex * (cardWidth + gap));
-  const activeIndex = currentIndex % totalCards;
+  const activeIndex = displayLeads.length > 0 ? currentIndex % totalCards : 0;
 
   return (
     <div className="h-screen w-screen bg-[#F5F5F5] font-sans overflow-hidden flex flex-col">
-      {/* Header - optimized for 1420px */}
+      {/* Header */}
       <div className="px-8 pt-5 pb-3">
         <div className="max-w-[1380px] mx-auto bg-white rounded-full shadow-sm border border-gray-100 px-8 py-2.5 flex justify-between items-center">
           {/* Logo */}
@@ -151,7 +175,7 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
         </div>
       </div>
 
-      {/* Hero Section - optimized for 1420px */}
+      {/* Hero Section */}
       <div className="flex-1 px-8 pb-5 flex flex-col min-h-0">
         <div className="flex-1 max-w-[1380px] w-full mx-auto relative rounded-[28px] overflow-hidden shadow-xl">
           {/* Hero Image */}
@@ -161,7 +185,7 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
             className="w-full h-full object-cover"
           />
 
-          {/* Cards Carousel at Bottom - Same width as hero */}
+          {/* Cards Carousel at Bottom */}
           <div
             className="absolute bottom-6 left-0 right-0 overflow-hidden"
             onMouseEnter={() => setIsPaused(true)}
@@ -171,42 +195,58 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
               className="mx-auto overflow-hidden px-4"
               style={{ maxWidth: '1380px' }}
             >
-              <div
-                ref={trackRef}
-                className="flex"
-                style={{
-                  gap: `${gap}px`,
-                  transform: `translateX(${translateX}px)`,
-                  transition: isTransitioning ? 'transform 0.5s ease-in-out' : 'none',
-                }}
-              >
-                {extendedLeads.map((lead, index) => (
-                  <LeadCard key={`${lead.id}-${index}`} lead={lead} />
-                ))}
-              </div>
+              {loading ? (
+                // Show skeleton while loading
+                <div className="flex gap-4 px-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="w-[200px] flex-shrink-0">
+                      <SkeletonCard />
+                    </div>
+                  ))}
+                </div>
+              ) : extendedLeads.length > 0 ? (
+                <div
+                  ref={trackRef}
+                  className="flex"
+                  style={{
+                    gap: `${gap}px`,
+                    transform: `translateX(${translateX}px)`,
+                    transition: isTransitioning ? 'transform 0.5s ease-in-out' : 'none',
+                  }}
+                >
+                  {extendedLeads.map((lead, index) => (
+                    <LeadCard key={`${lead.id}-${index}`} lead={lead} />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-64 text-gray-500">
+                  <p>No property leads available yet</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Pagination Dots */}
-        <div className="flex justify-center items-center gap-2.5 py-4">
-          {sampleLeads.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setIsTransitioning(true);
-                setCurrentIndex(index);
-              }}
-              className={`rounded-full transition-all duration-300 ${
-                activeIndex === index
-                  ? 'bg-[#FE9200] w-3.5 h-3.5'
-                  : 'bg-gray-300 w-2.5 h-2.5 hover:bg-gray-400'
-              }`}
-            />
-          ))}
-        </div>
+        {displayLeads.length > 0 && (
+          <div className="flex justify-center items-center gap-2.5 py-4">
+            {displayLeads.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setIsTransitioning(true);
+                  setCurrentIndex(index);
+                }}
+                className={`rounded-full transition-all duration-300 ${
+                  activeIndex === index
+                    ? 'bg-[#FE9200] w-3.5 h-3.5'
+                    : 'bg-gray-300 w-2.5 h-2.5 hover:bg-gray-400'
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 };
-

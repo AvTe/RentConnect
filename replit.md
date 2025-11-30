@@ -22,7 +22,20 @@ RentConnect (branded as Yoombaa) is a comprehensive rental property marketplace 
 - **Optimized loading states with Next.js best practices**
 - **High-performance image delivery with Next.js Image optimization**
 
-## Recent Changes (Performance Optimization - November 30, 2025)
+## Recent Changes (Real Database Integration & Performance - November 30, 2025)
+
+### Database & Real Data Implementation
+- **Landing Page Carousel:** Updated to fetch real property leads from Firebase Firestore
+- **Removed Demo Data:** Replaced hardcoded `sampleLeads` with live database queries
+- **Real-Time Updates:** Implemented `useLeads` hook for real-time lead data subscriptions
+- **Lead Structure:** Properly mapped real database fields:
+  - `requirements.property_type` → Property type
+  - `requirements.location` → Location  
+  - `requirements.budget` → Budget amount
+  - `tenant_info.name` & `tenant_info.phone` & `tenant_info.email` → Tenant details
+  - `contacts` → Contact count from database
+- **Smart Fallbacks:** Handles missing fields gracefully with defaults
+- **Loading States:** Skeleton loaders during data fetch for better UX
 
 ### Performance Optimizations Implemented
 - **Loading States:** Created `loading.js` files with skeleton loaders for seamless Suspense boundaries
