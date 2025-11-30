@@ -34,10 +34,20 @@ export default function RentalLeadApp() {
   const { isPremium } = useSubscription(currentUser?.uid);
 
   useEffect(() => {
+    // Minimum loading time for smooth animation (1.5 seconds)
+    const loadStartTime = Date.now();
+    const MIN_LOADING_TIME = 1500;
+    
+    const finishLoading = () => {
+      const elapsed = Date.now() - loadStartTime;
+      const remaining = Math.max(0, MIN_LOADING_TIME - elapsed);
+      setTimeout(() => setLoading(false), remaining);
+    };
+    
     // Check if Firebase is initialized before setting up auth listener
     if (!isFirebaseReady) {
       console.warn('Firebase not initialized. Running in demo mode.');
-      setLoading(false);
+      finishLoading();
       return;
     }
 
@@ -89,7 +99,7 @@ export default function RentalLeadApp() {
           setView('landing');
         }
       }
-      setLoading(false);
+      finishLoading();
     });
 
     return () => unsubscribe();
