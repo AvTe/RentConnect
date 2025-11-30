@@ -73,10 +73,5 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated();
     }
-    
-    // Catch-all for other collections during development
-    match /{document=**} {
-      allow read, write: if isAuthenticated();
-    }
   }
 }
