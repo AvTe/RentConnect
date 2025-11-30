@@ -9,18 +9,42 @@ RentConnect (branded as Yoombaa) is a comprehensive rental property marketplace 
 - **Framework:** Next.js 14 (App Router)
 - **Frontend:** React 18, Tailwind CSS
 - **Backend:** Firebase (Auth, Firestore, Storage, Analytics)
-- **Payment:** Paystack (Nigerian Naira)
+- **Payment:** Paystack (Kenyan Shillings - KES)
 - **Notifications:** SendGrid (Email), Twilio (WhatsApp/SMS)
 
 ### Key Features
 - Dual user system (Tenants and Agents)
 - Real-time lead management
-- Premium agent subscriptions (₦15,000/month)
+- Premium agent subscriptions (KSh 1,500/month)
 - Property listings with image uploads
 - Multi-channel notifications
 - Admin dashboard for platform management
 - **Optimized loading states with Next.js best practices**
 - **High-performance image delivery with Next.js Image optimization**
+
+## Recent Changes (Currency Localization to Kenya - November 30, 2025)
+
+### Full Currency Migration to Kenyan Shillings (KES)
+- **Currency Symbol:** Changed from Nigerian Naira (₦) to Kenyan Shillings (KSh)
+- **Currency Code:** Updated from NGN to KES throughout application
+- **Format Function:** Updated `formatBudget()` to use K/M suffixes (e.g., KSh 50K, KSh 1.5M)
+- **Locale:** Changed from 'en-NG' to 'en-KE' for number formatting
+- **Paystack Integration:** Updated currency to KES, subscription amount to KSh 1,500
+- **Phone Numbers:** Changed default country from Nigeria (+234) to Kenya (+254)
+- **Location Context:** Replaced Nigerian cities (Lagos, Lekki, Yaba, Abuja) with Kenyan equivalents (Nairobi, Westlands, Kilimani, Mombasa)
+
+### Files Updated for Currency Localization
+- `lib/paystack.js` - SUBSCRIPTION_PLANS amount and currency
+- `components/LandingPage.jsx` - formatBudget function and display
+- `components/TenantForm.jsx` - Default country, budget options, placeholders
+- `components/SubscriptionPage.jsx` - Pricing display
+- `components/AgentDashboard.jsx` - Wallet and pricing
+- `components/PropertiesPage.jsx` - Budget display
+- `components/UserSubscriptionPage.jsx` - Plan pricing
+- `components/UserDashboard.jsx` - Budget display
+- `components/admin/*` - All admin finance components
+- `app/api/paystack/initialize/route.js` - Payment currency
+- `app/page.js` - Lead requirements currency
 
 ## Recent Changes (Enhanced LeadCard Design - November 30, 2025)
 

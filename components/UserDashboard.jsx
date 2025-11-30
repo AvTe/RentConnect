@@ -124,7 +124,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                     </div>
                   </td>
                   <td className="px-6 py-4 text-gray-600">{agent.agencyName || 'Independent'}</td>
-                  <td className="px-6 py-4 text-gray-600">{agent.location || 'Lagos, Nigeria'}</td>
+                  <td className="px-6 py-4 text-gray-600">{agent.location || 'Nairobi, Kenya'}</td>
                   <td className="px-6 py-4 text-gray-600">{agent.experience || 'N/A'}</td>
                   <td className="px-6 py-4 text-right">
                     <button 
@@ -184,7 +184,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                           {request.requirements?.location}
                         </span>
                         <span className="text-gray-300">•</span>
-                        <span>{request.requirements?.budget ? `₦${parseInt(request.requirements.budget).toLocaleString()}` : 'Budget N/A'}</span>
+                        <span>{request.requirements?.budget ? `KSh ${parseInt(request.requirements.budget).toLocaleString()}` : 'Budget N/A'}</span>
                       </p>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-medium ${

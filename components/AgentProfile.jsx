@@ -129,7 +129,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
               <MapPin className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="e.g. Lekki, Lagos"
+                placeholder="e.g. Westlands, Nairobi"
                 value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
                 className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"

@@ -38,7 +38,7 @@ export async function POST(request) {
     const phoneRegex = /^\+[1-9]\d{1,14}$/;
     if (!phoneRegex.test(phoneNumber)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid phone number format. Use international format (e.g., +2348012345678)' },
+        { success: false, error: 'Invalid phone number format. Use international format (e.g., +254712345678)' },
         { status: 400 }
       );
     }

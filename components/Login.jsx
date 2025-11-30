@@ -404,7 +404,7 @@ export const Login = ({ onNavigate, onLogin }) => {
             </h2>
             <div className="space-y-4">
                <p className="text-lg text-gray-300 italic leading-relaxed">
-                  &quot;Yoombaa transformed my house hunting experience. I found a verified apartment in Lagos within 2 days! The process was seamless and secure.&quot;
+                  &quot;Yoombaa transformed my house hunting experience. I found a verified apartment in Nairobi within 2 days! The process was seamless and secure.&quot;
                </p>
                <div className="flex items-center gap-4 mt-8">
                   <div className="w-12 h-12 rounded-full bg-[#FE9200] flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-[#7A00AA]/20">S</div>

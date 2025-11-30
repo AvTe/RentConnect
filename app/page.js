@@ -247,7 +247,7 @@ export default function RentalLeadApp() {
           pincode: formData.pincode,
           property_type: formData.type,
           budget: formData.budget,
-          currency: 'NGN',
+          currency: 'KES',
           move_in_date: 'ASAP' // Defaulting for now
         }
       };
@@ -358,7 +358,7 @@ export default function RentalLeadApp() {
         // Agent buying credits
         const result = await initializePayment(
           currentUser.email,
-          parseInt(paymentData.price.replace(/[^0-9]/g, '')), // Extract amount from string like "₦ 5,000"
+          parseInt(paymentData.price.replace(/[^0-9]/g, '')), // Extract amount from string like "KSh 500"
           {
             agentId: currentUser.uid,
             agentName: currentUser.name,

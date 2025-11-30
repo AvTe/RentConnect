@@ -282,7 +282,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
             type="text"
             autoFocus
             className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm"
-            placeholder="e.g. Yaba, Lagos"
+            placeholder="e.g. Kilimani, Nairobi"
             value={formData.location}
             onChange={(e) => setFormData({...formData, location: e.target.value})}
             onKeyDown={(e) => e.key === 'Enter' && formData.location && handleNext()}
