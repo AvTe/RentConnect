@@ -251,7 +251,7 @@ export const FinanceManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Price (₦)</label>
+                  <label className="block text-sm font-medium mb-1">Price (KSh)</label>
                   <input 
                     className="w-full border rounded p-2" 
                     value={bundleForm.price}
@@ -265,7 +265,7 @@ export const FinanceManagement = () => {
                     className="w-full border rounded p-2" 
                     value={bundleForm.perLead}
                     onChange={e => setBundleForm({...bundleForm, perLead: e.target.value})}
-                    placeholder="e.g. ₦ 500/lead"
+                    placeholder="e.g. KSh 50/lead"
                   />
                 </div>
                 <div className="md:col-span-2">

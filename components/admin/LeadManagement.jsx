@@ -139,7 +139,7 @@ export const LeadManagement = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600">
-                      ₦{lead.requirements?.budget?.toLocaleString() || 'N/A'}
+                      KSh {lead.requirements?.budget?.toLocaleString() || 'N/A'}
                     </td>
                     <td className="px-6 py-4">
                       <Badge className={

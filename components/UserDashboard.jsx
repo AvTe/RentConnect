@@ -20,8 +20,8 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
   const user = currentUser || {
     name: 'Alex Johnson',
     email: 'alex.j@example.com',
-    phone: '+234 801 234 5678',
-    city: 'Lagos',
+    phone: '+254 700 123 456',
+    city: 'Nairobi',
     avatar: null
   };
 

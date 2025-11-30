@@ -78,8 +78,8 @@ export const AdminOverview = () => {
         />
         <StatCard 
           title="System Revenue (30d)" 
-          value={`₦ ${(stats?.revenueLast30Days || 0).toLocaleString()}`} 
-          subtext={`Wallet Balance: ₦ ${(stats?.totalWalletBalance || 0).toLocaleString()}`}
+          value={`KSh ${(stats?.revenueLast30Days || 0).toLocaleString()}`} 
+          subtext={`Wallet Balance: KSh ${(stats?.totalWalletBalance || 0).toLocaleString()}`}
           icon={DollarSign} 
           colorClass="bg-[#16A34A] text-[#16A34A]" 
         />

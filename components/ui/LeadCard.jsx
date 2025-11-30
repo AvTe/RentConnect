@@ -20,10 +20,9 @@ export const LeadCard = ({
 
   const formatBudget = (amount) => {
     const num = parseInt(amount?.toString().replace(/[^0-9]/g, '') || '0');
-    if (num >= 100000) {
-      return `₦${(num / 100000).toFixed(1)}L`;
-    }
-    return `₦${num.toLocaleString()}`;
+    if (num >= 1000000) return `KSh ${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `KSh ${(num / 1000).toFixed(0)}K`;
+    return `KSh ${num.toLocaleString()}`;
   };
 
   if (compact) {

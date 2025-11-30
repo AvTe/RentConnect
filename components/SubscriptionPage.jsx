@@ -19,16 +19,16 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
             id: 'starter',
             name: 'Starter Pack',
             credits: 10,
-            price: '5000',
-            perLead: '₦ 500/lead',
+            price: '500',
+            perLead: 'KSh 50/lead',
             features: ['Perfect for new agents', 'Unlock 10 leads', 'No expiration']
           },
           {
             id: 'pro',
             name: 'Pro Bundle',
             credits: 50,
-            price: '20000',
-            perLead: '₦ 400/lead',
+            price: '2000',
+            perLead: 'KSh 40/lead',
             popular: true,
             features: ['Best value', 'Unlock 50 leads', 'Priority support', 'Verified Badge']
           },
@@ -36,8 +36,8 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
             id: 'agency',
             name: 'Agency Bulk',
             credits: 200,
-            price: '70000',
-            perLead: '₦ 350/lead',
+            price: '7000',
+            perLead: 'KSh 35/lead',
             features: ['For teams', 'Unlock 200 leads', 'Dedicated account manager', 'API Access']
           }
         ]);
@@ -82,7 +82,7 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
                 <div className="p-8 text-center border-b border-gray-100">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{bundle.name}</h3>
                   <div className="flex justify-center items-baseline mb-1">
-                    <span className="text-4xl font-extrabold text-gray-900">₦ {parseInt(bundle.price).toLocaleString()}</span>
+                    <span className="text-4xl font-extrabold text-gray-900">KSh {parseInt(bundle.price).toLocaleString()}</span>
                   </div>
                   <p className="text-[#FE9200] font-medium text-sm mb-4">{bundle.credits} Credits</p>
                   <div className="inline-block bg-gray-100 rounded-full px-3 py-1 text-xs text-gray-500 font-medium">

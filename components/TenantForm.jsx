@@ -37,7 +37,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
       }
     }
   }, [currentUser, formData.name, onUpdateUser]);
-  const [defaultCountry, setDefaultCountry] = useState('NG');
+  const [defaultCountry, setDefaultCountry] = useState('KE');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);

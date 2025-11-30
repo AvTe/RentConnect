@@ -62,7 +62,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                   type="text"
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
-                  placeholder="Lagos Homes Ltd."
+                  placeholder="Nairobi Homes Ltd."
                   value={formData.agencyName}
                   onChange={(e) => setFormData({...formData, agencyName: e.target.value})}
                 />
@@ -93,7 +93,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                     type="tel"
                     required
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
-                    placeholder="+234..."
+                    placeholder="+254..."
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
                   />

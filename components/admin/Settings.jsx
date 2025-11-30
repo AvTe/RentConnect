@@ -134,7 +134,7 @@ export const Settings = ({ user }) => {
 
           <form onSubmit={handleConfigUpdate} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Credit Price (₦)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Credit Price (KSh)</label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input

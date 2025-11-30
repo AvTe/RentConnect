@@ -269,7 +269,7 @@ export const RenterDetail = ({ renter, onBack, onUpdate }) => {
                       </Badge>
                     </div>
                     <div className="flex justify-between text-sm text-gray-500">
-                      <span>Budget: ₦{req.requirements?.budget?.toLocaleString()}</span>
+                      <span>Budget: KSh {req.requirements?.budget?.toLocaleString()}</span>
                       <span>{req.createdAt?.toDate ? req.createdAt.toDate().toLocaleDateString() : ''}</span>
                     </div>
                   </div>

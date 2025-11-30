@@ -131,7 +131,7 @@ export const SubscriptionManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Price (₦)</label>
+                  <label className="block text-sm font-medium mb-1">Price (KSh)</label>
                   <input 
                     type="number"
                     className="w-full border rounded p-2" 
@@ -180,7 +180,7 @@ export const SubscriptionManagement = () => {
             {plans.map(plan => (
               <div key={plan.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="font-bold text-lg">{plan.name}</h3>
-                <div className="text-2xl font-bold text-blue-600 my-2">₦ {parseInt(plan.price).toLocaleString()} <span className="text-sm text-gray-500 font-normal">/{plan.interval}</span></div>
+                <div className="text-2xl font-bold text-blue-600 my-2">KSh {parseInt(plan.price).toLocaleString()} <span className="text-sm text-gray-500 font-normal">/{plan.interval}</span></div>
                 <p className="text-sm text-gray-500 mb-4">{plan.description}</p>
                 <ul className="text-sm space-y-1 mb-6 text-gray-600">
                   {Array.isArray(plan.features) && plan.features.map((f, i) => (
@@ -262,7 +262,7 @@ export const SubscriptionManagement = () => {
                       <td className="px-6 py-4 text-gray-500">
                         {sub.endDate?.toDate ? sub.endDate.toDate().toLocaleDateString() : 'N/A'}
                       </td>
-                      <td className="px-6 py-4">₦ {parseInt(sub.amount || 0).toLocaleString()}</td>
+                      <td className="px-6 py-4">KSh {parseInt(sub.amount || 0).toLocaleString()}</td>
                     </tr>
                   ))
                 )}

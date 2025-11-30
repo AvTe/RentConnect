@@ -29,8 +29,8 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         email,
-        amount, // Amount in kobo
-        currency: 'NGN',
+        amount, // Amount in cents
+        currency: 'KES',
         metadata: {
           ...metadata,
           custom_fields: [

@@ -128,7 +128,7 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
                       </div>
                     </div>
                     <Badge className="bg-[#FFF5E6] text-[#E58300] border-[#FFE4C4]">
-                      {lead.requirements?.budget ? `₦${parseInt(lead.requirements.budget).toLocaleString()}` : 'Budget N/A'}
+                      {lead.requirements?.budget ? `KSh ${parseInt(lead.requirements.budget).toLocaleString()}` : 'Budget N/A'}
                     </Badge>
                   </div>
 
