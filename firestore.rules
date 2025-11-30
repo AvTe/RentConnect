@@ -27,11 +27,15 @@ service cloud.firestore {
       allow write: if isOwner(userId) || isAdmin();
     }
 
-    // Collection: requests (The Leads)
+    // Collection: requests (The Leads) - PUBLIC READ for active leads (carousel)
     match /requests/{requestId} {
-      allow read: if isAuthenticated();
+      // ALLOW PUBLIC READ for carousel display
+      allow read: if true;
+      // Anyone can create a lead
       allow create: if true;
-      allow update, delete: if isAuthenticated();
+      // Only the tenant who created the lead can update/delete
+      allow update, delete: if isAuthenticated() && 
+        resource.data.tenant_info.id == request.auth.uid;
     }
     
     // Collection: properties
