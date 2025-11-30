@@ -4,7 +4,6 @@ import { Button } from './ui/Button';
 import { auth, googleProvider } from '@/lib/firebase';
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
-// Helper function to convert Firebase error codes to user-friendly messages
 const getAuthErrorMessage = (errorCode) => {
   const errorMessages = {
     'auth/invalid-credential': 'Invalid email or password. Please check your credentials and try again.',
@@ -25,13 +24,11 @@ const getAuthErrorMessage = (errorCode) => {
   return errorMessages[errorCode] || 'An error occurred during authentication. Please try again.';
 };
 
-// Email validation helper
 const isValidEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-// Google Logo SVG Component
 const GoogleLogo = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
     <path
@@ -54,7 +51,7 @@ const GoogleLogo = () => (
 );
 
 export const Login = ({ onNavigate, onLogin }) => {
-  const [userType, setUserType] = useState('tenant'); // 'tenant' | 'agent'
+  const [userType, setUserType] = useState('tenant');
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -69,7 +66,6 @@ export const Login = ({ onNavigate, onLogin }) => {
     setError('');
     setSuccessMessage('');
 
-    // Check if Firebase auth is initialized
     if (!auth || !googleProvider) {
       setError('Authentication service is not available. Please refresh the page and try again.');
       setLoading(false);
@@ -80,12 +76,10 @@ export const Login = ({ onNavigate, onLogin }) => {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      // Check if user exists in Firestore
       const { getUser, createUser } = await import('@/lib/firestore');
       const userResult = await getUser(user.uid);
 
       if (!userResult.success) {
-        // Create new user profile
         const userData = {
           email: user.email,
           name: user.displayName,
@@ -97,7 +91,6 @@ export const Login = ({ onNavigate, onLogin }) => {
         await createUser(user.uid, userData);
         onLogin({ ...userData, uid: user.uid });
       } else {
-        // User exists, use their profile
         onLogin({ ...userResult.data, uid: user.uid });
       }
     } catch (err) {
@@ -145,11 +138,9 @@ export const Login = ({ onNavigate, onLogin }) => {
     setError('');
     setSuccessMessage('');
 
-    // Trim inputs
     const trimmedEmail = email.trim();
     const trimmedName = name.trim();
 
-    // Validate email format
     if (!trimmedEmail) {
       setError('Please enter your email address.');
       return;
@@ -160,7 +151,6 @@ export const Login = ({ onNavigate, onLogin }) => {
       return;
     }
 
-    // Validate password
     if (!password) {
       setError('Please enter your password.');
       return;
@@ -171,13 +161,11 @@ export const Login = ({ onNavigate, onLogin }) => {
       return;
     }
 
-    // Validate name for registration
     if (isRegistering && !trimmedName) {
       setError('Please enter your full name.');
       return;
     }
 
-    // Check if Firebase auth is initialized
     if (!auth) {
       setError('Authentication service is not available. Please refresh the page and try again.');
       return;
@@ -193,7 +181,6 @@ export const Login = ({ onNavigate, onLogin }) => {
         userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
         const user = userCredential.user;
 
-        // Create user profile in Firestore
         const userData = {
           email: user.email,
           name: trimmedName || (userType === 'tenant' ? 'New Tenant' : 'New Agent'),
@@ -208,7 +195,6 @@ export const Login = ({ onNavigate, onLogin }) => {
         userCredential = await signInWithEmailAndPassword(auth, trimmedEmail, password);
         const user = userCredential.user;
 
-        // Fetch user profile
         const userResult = await getUser(user.uid);
         if (userResult.success) {
           onLogin({ ...userResult.data, uid: user.uid });
@@ -229,206 +215,216 @@ export const Login = ({ onNavigate, onLogin }) => {
   };
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden bg-white font-sans">
+    <div className="min-h-screen w-full flex flex-col md:flex-row overflow-hidden bg-white font-sans">
       {/* Left Side - Form */}
-      <div className="w-full md:w-1/2 flex flex-col justify-center px-8 sm:px-12 lg:px-24 relative z-10 overflow-y-auto">
-         {/* Logo */}
-         <div className="absolute top-8 left-8 sm:left-12 lg:left-24 flex items-center gap-1 cursor-pointer" onClick={() => onNavigate('landing')}>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">Rent-</span>
-            <span className="text-xl font-bold text-[#8B5CF6] tracking-tight">Connect</span>
-         </div>
+      <div className="w-full md:w-1/2 flex flex-col justify-start md:justify-center px-6 sm:px-8 lg:px-16 xl:px-24 py-6 md:py-8 relative z-10 overflow-y-auto min-h-screen md:min-h-0">
+        {/* Minimal Header - Logo only + I'm an Agent button */}
+        <div className="flex items-center justify-between mb-8 md:absolute md:top-8 md:left-6 md:right-6 lg:left-16 xl:left-24 lg:right-16 xl:right-24">
+          <div 
+            className="cursor-pointer" 
+            onClick={() => onNavigate('landing')}
+          >
+            <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-8 sm:h-10 w-auto" />
+          </div>
+          <button
+            onClick={() => onNavigate('landing')}
+            className="px-4 py-2 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md text-sm"
+          >
+            I&apos;m an Agent
+          </button>
+        </div>
 
-         <div className="max-w-md w-full mx-auto mt-16 md:mt-0">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {isRegistering ? 'Create an account' : 'Welcome Back!'}
-            </h2>
-            <p className="text-gray-500 mb-8">
-              {isRegistering ? 'Join Yoombaa to find your home' : 'Sign in to access your dashboard'}
-            </p>
+        <div className="max-w-md w-full mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            {isRegistering ? 'Create an account' : 'Welcome Back!'}
+          </h2>
+          <p className="text-gray-500 mb-6 sm:mb-8 text-sm sm:text-base">
+            {isRegistering ? 'Join Yoombaa to find your home' : 'Sign in to access your dashboard'}
+          </p>
 
-            {/* User Type Toggle */}
-            <div className="flex p-1 bg-gray-100 rounded-lg mb-6 w-fit">
-              <button
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                  userType === 'tenant' 
-                    ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                onClick={() => setUserType('tenant')}
-                type="button"
-              >
-                <User className="w-4 h-4" />
-                Tenant
-              </button>
-              <button
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                  userType === 'agent' 
-                    ? 'bg-white text-gray-900 shadow-sm' 
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-                onClick={() => setUserType('agent')}
-                type="button"
-              >
-                <Building2 className="w-4 h-4" />
-                Agent
-              </button>
-            </div>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
-                {error}
-              </div>
-            )}
-            
-            {successMessage && (
-              <div className="mb-4 p-3 bg-[#FFF5E6] text-[#16A34A] text-sm rounded-lg border border-[#FFE4C4]">
-                {successMessage}
-              </div>
-            )}
-
-            {/* Form */}
-            <form className="space-y-5" onSubmit={handleEmailAuth}>
-               {isRegistering && (
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                   <div className="relative">
-                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                     <input
-                       type="text"
-                       required={isRegistering}
-                       value={name}
-                       onChange={(e) => setName(e.target.value)}
-                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
-                       placeholder="Enter your name"
-                     />
-                   </div>
-                 </div>
-               )}
-
-               <div>
-                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                 <div className="relative">
-                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                   <input
-                     type="email"
-                     required
-                     value={email}
-                     onChange={(e) => setEmail(e.target.value)}
-                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
-                     placeholder="Enter your email"
-                   />
-                 </div>
-               </div>
-
-               <div>
-                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                 <div className="relative">
-                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                   <input
-                     type={showPassword ? "text" : "password"}
-                     required
-                     value={password}
-                     onChange={(e) => setPassword(e.target.value)}
-                     className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
-                     placeholder="Enter your password"
-                   />
-                   <button
-                     type="button"
-                     onClick={() => setShowPassword(!showPassword)}
-                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                   >
-                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                   </button>
-                 </div>
-               </div>
-
-               {!isRegistering && (
-                 <div className="flex justify-end">
-                   <button 
-                     type="button"
-                     onClick={handlePasswordReset}
-                     className="text-sm font-medium text-[#8B5CF6] hover:text-[#7C3AED]"
-                   >
-                     Forgot Password?
-                   </button>
-                 </div>
-               )}
-
-               <Button 
-                 type="submit" 
-                 disabled={loading}
-                 className="w-full py-3 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-lg font-medium shadow-lg shadow-[#FFE4C4] transition-all"
-               >
-                 {loading ? 'Processing...' : (isRegistering ? 'Sign Up' : 'Sign In')}
-               </Button>
-            </form>
-
-            {/* Divider */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
-              <div className="relative flex justify-center text-sm"><span className="px-4 bg-white text-gray-500">OR</span></div>
-            </div>
-
-            {/* Google Button */}
-            <button 
-              onClick={handleGoogleLogin} 
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all group"
+          {/* User Type Toggle */}
+          <div className="flex p-1 bg-gray-100 rounded-lg mb-6 w-fit">
+            <button
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                userType === 'tenant' 
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              onClick={() => setUserType('tenant')}
+              type="button"
             >
-               <GoogleLogo />
-               <span className="font-medium text-gray-700 group-hover:text-gray-900">Continue with Google</span>
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Tenant</span>
             </button>
+            <button
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                userType === 'agent' 
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              onClick={() => setUserType('agent')}
+              type="button"
+            >
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Agent</span>
+            </button>
+          </div>
 
-            {/* Footer Link */}
-            <p className="mt-8 text-center text-sm text-gray-600">
-               {isRegistering ? 'Already have an account?' : "Don't have an Account?"} 
-               <button 
-                 onClick={() => setIsRegistering(!isRegistering)} 
-                 className="ml-1 font-semibold text-[#8B5CF6] hover:underline"
-               >
-                 {isRegistering ? 'Sign In' : 'Sign Up'}
-               </button>
-            </p>
-         </div>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
+              {error}
+            </div>
+          )}
+          
+          {successMessage && (
+            <div className="mb-4 p-3 bg-[#FFF5E6] text-[#16A34A] text-sm rounded-lg border border-[#FFE4C4]">
+              {successMessage}
+            </div>
+          )}
+
+          {/* Form */}
+          <form className="space-y-4 sm:space-y-5" onSubmit={handleEmailAuth}>
+            {isRegistering && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    required={isRegistering}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm sm:text-base"
+                    placeholder="Enter your name"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm sm:text-base"
+                  placeholder="Enter your email"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm sm:text-base"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            {!isRegistering && (
+              <div className="flex justify-end">
+                <button 
+                  type="button"
+                  onClick={handlePasswordReset}
+                  className="text-sm font-medium text-[#8B5CF6] hover:text-[#7C3AED]"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
+
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className="w-full py-3 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-lg font-medium shadow-lg shadow-[#FFE4C4] transition-all text-sm sm:text-base"
+            >
+              {loading ? 'Processing...' : (isRegistering ? 'Sign Up' : 'Sign In')}
+            </Button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative my-6 sm:my-8">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
+            <div className="relative flex justify-center text-sm"><span className="px-4 bg-white text-gray-500">OR</span></div>
+          </div>
+
+          {/* Google Button */}
+          <button 
+            onClick={handleGoogleLogin} 
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all group"
+          >
+            <GoogleLogo />
+            <span className="font-medium text-gray-700 group-hover:text-gray-900 text-sm sm:text-base">Continue with Google</span>
+          </button>
+
+          {/* Footer Link */}
+          <p className="mt-6 sm:mt-8 text-center text-sm text-gray-600">
+            {isRegistering ? 'Already have an account?' : "Don't have an Account?"} 
+            <button 
+              onClick={() => setIsRegistering(!isRegistering)} 
+              className="ml-1 font-semibold text-[#8B5CF6] hover:underline"
+            >
+              {isRegistering ? 'Sign In' : 'Sign Up'}
+            </button>
+          </p>
+        </div>
       </div>
 
       {/* Right Side - Image/Testimonial */}
-      <div className="hidden md:flex md:w-1/2 bg-[#0f172a] relative items-center justify-center p-12 text-white overflow-hidden">
-         {/* Background Gradient/Image */}
-         <div className="absolute inset-0 bg-gradient-to-br from-[#7A00AA] to-slate-900 z-0"></div>
-         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80')] opacity-20 bg-cover bg-center mix-blend-overlay"></div>
-         
-         <div className="relative z-10 max-w-lg">
-            <h2 className="text-4xl font-bold mb-6 leading-tight">
-               Find your perfect home with trusted agents.
-            </h2>
-            <div className="space-y-4">
-               <p className="text-lg text-gray-300 italic leading-relaxed">
-                  &quot;Yoombaa transformed my house hunting experience. I found a verified apartment in Nairobi within 2 days! The process was seamless and secure.&quot;
-               </p>
-               <div className="flex items-center gap-4 mt-8">
-                  <div className="w-12 h-12 rounded-full bg-[#FE9200] flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-[#7A00AA]/20">S</div>
-                  <div>
-                     <p className="font-semibold text-white">Sarah Johnson</p>
-                     <p className="text-sm text-[#FFD4A3]">Tenant in Lekki</p>
-                  </div>
-               </div>
+      <div className="hidden md:flex md:w-1/2 bg-[#0f172a] relative items-center justify-center p-8 lg:p-12 text-white overflow-hidden">
+        {/* Background Gradient/Image */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#7A00AA] to-slate-900 z-0"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80')] opacity-20 bg-cover bg-center mix-blend-overlay"></div>
+        
+        <div className="relative z-10 max-w-lg">
+          <h2 className="text-3xl lg:text-4xl font-bold mb-6 leading-tight">
+            Find your perfect home with trusted agents.
+          </h2>
+          <div className="space-y-4">
+            <p className="text-base lg:text-lg text-gray-300 italic leading-relaxed">
+              &quot;Yoombaa transformed my house hunting experience. I found a verified apartment in Nairobi within 2 days! The process was seamless and secure.&quot;
+            </p>
+            <div className="flex items-center gap-4 mt-8">
+              <div className="w-12 h-12 rounded-full bg-[#FE9200] flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-[#7A00AA]/20">S</div>
+              <div>
+                <p className="font-semibold text-white">Sarah Johnson</p>
+                <p className="text-sm text-[#FFD4A3]">Tenant in Nairobi</p>
+              </div>
             </div>
-            
-            {/* Logos at bottom */}
-            <div className="mt-16 pt-8 border-t border-white/10 flex gap-8 opacity-40 grayscale">
-               <div className="flex items-center gap-2">
-                 <Building2 className="w-6 h-6" />
-                 <span className="font-bold text-lg">Yoombaa</span>
-               </div>
-               <div className="flex items-center gap-2">
-                 <span className="font-bold text-lg">Paystack</span>
-               </div>
-               <div className="flex items-center gap-2">
-                 <span className="font-bold text-lg">Google</span>
-               </div>
+          </div>
+          
+          {/* Logos at bottom */}
+          <div className="mt-12 lg:mt-16 pt-6 lg:pt-8 border-t border-white/10 flex gap-6 lg:gap-8 opacity-40 grayscale">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-5 lg:w-6 h-5 lg:h-6" />
+              <span className="font-bold text-base lg:text-lg">Yoombaa</span>
             </div>
-         </div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-base lg:text-lg">Pesapal</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-base lg:text-lg">Google</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

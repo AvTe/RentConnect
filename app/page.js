@@ -34,9 +34,9 @@ export default function RentalLeadApp() {
   const { isPremium } = useSubscription(currentUser?.uid);
 
   useEffect(() => {
-    // Minimum loading time for smooth animation (1.5 seconds)
+    // Minimum loading time for smooth animation
     const loadStartTime = Date.now();
-    const MIN_LOADING_TIME = 1500;
+    const MIN_LOADING_TIME = 300;
     
     const finishLoading = () => {
       const elapsed = Date.now() - loadStartTime;
@@ -99,6 +99,7 @@ export default function RentalLeadApp() {
           setView('landing');
         }
       }
+      // Only finish loading after auth state AND profile fetch are complete
       finishLoading();
     });
 

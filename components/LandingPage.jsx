@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useLeads, useSubscription } from '@/lib/hooks';
 import { trackAgentLeadContact } from '@/lib/firestore';
 import { SkeletonCard } from '@/components/ui/Skeleton';
@@ -63,94 +63,94 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick }) 
   };
 
   return (
-    <div className="bg-[#FFF5E6] rounded-[20px] p-2.5 w-[280px] flex-shrink-0">
-      <div className="bg-white rounded-[16px] overflow-hidden border-b-[5px] border-[#FE9200] h-full flex flex-col shadow-sm">
-        <div className="p-4 flex flex-col flex-1">
+    <div className="bg-[#FFF5E6] rounded-[16px] p-2 w-[220px] sm:w-[240px] flex-shrink-0 select-none">
+      <div className="bg-white rounded-[12px] overflow-hidden border-b-4 border-[#FE9200] h-full flex flex-col shadow-sm">
+        <div className="p-3 flex flex-col flex-1">
           
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-1.5 bg-[#E8F5E9] px-3 py-2 rounded-full">
-              <Users size={14} className="text-[#2E7D32]" />
-              <span className="text-[11px] font-semibold text-[#2E7D32]">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1.5 rounded-full">
+              <Users size={11} className="text-[#2E7D32]" />
+              <span className="text-[9px] font-semibold text-[#2E7D32]">
                 {contactCount} Agents Contacted
               </span>
             </div>
-            <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-3 py-2 rounded-full text-[11px] font-bold shadow-sm">
+            <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-2 py-1.5 rounded-full text-[9px] font-bold shadow-sm">
               {formatBudget(budget)}
             </span>
           </div>
 
-          <h3 className="text-xl font-bold text-gray-900 mb-1">{propertyType}</h3>
-          <p className="text-sm text-gray-500 mb-4">{location}</p>
+          <h3 className="text-base font-bold text-gray-900 mb-0.5 truncate">{propertyType}</h3>
+          <p className="text-xs text-gray-500 mb-3 truncate">{location}</p>
 
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-[#F5F5F5] rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Home size={14} className="text-gray-400" />
-                <span className="text-[11px] text-gray-400">Type</span>
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="bg-[#F5F5F5] rounded-lg p-2">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <Home size={11} className="text-gray-400" />
+                <span className="text-[9px] text-gray-400">Type</span>
               </div>
-              <p className="text-[13px] text-[#2E7D32] font-semibold">{propertyType}</p>
+              <p className="text-[11px] text-[#2E7D32] font-semibold truncate">{propertyType}</p>
             </div>
             
-            <div className="bg-[#F5F5F5] rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <MapPin size={14} className="text-gray-400" />
-                <span className="text-[11px] text-gray-400">Area</span>
+            <div className="bg-[#F5F5F5] rounded-lg p-2">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <MapPin size={11} className="text-gray-400" />
+                <span className="text-[9px] text-gray-400">Area</span>
               </div>
-              <p className="text-[13px] text-[#2E7D32] font-semibold">{area}</p>
+              <p className="text-[11px] text-[#2E7D32] font-semibold truncate">{area}</p>
             </div>
             
-            <div className="bg-[#F5F5F5] rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock size={14} className="text-gray-400" />
-                <span className="text-[11px] text-gray-400">Status</span>
+            <div className="bg-[#F5F5F5] rounded-lg p-2">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <Clock size={11} className="text-gray-400" />
+                <span className="text-[9px] text-gray-400">Status</span>
               </div>
-              <p className="text-[13px] text-[#2E7D32] font-semibold capitalize">{status}</p>
+              <p className="text-[11px] text-[#2E7D32] font-semibold capitalize">{status}</p>
             </div>
             
-            <div className="bg-[#F5F5F5] rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Zap size={14} className="text-gray-400" />
-                <span className="text-[11px] text-gray-400">Ready</span>
+            <div className="bg-[#F5F5F5] rounded-lg p-2">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <Zap size={11} className="text-gray-400" />
+                <span className="text-[9px] text-gray-400">Ready</span>
               </div>
-              <p className="text-[13px] text-[#2E7D32] font-semibold">Available</p>
+              <p className="text-[11px] text-[#2E7D32] font-semibold">Available</p>
             </div>
           </div>
 
           {isPremium ? (
-            <div className="bg-[#E8F5E9] rounded-xl p-3 border-2 border-[#2E7D32] mt-auto">
+            <div className="bg-[#E8F5E9] rounded-lg p-2.5 border-2 border-[#2E7D32] mt-auto">
               <div className="flex items-center justify-around">
                 <button
                   onClick={() => handleContactClick('phone')}
-                  className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
+                  className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity"
                 >
-                  <div className="w-8 h-8 rounded-full bg-[#2E7D32] flex items-center justify-center">
-                    <Phone size={14} className="text-white" />
+                  <div className="w-6 h-6 rounded-full bg-[#2E7D32] flex items-center justify-center">
+                    <Phone size={11} className="text-white" />
                   </div>
-                  <span className="text-[10px] text-[#2E7D32] font-medium">Call</span>
+                  <span className="text-[8px] text-[#2E7D32] font-medium">Call</span>
                 </button>
-                <div className="w-px h-10 bg-[#2E7D32]/30" />
+                <div className="w-px h-8 bg-[#2E7D32]/30" />
                 <button
                   onClick={() => handleContactClick('email')}
-                  className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
+                  className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity"
                 >
-                  <div className="w-8 h-8 rounded-full bg-[#2E7D32] flex items-center justify-center">
-                    <Mail size={14} className="text-white" />
+                  <div className="w-6 h-6 rounded-full bg-[#2E7D32] flex items-center justify-center">
+                    <Mail size={11} className="text-white" />
                   </div>
-                  <span className="text-[10px] text-[#2E7D32] font-medium">Email</span>
+                  <span className="text-[8px] text-[#2E7D32] font-medium">Email</span>
                 </button>
               </div>
             </div>
           ) : (
             <button
               onClick={handleOverlayClick}
-              className="bg-[#FFF5E6] rounded-xl p-4 border-2 border-[#FE9200] mt-auto hover:bg-[#FFE8CC] transition-colors cursor-pointer"
+              className="bg-[#FFF5E6] rounded-lg p-3 border-2 border-[#FE9200] mt-auto hover:bg-[#FFE8CC] transition-colors cursor-pointer"
             >
-              <div className="flex flex-col items-center justify-center gap-1">
-                <Lock size={20} className="text-[#FE9200]" />
-                <p className="text-[12px] text-gray-600 text-center">
+              <div className="flex flex-col items-center justify-center gap-0.5">
+                <Lock size={16} className="text-[#FE9200]" />
+                <p className="text-[10px] text-gray-600 text-center">
                   Contact details available for
                 </p>
-                <p className="text-[13px] text-[#FE9200] font-semibold">
+                <p className="text-[11px] text-[#FE9200] font-semibold">
                   Subscribed Agents
                 </p>
               </div>
@@ -162,37 +162,87 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick }) 
   );
 };
 
+const SkeletonCardSmall = () => (
+  <div className="bg-[#FFF5E6] rounded-[16px] p-2 w-[220px] sm:w-[240px] flex-shrink-0 animate-pulse">
+    <div className="bg-white rounded-[12px] p-3 h-[280px]">
+      <div className="flex justify-between mb-3">
+        <div className="h-5 bg-gray-200 rounded-full w-24"></div>
+        <div className="h-5 bg-gray-200 rounded-full w-16"></div>
+      </div>
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
+      <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        {[1,2,3,4].map(i => (
+          <div key={i} className="h-12 bg-gray-100 rounded-lg"></div>
+        ))}
+      </div>
+      <div className="h-14 bg-gray-100 rounded-lg"></div>
+    </div>
+  </div>
+);
+
 export const LandingPage = ({ onNavigate, currentUser }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
+  const [cardWidth, setCardWidth] = useState(240);
   const trackRef = useRef(null);
+  const containerRef = useRef(null);
+  const cardRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  
+  // Drag scroll state
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [hasDragged, setHasDragged] = useState(false);
 
   const { leads, loading } = useLeads({}, true);
   const { isPremium } = useSubscription(currentUser?.uid);
 
+  // Measure actual card width from DOM to ensure drag calculations match rendered width
+  useEffect(() => {
+    if (!cardRef.current) return;
+    
+    const measureCard = () => {
+      if (cardRef.current) {
+        const width = cardRef.current.offsetWidth;
+        if (width > 0) setCardWidth(width);
+      }
+    };
+    
+    // Initial measurement
+    measureCard();
+    
+    // Re-measure on resize
+    const resizeObserver = new ResizeObserver(measureCard);
+    resizeObserver.observe(cardRef.current);
+    
+    return () => resizeObserver.disconnect();
+  }, [leads]);
+
   const displayLeads = useMemo(() => {
     return leads && leads.length > 0 ? leads : [];
   }, [leads]);
-
-  const cardWidth = 280;
-  const gap = 16;
+  const gap = 12;
   const totalCards = displayLeads.length || 1;
 
   const extendedLeads = displayLeads.length > 0 
     ? [...displayLeads, ...displayLeads.slice(0, Math.min(5, displayLeads.length))]
     : [];
 
+  // Auto-scroll effect
   useEffect(() => {
-    if (isPaused || displayLeads.length === 0) return;
+    if (isPaused || displayLeads.length === 0 || isDragging) return;
 
     const timer = setInterval(() => {
       setCurrentIndex(prev => prev + 1);
-    }, 3500);
+    }, 4000);
 
     return () => clearInterval(timer);
-  }, [isPaused, displayLeads.length]);
+  }, [isPaused, displayLeads.length, isDragging]);
 
+  // Reset carousel when reaching end
   useEffect(() => {
     if (displayLeads.length === 0) return;
     
@@ -200,6 +250,7 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
       const timeout = setTimeout(() => {
         setIsTransitioning(false);
         setCurrentIndex(0);
+        setDragOffset(0);
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             setIsTransitioning(true);
@@ -210,7 +261,92 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
     }
   }, [currentIndex, totalCards, displayLeads.length]);
 
+  // Drag handlers for smooth scrolling
+  const handleMouseDown = useCallback((e) => {
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    setHasDragged(false);
+    setIsPaused(true); // Pause auto-scroll during drag
+    setStartX(e.pageX || e.touches?.[0]?.pageX || 0);
+    setIsTransitioning(false);
+    setDragOffset(0);
+  }, []);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX || e.touches?.[0]?.pageX || 0;
+    const walk = (startX - x);
+    
+    if (Math.abs(walk) > 5) {
+      setHasDragged(true);
+    }
+    
+    setDragOffset(walk);
+  }, [isDragging, startX]);
+
+  const handleMouseUp = useCallback(() => {
+    // Use ref to get current drag state (not stale closure value)
+    const wasDragging = isDraggingRef.current;
+    
+    // Guard: only process if we were actually dragging
+    if (!wasDragging) {
+      // Not dragging, just reset pause state immediately
+      setIsPaused(false);
+      return;
+    }
+    
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    
+    // Calculate index change based on drag distance
+    const cardFullWidth = cardWidth + gap;
+    const indexChange = Math.round(dragOffset / cardFullWidth);
+    const newIndex = currentIndex + indexChange;
+    
+    // Clamp index within bounds
+    const clampedIndex = Math.max(0, Math.min(newIndex, displayLeads.length - 1));
+    
+    setIsTransitioning(true);
+    setCurrentIndex(clampedIndex);
+    setDragOffset(0);
+    
+    // Resume auto-scroll after a short delay to allow click actions
+    setTimeout(() => {
+      setIsPaused(false);
+      setHasDragged(false);
+    }, 100);
+  }, [dragOffset, cardWidth, gap, currentIndex, displayLeads.length]);
+
+  // Touch event handlers
+  const handleTouchStart = useCallback((e) => {
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    setHasDragged(false);
+    setIsPaused(true);
+    setStartX(e.touches[0].pageX);
+    setIsTransitioning(false);
+    setDragOffset(0);
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isDragging) return;
+    const x = e.touches[0].pageX;
+    const walk = (startX - x);
+    
+    if (Math.abs(walk) > 5) {
+      setHasDragged(true);
+    }
+    
+    setDragOffset(walk);
+  }, [isDragging, startX]);
+
+  const handleTouchEnd = useCallback(() => {
+    handleMouseUp();
+  }, [handleMouseUp]);
+
   const handleContactClick = async (leadId, type, phone, email) => {
+    if (hasDragged) return; // Prevent clicks after drag
     console.log(`Contact clicked: Lead ${leadId}, Type: ${type}`);
     if (type === 'phone' && phone) {
       window.location.href = `tel:${phone}`;
@@ -219,22 +355,24 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
     }
   };
 
-  const translateX = -(currentIndex * (cardWidth + gap));
+  const baseTranslateX = -(currentIndex * (cardWidth + gap));
+  const translateX = baseTranslateX - dragOffset;
   const activeIndex = displayLeads.length > 0 ? currentIndex % totalCards : 0;
 
   return (
     <div className="h-screen w-screen bg-[#F5F5F5] font-sans overflow-hidden flex flex-col">
-      <div className="px-8 pt-5 pb-3">
-        <div className="max-w-[1380px] mx-auto bg-white rounded-full shadow-sm border border-gray-100 px-8 py-2.5 flex justify-between items-center">
+      {/* Header */}
+      <div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-5 pb-2 sm:pb-3">
+        <div className="max-w-[1380px] mx-auto bg-white rounded-full shadow-sm border border-gray-100 px-4 sm:px-8 py-2 sm:py-2.5 flex justify-between items-center">
           <div className="cursor-pointer" onClick={() => onNavigate('landing')}>
-            <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-9 w-auto" />
+            <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-7 sm:h-9 w-auto" />
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {currentUser ? (
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('profile')}>
-                <span className="text-gray-700 font-medium">Hi {(currentUser.name || 'User').split(' ')[0]}</span>
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FE9200] to-[#7A00AA] flex items-center justify-center text-white font-bold">
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => onNavigate('profile')}>
+                <span className="hidden sm:block text-gray-700 font-medium text-sm">Hi {(currentUser.name || 'User').split(' ')[0]}</span>
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FE9200] to-[#7A00AA] flex items-center justify-center text-white font-bold text-sm">
                   {(currentUser.name || 'U').charAt(0)}
                 </div>
               </div>
@@ -242,15 +380,17 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
               <>
                 <button
                   onClick={() => onNavigate('tenant-form')}
-                  className="px-6 py-2.5 rounded-full bg-white border-2 border-[#FE9200] text-[#FE9200] font-semibold hover:bg-orange-50 transition-all"
+                  className="px-3 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white border-2 border-[#FE9200] text-[#FE9200] font-semibold hover:bg-orange-50 transition-all text-xs sm:text-sm whitespace-nowrap"
                 >
-                  I Need a Place to Rent
+                  <span className="hidden sm:inline">I Need a Place to Rent</span>
+                  <span className="sm:hidden">Find Home</span>
                 </button>
                 <button
                   onClick={() => onNavigate('login')}
-                  className="px-6 py-2.5 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md"
+                  className="px-3 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md text-xs sm:text-sm whitespace-nowrap"
                 >
-                  I Am An Agent
+                  <span className="hidden sm:inline">I Am An Agent</span>
+                  <span className="sm:hidden">Agent</span>
                 </button>
               </>
             )}
@@ -258,64 +398,77 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
         </div>
       </div>
 
-      <div className="flex-1 px-8 pb-5 flex flex-col min-h-0">
-        <div className="flex-1 max-w-[1380px] w-full mx-auto relative rounded-[28px] overflow-hidden shadow-xl">
+      {/* Hero Section */}
+      <div className="flex-1 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-5 flex flex-col min-h-0">
+        <div className="flex-1 max-w-[1380px] w-full mx-auto relative rounded-[20px] sm:rounded-[28px] overflow-hidden shadow-xl">
           <img
             src="/hero-section.jpg"
             alt="Modern homes"
             className="w-full h-full object-cover"
           />
 
+          {/* Gradient overlay for better card visibility */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+
+          {/* Cards carousel */}
           <div
-            className="absolute bottom-6 left-0 right-0 overflow-hidden"
+            ref={containerRef}
+            className="absolute bottom-4 sm:bottom-6 left-0 right-0 overflow-hidden touch-pan-y"
             onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
+            onMouseLeave={() => { if (isDraggingRef.current) handleMouseUp(); else setIsPaused(false); }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
           >
             <div
-              className="mx-auto overflow-hidden px-4"
+              className="mx-auto overflow-visible px-4"
               style={{ maxWidth: '1380px' }}
             >
               {loading ? (
-                <div className="flex gap-4 px-2">
+                <div className="flex gap-3 px-2">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="w-[280px] flex-shrink-0">
-                      <SkeletonCard />
-                    </div>
+                    <SkeletonCardSmall key={i} />
                   ))}
                 </div>
               ) : extendedLeads.length > 0 ? (
                 <div
                   ref={trackRef}
-                  className="flex"
+                  className="flex will-change-transform"
                   style={{
                     gap: `${gap}px`,
                     transform: `translateX(${translateX}px)`,
-                    transition: isTransitioning ? 'transform 0.5s ease-in-out' : 'none',
+                    transition: isTransitioning && !isDragging ? 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
                   }}
                 >
                   {extendedLeads.map((lead, index) => (
-                    <LeadCard 
-                      key={`${lead.id}-${index}`} 
-                      lead={lead}
-                      currentUser={currentUser}
-                      isPremium={isPremium}
-                      onNavigate={onNavigate}
-                      onContactClick={handleContactClick}
-                    />
+                    <div key={`${lead.id}-${index}`} ref={index === 0 ? cardRef : null}>
+                      <LeadCard 
+                        lead={lead}
+                        currentUser={currentUser}
+                        isPremium={isPremium}
+                        onNavigate={onNavigate}
+                        onContactClick={handleContactClick}
+                      />
+                    </div>
                   ))}
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-64 text-gray-500">
-                  <p>No property leads available yet</p>
+                <div className="flex items-center justify-center h-48 sm:h-64 text-gray-500 bg-white/80 backdrop-blur-sm rounded-xl mx-4">
+                  <p className="text-sm sm:text-base">No property leads available yet</p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
+        {/* Pagination dots */}
         {displayLeads.length > 0 && (
-          <div className="flex justify-center items-center gap-2.5 py-4">
-            {displayLeads.map((_, index) => (
+          <div className="flex justify-center items-center gap-2 py-3 sm:py-4">
+            {displayLeads.slice(0, Math.min(displayLeads.length, 8)).map((_, index) => (
               <button
                 key={index}
                 onClick={() => {
@@ -324,11 +477,14 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
                 }}
                 className={`rounded-full transition-all duration-300 ${
                   activeIndex === index
-                    ? 'bg-[#FE9200] w-3.5 h-3.5'
-                    : 'bg-gray-300 w-2.5 h-2.5 hover:bg-gray-400'
+                    ? 'bg-[#FE9200] w-3 h-3 sm:w-3.5 sm:h-3.5'
+                    : 'bg-gray-300 w-2 h-2 sm:w-2.5 sm:h-2.5 hover:bg-gray-400'
                 }`}
               />
             ))}
+            {displayLeads.length > 8 && (
+              <span className="text-xs text-gray-400 ml-1">+{displayLeads.length - 8}</span>
+            )}
           </div>
         )}
       </div>
