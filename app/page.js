@@ -14,7 +14,7 @@ import { AgentDetailPage } from '@/components/AgentDetailPage';
 import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { PropertiesPage } from '@/components/PropertiesPage';
-import { auth } from '@/lib/firebase';
+import { auth, isFirebaseReady } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/firestore';
 import { uploadImage } from '@/lib/storage';
@@ -33,6 +33,13 @@ export default function RentalLeadApp() {
   const { isPremium } = useSubscription(currentUser?.uid);
 
   useEffect(() => {
+    // Check if Firebase is initialized before setting up auth listener
+    if (!isFirebaseReady) {
+      console.warn('Firebase not initialized. Running in demo mode.');
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
@@ -140,6 +147,12 @@ export default function RentalLeadApp() {
   };
 
   const handleLogout = async () => {
+    if (!isFirebaseReady) {
+      console.warn('Firebase not initialized');
+      setCurrentUser(null);
+      setView('landing');
+      return;
+    }
     try {
       await signOut(auth);
       setCurrentUser(null);
@@ -159,6 +172,10 @@ export default function RentalLeadApp() {
   };
 
   const handleTenantSubmit = async (formData) => {
+    if (!isFirebaseReady) {
+      console.warn('Firebase not initialized. Cannot submit tenant form.');
+      return { success: false, error: 'Application is not yet configured. Please set up Firebase environment variables to enable this feature.' };
+    }
     try {
       const { createLead } = await import('@/lib/firestore');
       const { sendEmailNotification, EMAIL_TEMPLATES } = await import('@/lib/notifications');
@@ -253,6 +270,10 @@ export default function RentalLeadApp() {
   };
 
   const handleAgentRegistration = async (formData) => {
+    if (!isFirebaseReady) {
+      console.warn('Firebase not initialized. Cannot register agent.');
+      return { success: false, error: 'Application is not yet configured. Please set up Firebase environment variables to enable registration.' };
+    }
     try {
       setLoading(true);
       // 1. Create Auth User
@@ -493,6 +514,12 @@ export default function RentalLeadApp() {
 
   return (
     <main className="min-h-screen bg-white">
+      {!isFirebaseReady && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 text-center" role="alert">
+          <p className="font-medium">Demo Mode</p>
+          <p className="text-sm">Firebase is not configured. Authentication and database features are disabled. Set up Firebase environment variables to enable full functionality.</p>
+        </div>
+      )}
       {view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && view !== 'admin-dashboard' && (
         <Header 
           onNavigate={setView} 

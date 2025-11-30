@@ -150,8 +150,17 @@ Use Replit's deployment environment variable settings.
 ✅ Application is running successfully on Replit
 ✅ All dependencies installed
 ✅ Development server configured for port 5000
+✅ Graceful degradation when Firebase is not configured (Demo Mode)
 ⚠️ Firebase environment variables needed for full functionality
 ⚠️ Payment and notification services are optional
+
+### Demo Mode
+The application has been configured to run in "demo mode" when Firebase environment variables are not set:
+- Landing page displays correctly
+- UI is fully visible for preview purposes
+- Auth-dependent features show user-friendly error messages when accessed
+- No runtime errors occur when Firebase is not configured
+- Perfect for initial setup and testing the deployment configuration
 
 ### Firebase Setup Required
 The app will run but authentication, database, and storage features won't work until Firebase is configured.
