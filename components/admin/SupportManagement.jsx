@@ -78,7 +78,7 @@ export const SupportManagement = () => {
     switch (status) {
       case 'open': return 'bg-blue-100 text-blue-800';
       case 'in_progress': return 'bg-purple-100 text-purple-800';
-      case 'resolved': return 'bg-green-100 text-green-800';
+      case 'resolved': return 'bg-[#FFE4C4] text-green-800';
       case 'closed': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -185,10 +185,10 @@ export const SupportManagement = () => {
             </div>
 
             {selectedTicket.status === 'resolved' && (
-              <div className="bg-green-50 p-4 rounded-lg mb-6 border border-green-100">
+              <div className="bg-[#FFF5E6] p-4 rounded-lg mb-6 border border-[#FFE4C4]">
                 <h4 className="font-medium text-green-900 mb-1">Resolution</h4>
                 <p className="text-green-800 text-sm">{selectedTicket.resolutionNote}</p>
-                <p className="text-xs text-green-600 mt-2">
+                <p className="text-xs text-[#16A34A] mt-2">
                   Resolved at: {selectedTicket.resolvedAt?.toDate ? selectedTicket.resolvedAt.toDate().toLocaleString() : 'N/A'}
                 </p>
               </div>
@@ -206,7 +206,7 @@ export const SupportManagement = () => {
                   required
                 />
                 <div className="flex justify-end">
-                  <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">
+                  <Button type="submit" className="bg-[#16A34A] text-white hover:bg-[#15803D]">
                     <CheckCircle className="w-4 h-4 mr-2" /> Mark as Resolved
                   </Button>
                 </div>

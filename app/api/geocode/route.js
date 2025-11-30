@@ -14,8 +14,8 @@ export async function GET(request) {
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
       {
         headers: {
-          'User-Agent': 'RentConnect/1.0 (contact@rentconnect.ng)', // Updated to a more realistic email
-          'Referer': 'https://rentconnect.ng'
+          'User-Agent': 'Yoombaa/1.0 (contact@Yoombaa.ng)', // Updated to a more realistic email
+          'Referer': 'https://Yoombaa.ng'
         },
       }
     );

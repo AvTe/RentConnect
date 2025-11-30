@@ -113,7 +113,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                 <tr key={agent.id} className="hover:bg-gray-50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">
+                      <div className="w-8 h-8 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs">
                         {agent.photoURL ? (
                           <img src={agent.photoURL} alt={agent.name} className="w-full h-full rounded-full object-cover" />
                         ) : (
@@ -129,7 +129,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                   <td className="px-6 py-4 text-right">
                     <button 
                       onClick={() => onNavigate('agents-listing')} // Or specific agent profile if implemented
-                      className="text-gray-400 hover:text-emerald-600 font-medium text-xs border border-gray-200 hover:border-emerald-600 px-3 py-1.5 rounded-md transition-all"
+                      className="text-gray-400 hover:text-[#FE9200] font-medium text-xs border border-gray-200 hover:border-[#FE9200] px-3 py-1.5 rounded-md transition-all"
                     >
                       View Profile
                     </button>
@@ -170,7 +170,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
 
           {loadingRequests ? (
             <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FE9200]"></div>
             </div>
           ) : myRequests.length > 0 ? (
             <div className="grid gap-4">
@@ -188,7 +188,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                       </p>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      request.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                      request.status === 'active' ? 'bg-[#FFE4C4] text-[#15803D]' : 'bg-gray-100 text-gray-600'
                     }`}>
                       {request.status?.toUpperCase()}
                     </div>
@@ -224,7 +224,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">All Agents</h2>
-              <p className="text-gray-500 text-sm">A list of all verified agents on RentConnect.</p>
+              <p className="text-gray-500 text-sm">A list of all verified agents on Yoombaa.</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -259,7 +259,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
               <FileText className="w-4 h-4 text-gray-400" />
             </div>
             <div className="text-2xl font-bold text-gray-900">0</div>
-            <div className="mt-1 text-xs text-green-600 flex items-center">
+            <div className="mt-1 text-xs text-[#16A34A] flex items-center">
               <span className="font-medium">+0%</span>
               <span className="text-gray-400 ml-1">from last month</span>
             </div>
@@ -311,7 +311,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold">
               R
             </div>
-            <span className="font-bold text-gray-900">RentConnect</span>
+            <span className="font-bold text-gray-900">Yoombaa</span>
           </div>
 
           {/* Create Button */}
@@ -351,7 +351,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
         {/* User Profile Snippet at Bottom */}
         <div className="mt-auto p-4 border-t border-gray-200">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">
+            <div className="w-8 h-8 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs">
               {(user.name || 'U').charAt(0)}
             </div>
             <div className="flex-1 min-w-0">

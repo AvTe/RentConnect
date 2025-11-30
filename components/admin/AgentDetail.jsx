@@ -169,7 +169,7 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
           {agent.status === 'suspended' ? (
             <Button 
               onClick={() => handleAction('reactivate')}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-[#16A34A] hover:bg-[#15803D] text-white"
               disabled={loading}
             >
               <Unlock className="w-4 h-4 mr-2" /> Reactivate Account
@@ -218,7 +218,7 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
               </div>
               <div className="flex gap-2">
                 <Badge className={
-                  agent.verificationStatus === 'verified' ? 'bg-green-100 text-green-800' :
+                  agent.verificationStatus === 'verified' ? 'bg-[#FFE4C4] text-green-800' :
                   agent.verificationStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                   'bg-red-100 text-red-800'
                 }>
@@ -276,7 +276,7 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
                     <Button 
                       size="sm" 
                       onClick={() => handleAction('approve')}
-                      className="bg-green-600 hover:bg-green-700 text-white border-0"
+                      className="bg-[#16A34A] hover:bg-[#15803D] text-white border-0"
                     >
                       Approve
                     </Button>
@@ -344,7 +344,7 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
                       </p>
                     </div>
                     <div className={`font-mono font-medium ${
-                      tx.type === 'credit_add' || tx.type === 'credit_purchase' ? 'text-green-600' : 'text-red-600'
+                      tx.type === 'credit_add' || tx.type === 'credit_purchase' ? 'text-[#16A34A]' : 'text-red-600'
                     }`}>
                       {tx.type === 'credit_add' || tx.type === 'credit_purchase' ? '+' : '-'}{tx.amount}
                     </div>

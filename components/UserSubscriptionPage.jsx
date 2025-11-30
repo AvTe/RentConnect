@@ -87,8 +87,8 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
           </h3>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="bg-emerald-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Phone className="w-8 h-8 text-emerald-600" />
+              <div className="bg-[#FFE4C4] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Phone className="w-8 h-8 text-[#FE9200]" />
               </div>
               <h4 className="font-semibold text-gray-900 mb-2">Direct Contact</h4>
               <p className="text-sm text-gray-600">
@@ -123,12 +123,12 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
               key={key}
               className={`bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all ${
                 plan.popular 
-                  ? 'border-emerald-500 ring-4 ring-emerald-100 transform scale-105' 
-                  : 'border-gray-200 hover:border-emerald-300'
+                  ? 'border-[#FE9200] ring-4 ring-[#FFE4C4] transform scale-105' 
+                  : 'border-gray-200 hover:border-[#FFC482]'
               }`}
             >
               {plan.popular && (
-                <div className="bg-emerald-500 text-white text-center py-2 text-sm font-semibold">
+                <div className="bg-[#FE9200] text-white text-center py-2 text-sm font-semibold">
                   MOST POPULAR
                 </div>
               )}
@@ -139,7 +139,7 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
                     {key} Plan
                   </h3>
                   {plan.savings && (
-                    <span className="inline-block bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full mb-3">
+                    <span className="inline-block bg-[#FFE4C4] text-[#E58300] text-xs font-semibold px-3 py-1 rounded-full mb-3">
                       {plan.savings}
                     </span>
                   )}
@@ -154,7 +154,7 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
-                      <Check className="w-5 h-5 text-emerald-500 mr-2 flex-shrink-0 mt-0.5" />
+                      <Check className="w-5 h-5 text-[#FE9200] mr-2 flex-shrink-0 mt-0.5" />
                       <span className="text-gray-600 text-sm">{feature}</span>
                     </li>
                   ))}
@@ -162,7 +162,7 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
 
                 <Button 
                   onClick={() => handleSubscribe(key)}
-                  className={`w-full py-3 ${plan.popular ? 'shadow-lg shadow-emerald-200' : ''}`}
+                  className={`w-full py-3 ${plan.popular ? 'shadow-lg shadow-[#FFD4A3]' : ''}`}
                   variant={plan.popular ? 'default' : 'outline'}
                 >
                   Get Started
@@ -173,8 +173,8 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
         </div>
 
         {/* Security & Trust */}
-        <div className="bg-gradient-to-r from-blue-50 to-emerald-50 rounded-2xl p-8 text-center max-w-4xl mx-auto">
-          <Shield className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
+        <div className="bg-gradient-to-r from-blue-50 to-[#FFF5E6] rounded-2xl p-8 text-center max-w-4xl mx-auto">
+          <Shield className="w-12 h-12 text-[#FE9200] mx-auto mb-4" />
           <h3 className="text-xl font-bold text-gray-900 mb-3">
             Secure & Trusted
           </h3>
@@ -184,15 +184,15 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
           </p>
           <div className="flex items-center justify-center gap-8 text-sm text-gray-600">
             <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600" />
+              <Check className="w-4 h-4 text-[#FE9200]" />
               <span>256-bit SSL Encryption</span>
             </div>
             <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600" />
+              <Check className="w-4 h-4 text-[#FE9200]" />
               <span>Verified Agents Only</span>
             </div>
             <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600" />
+              <Check className="w-4 h-4 text-[#FE9200]" />
               <span>No Hidden Fees</span>
             </div>
           </div>

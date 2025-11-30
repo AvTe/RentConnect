@@ -144,7 +144,7 @@ export const RenterManagement = () => {
                     <td className="px-6 py-4">
                       <Badge className={
                         renter.status === 'suspended' ? 'bg-red-100 text-red-800' :
-                        'bg-green-100 text-green-800'
+                        'bg-[#FFE4C4] text-green-800'
                       }>
                         {renter.status === 'suspended' ? 'SUSPENDED' : 'ACTIVE'}
                       </Badge>

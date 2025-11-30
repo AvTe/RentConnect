@@ -2,8 +2,8 @@ import React from 'react';
 
 export const Badge = ({ children, variant = 'default', className = '' }) => {
   const variants = {
-    default: "bg-emerald-100 text-emerald-800",
-    outline: "border border-emerald-200 text-emerald-700",
+    default: "bg-[#FFE4C4] text-[#CC7400]",
+    outline: "border border-[#FFD4A3] text-[#E58300]",
     secondary: "bg-gray-100 text-gray-800"
   };
 

@@ -31,7 +31,7 @@ export const SearchFilter = ({ onSearch }) => {
       </div>
 
       {/* Filter Card */}
-      <div className="bg-white p-4 rounded-3xl rounded-tl-none shadow-xl shadow-emerald-900/5 border border-white/50 backdrop-blur-xl">
+      <div className="bg-white p-4 rounded-3xl rounded-tl-none shadow-xl shadow-[#7A00AA]/5 border border-white/50 backdrop-blur-xl">
         <div className="flex flex-col md:flex-row items-center gap-4">
           
           {/* Location Input */}

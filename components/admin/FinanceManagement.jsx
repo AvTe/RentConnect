@@ -183,7 +183,7 @@ export const FinanceManagement = () => {
                       </td>
                       <td className="px-6 py-4">
                         <Badge className={
-                          tx.type === 'credit_purchase' ? 'bg-green-100 text-green-800' :
+                          tx.type === 'credit_purchase' ? 'bg-[#FFE4C4] text-green-800' :
                           tx.type === 'lead_unlock' ? 'bg-blue-100 text-blue-800' :
                           'bg-gray-100 text-gray-800'
                         }>
@@ -299,7 +299,7 @@ export const FinanceManagement = () => {
             {bundles.map(bundle => (
               <div key={bundle.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative">
                 {bundle.popular && (
-                  <span className="absolute top-0 right-0 bg-green-500 text-white text-xs px-2 py-1 rounded-bl-lg">POPULAR</span>
+                  <span className="absolute top-0 right-0 bg-[#FE9200] text-white text-xs px-2 py-1 rounded-bl-lg">POPULAR</span>
                 )}
                 <h3 className="font-bold text-lg">{bundle.name}</h3>
                 <div className="text-2xl font-bold text-blue-600 my-2">{bundle.price}</div>

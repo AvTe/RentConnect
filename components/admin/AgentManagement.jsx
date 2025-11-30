@@ -147,7 +147,7 @@ export const AgentManagement = () => {
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
                         <Badge className={
-                          agent.verificationStatus === 'verified' ? 'bg-green-100 text-green-800 w-fit' :
+                          agent.verificationStatus === 'verified' ? 'bg-[#FFE4C4] text-green-800 w-fit' :
                           agent.verificationStatus === 'pending' ? 'bg-yellow-100 text-yellow-800 w-fit' :
                           'bg-gray-100 text-gray-800 w-fit'
                         }>

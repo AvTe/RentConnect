@@ -132,12 +132,12 @@ export const SmileIDVerification = ({ onClose, onComplete, userId }) => {
 
           {step === 'success' && (
             <div className="text-center py-12">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600">
+              <div className="w-20 h-20 bg-[#FFE4C4] rounded-full flex items-center justify-center mx-auto mb-6 text-[#16A34A]">
                 <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900">Verification Successful!</h3>
               <p className="text-gray-500 mt-2 mb-8">Your account has been verified.</p>
-              <Button onClick={onClose} className="bg-green-600 text-white px-8">
+              <Button onClick={onClose} className="bg-[#16A34A] text-white px-8">
                 Continue
               </Button>
             </div>

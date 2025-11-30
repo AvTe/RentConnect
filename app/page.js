@@ -234,7 +234,7 @@ export default function RentalLeadApp() {
         // Send confirmation email to tenant
         if (leadData.tenant_info.email) {
           const emailContent = EMAIL_TEMPLATES.TENANT_CONFIRMATION(leadData.tenant_info.name, leadData);
-          await sendEmailNotification(leadData.tenant_info.email, 'Request Submitted - RentConnect', emailContent);
+          await sendEmailNotification(leadData.tenant_info.email, 'Request Submitted - Yoombaa', emailContent);
         }
         
         // Let the form component handle the success UI

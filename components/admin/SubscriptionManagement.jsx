@@ -251,7 +251,7 @@ export const SubscriptionManagement = () => {
                       <td className="px-6 py-4 font-medium">{sub.plan}</td>
                       <td className="px-6 py-4">
                         <Badge className={
-                          sub.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          sub.status === 'active' ? 'bg-[#FFE4C4] text-green-800' : 'bg-gray-100 text-gray-800'
                         }>
                           {sub.status}
                         </Badge>

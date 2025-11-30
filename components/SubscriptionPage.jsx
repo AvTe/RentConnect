@@ -72,9 +72,9 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {bundles.map((bundle) => (
-              <div key={bundle.id} className={`bg-white rounded-2xl shadow-xl overflow-hidden border ${bundle.popular ? 'border-emerald-500 ring-2 ring-emerald-500 ring-opacity-50' : 'border-gray-200'} relative flex flex-col`}>
+              <div key={bundle.id} className={`bg-white rounded-2xl shadow-xl overflow-hidden border ${bundle.popular ? 'border-[#FE9200] ring-2 ring-[#FE9200] ring-opacity-50' : 'border-gray-200'} relative flex flex-col`}>
                 {bundle.popular && (
-                  <div className="absolute top-0 right-0 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wide">
+                  <div className="absolute top-0 right-0 bg-[#FE9200] text-white text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wide">
                     Most Popular
                   </div>
                 )}
@@ -84,7 +84,7 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
                   <div className="flex justify-center items-baseline mb-1">
                     <span className="text-4xl font-extrabold text-gray-900">₦ {parseInt(bundle.price).toLocaleString()}</span>
                   </div>
-                  <p className="text-emerald-600 font-medium text-sm mb-4">{bundle.credits} Credits</p>
+                  <p className="text-[#FE9200] font-medium text-sm mb-4">{bundle.credits} Credits</p>
                   <div className="inline-block bg-gray-100 rounded-full px-3 py-1 text-xs text-gray-500 font-medium">
                     {bundle.perLead || 'Best Value'}
                   </div>
@@ -95,7 +95,7 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
                     {(Array.isArray(bundle.features) ? bundle.features : []).map((feature, index) => (
                       <li key={index} className="flex items-start">
                         <div className="flex-shrink-0">
-                          <Check className="w-5 h-5 text-emerald-500" />
+                          <Check className="w-5 h-5 text-[#FE9200]" />
                         </div>
                         <p className="ml-3 text-gray-600 text-sm">{feature}</p>
                       </li>
@@ -104,7 +104,7 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
 
                   <Button 
                     onClick={() => onBuyCredits(bundle)}
-                    className={`w-full py-3 text-lg shadow-lg ${bundle.popular ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200' : 'bg-gray-900 hover:bg-gray-800'}`}
+                    className={`w-full py-3 text-lg shadow-lg ${bundle.popular ? 'bg-[#FE9200] hover:bg-[#E58300] shadow-[#FFD4A3]' : 'bg-gray-900 hover:bg-gray-800'}`}
                   >
                     Buy {bundle.credits} Credits
                   </Button>
@@ -118,8 +118,8 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
               <div className="flex justify-center mb-4">
-                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                  <Coins className="w-6 h-6 text-emerald-600" />
+                <div className="w-12 h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center">
+                  <Coins className="w-6 h-6 text-[#FE9200]" />
                 </div>
               </div>
               <h4 className="font-semibold text-gray-900">Pay As You Go</h4>
@@ -127,8 +127,8 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
             </div>
             <div>
               <div className="flex justify-center mb-4">
-                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-emerald-600" />
+                <div className="w-12 h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-[#FE9200]" />
                 </div>
               </div>
               <h4 className="font-semibold text-gray-900">Verified Leads Only</h4>
@@ -136,8 +136,8 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
             </div>
             <div>
               <div className="flex justify-center mb-4">
-                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-emerald-600" />
+                <div className="w-12 h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center">
+                  <Zap className="w-6 h-6 text-[#FE9200]" />
                 </div>
               </div>
               <h4 className="font-semibold text-gray-900">Instant Reveal</h4>

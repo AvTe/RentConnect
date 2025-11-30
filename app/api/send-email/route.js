@@ -14,7 +14,7 @@ export async function POST(request) {
     
     await sgMail.send({
       to,
-      from: 'noreply@rentconnect.com', // Make sure this sender is verified in SendGrid
+      from: 'noreply@Yoombaa.com', // Make sure this sender is verified in SendGrid
       subject,
       html: htmlContent
     });

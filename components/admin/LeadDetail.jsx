@@ -57,7 +57,7 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
           ) : (
             <Button 
               onClick={() => handleAction('activate')}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-[#16A34A] hover:bg-[#15803D] text-white"
               disabled={loading}
             >
               <CheckCircle className="w-4 h-4 mr-2" /> Reactivate
@@ -89,7 +89,7 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
                 </div>
               </div>
               <Badge className={
-                lead.status === 'active' ? 'bg-green-100 text-green-800' : 
+                lead.status === 'active' ? 'bg-[#FFE4C4] text-green-800' : 
                 lead.status === 'closed' ? 'bg-gray-100 text-gray-800' : 
                 'bg-red-100 text-red-800'
               }>

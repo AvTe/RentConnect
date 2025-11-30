@@ -162,7 +162,7 @@ export const RenterDetail = ({ renter, onBack, onUpdate }) => {
           {renter.status === 'suspended' ? (
             <Button 
               onClick={() => handleAction('reactivate')}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-[#16A34A] hover:bg-[#15803D] text-white"
               disabled={loading}
             >
               <Unlock className="w-4 h-4 mr-2" /> Reactivate Account
@@ -211,7 +211,7 @@ export const RenterDetail = ({ renter, onBack, onUpdate }) => {
               </div>
               <div className="flex gap-2">
                 <Badge className={
-                  renter.status === 'active' ? 'bg-green-100 text-green-800' :
+                  renter.status === 'active' ? 'bg-[#FFE4C4] text-green-800' :
                   renter.status === 'suspended' ? 'bg-red-100 text-red-800' :
                   'bg-gray-100 text-gray-800'
                 }>
@@ -263,7 +263,7 @@ export const RenterDetail = ({ renter, onBack, onUpdate }) => {
                         {req.requirements?.property_type} in {req.requirements?.location}
                       </h4>
                       <Badge className={
-                        req.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                        req.status === 'active' ? 'bg-[#FFE4C4] text-green-800' : 'bg-gray-100 text-gray-600'
                       }>
                         {req.status}
                       </Badge>

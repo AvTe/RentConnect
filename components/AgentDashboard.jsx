@@ -110,11 +110,11 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
       onClick={() => setActiveTab(id)}
       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
         active 
-          ? 'bg-emerald-50 text-emerald-700 shadow-sm' 
+          ? 'bg-[#FFF5E6] text-[#E58300] shadow-sm' 
           : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
       }`}
     >
-      <Icon className={`w-4 h-4 ${active ? 'text-emerald-600' : 'text-gray-500'}`} />
+      <Icon className={`w-4 h-4 ${active ? 'text-[#FE9200]' : 'text-gray-500'}`} />
       {label}
     </button>
   );
@@ -123,16 +123,16 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
     if (activeTab === 'referrals') {
       return (
         <div className="space-y-6">
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-8 text-white relative overflow-hidden">
+          <div className="bg-gradient-to-r from-[#FE9200] to-teal-600 rounded-2xl p-8 text-white relative overflow-hidden">
             <div className="relative z-10 max-w-xl">
               <h2 className="text-3xl font-bold mb-4">Invite Agents, Get Free Credits</h2>
-              <p className="text-emerald-100 text-lg mb-8">
+              <p className="text-[#FFE4C4] text-lg mb-8">
                 Share your referral code with other agents. When they sign up, you both get 5 free credits!
               </p>
               
               <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 flex flex-col sm:flex-row items-center gap-4">
                 <div className="flex-1 text-center sm:text-left">
-                  <p className="text-sm text-emerald-200 mb-1">Your Referral Code</p>
+                  <p className="text-sm text-[#FFD4A3] mb-1">Your Referral Code</p>
                   <p className="text-3xl font-mono font-bold tracking-wider">{referralCode || 'GEN123'}</p>
                 </div>
                 <Button 
@@ -140,7 +140,7 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
                     navigator.clipboard.writeText(referralCode || 'GEN123');
                     alert('Code copied to clipboard!');
                   }}
-                  className="bg-white text-emerald-600 hover:bg-emerald-50 border-0"
+                  className="bg-white text-[#FE9200] hover:bg-[#FFF5E6] border-0"
                 >
                   <Copy className="w-4 h-4 mr-2" />
                   Copy Code
@@ -157,28 +157,28 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
             
             {/* Decorative circles */}
             <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-48 h-48 bg-emerald-500/20 rounded-full blur-2xl"></div>
+            <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-48 h-48 bg-[#FE9200]/20 rounded-full blur-2xl"></div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 className="font-bold text-gray-900 mb-4">How it works</h3>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="text-center">
-                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto mb-4">
+                <div className="w-12 h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mx-auto mb-4">
                   <Share2 className="w-6 h-6" />
                 </div>
                 <h4 className="font-semibold mb-2">1. Share Code</h4>
                 <p className="text-sm text-gray-500">Send your unique code to fellow real estate agents.</p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto mb-4">
+                <div className="w-12 h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mx-auto mb-4">
                   <User className="w-6 h-6" />
                 </div>
                 <h4 className="font-semibold mb-2">2. They Sign Up</h4>
                 <p className="text-sm text-gray-500">They enter your code during their registration process.</p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mx-auto mb-4">
+                <div className="w-12 h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mx-auto mb-4">
                   <Coins className="w-6 h-6" />
                 </div>
                 <h4 className="font-semibold mb-2">3. Earn Credits</h4>
@@ -202,7 +202,7 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
               <h2 className="text-2xl font-bold text-gray-900">My Properties</h2>
               <p className="text-gray-500 text-sm">Manage your property listings</p>
             </div>
-            <Button className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700">
+            <Button className="flex items-center gap-2 bg-[#FE9200] hover:bg-[#E58300]">
               <Plus className="w-4 h-4" />
               Add New Property
             </Button>
@@ -215,7 +215,7 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
                   <ImageIcon className="w-12 h-12 text-gray-300" />
                   <div className="absolute top-4 right-4">
                     <Badge className={
-                      property.status === 'Active' ? 'bg-green-100 text-green-800 border-green-200' :
+                      property.status === 'Active' ? 'bg-[#FFE4C4] text-green-800 border-[#D4F3D4]' :
                       property.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
                       'bg-gray-100 text-gray-800 border-gray-200'
                     }>
@@ -227,10 +227,10 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
                   <h3 className="font-semibold text-lg text-gray-900 mb-1">{property.name}</h3>
                   <p className="text-gray-500 text-sm mb-4">{property.location}</p>
                   <div className="flex justify-between items-center mb-6">
-                    <span className="font-bold text-emerald-600 text-lg">{property.price}</span>
+                    <span className="font-bold text-[#FE9200] text-lg">{property.price}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <Button className="flex items-center justify-center gap-2 text-xs h-9 bg-emerald-600 hover:bg-emerald-700 text-white">
+                    <Button className="flex items-center justify-center gap-2 text-xs h-9 bg-[#FE9200] hover:bg-[#E58300] text-white">
                       <Edit className="w-3 h-3" /> Edit
                     </Button>
                     <Button variant="outline" className="flex items-center justify-center gap-2 text-xs h-9">
@@ -289,7 +289,7 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
                 </div>
                 
                 <div className="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold">
+                  <div className="w-10 h-10 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold">
                     {(lead.tenant_info?.name || lead.name || 'U').charAt(0)}
                   </div>
                   <div>
@@ -311,7 +311,7 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
                       href={lead.tenant_info?.whatsapp_link || `https://wa.me/${lead.tenant_info?.whatsapp || lead.whatsapp}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors text-sm"
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-[#FE9200] text-white rounded-lg hover:bg-[#E58300] font-medium transition-colors text-sm"
                     >
                       <MessageCircle className="w-4 h-4" />
                       Chat
@@ -358,8 +358,8 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
             <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold">
               R
             </div>
-            <span className="font-bold text-gray-900">RentConnect</span>
-            <Badge className="ml-auto bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] px-1.5">Agent</Badge>
+            <span className="font-bold text-gray-900">Yoombaa</span>
+            <Badge className="ml-auto bg-[#FFE4C4] text-[#E58300] border-[#FFD4A3] text-[10px] px-1.5">Agent</Badge>
           </div>
 
           {/* Wallet Balance Card */}
@@ -412,13 +412,13 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
         {/* User Profile Snippet at Bottom */}
         <div className="p-4 border-t border-gray-200 mt-auto">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">
+            <div className="w-8 h-8 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs">
               {(agent.name || 'A').charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1">
                 <p className="text-sm font-medium text-gray-900 truncate">{agent.name || 'Agent'}</p>
-                {isVerified && <ShieldCheck className="w-3 h-3 text-emerald-500" />}
+                {isVerified && <ShieldCheck className="w-3 h-3 text-[#FE9200]" />}
                 {isPending && <ShieldAlert className="w-3 h-3 text-yellow-500" />}
               </div>
               <p className="text-xs text-gray-500 truncate">{agent.agencyName}</p>

@@ -102,7 +102,7 @@ export async function POST(request) {
     const client = twilio(accountSid, authToken);
     
     await client.messages.create({
-      body: `Your RentConnect verification code is: ${otp}. This code expires in 5 minutes. Do not share this code with anyone.`,
+      body: `Your Yoombaa verification code is: ${otp}. This code expires in 5 minutes. Do not share this code with anyone.`,
       from: twilioPhoneNumber,
       to: phoneNumber
     });

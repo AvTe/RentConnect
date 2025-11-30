@@ -85,20 +85,20 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all overflow-hidden">
         {/* Header with cover image */}
-        <div className="h-32 bg-gradient-to-r from-emerald-400 to-blue-500 relative">
+        <div className="h-32 bg-gradient-to-r from-[#FFB461] to-blue-500 relative">
           <div className="absolute -bottom-12 left-6">
             <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-lg flex items-center justify-center">
               {agent.photoURL ? (
                 <img src={agent.photoURL} alt={agent.name} className="w-full h-full rounded-full object-cover" />
               ) : (
-                <span className="text-3xl font-bold text-emerald-600">
+                <span className="text-3xl font-bold text-[#FE9200]">
                   {agent.name?.charAt(0) || 'A'}
                 </span>
               )}
             </div>
           </div>
           {agent.verified && (
-            <Badge className="absolute top-4 right-4 bg-white text-emerald-600 border-emerald-600">
+            <Badge className="absolute top-4 right-4 bg-white text-[#FE9200] border-[#FE9200]">
               <CheckCircle className="w-3 h-3 mr-1" />
               Verified
             </Badge>
@@ -154,7 +154,7 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
                 {agent.phone && (
                   <div className="flex items-center text-sm text-gray-600">
                     <Phone className="w-4 h-4 mr-2 text-gray-400" />
-                    <a href={`tel:${agent.phone}`} className="hover:text-emerald-600">
+                    <a href={`tel:${agent.phone}`} className="hover:text-[#FE9200]">
                       {agent.phone}
                     </a>
                   </div>
@@ -162,7 +162,7 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
                 {agent.email && (
                   <div className="flex items-center text-sm text-gray-600">
                     <Mail className="w-4 h-4 mr-2 text-gray-400" />
-                    <a href={`mailto:${agent.email}`} className="hover:text-emerald-600 truncate">
+                    <a href={`mailto:${agent.email}`} className="hover:text-[#FE9200] truncate">
                       {agent.email}
                     </a>
                   </div>
@@ -227,10 +227,10 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white py-12 px-4">
+      <div className="bg-gradient-to-r from-[#FE9200] to-blue-600 text-white py-12 px-4">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold mb-4">Find Your Perfect Agent</h1>
-          <p className="text-lg text-emerald-50 mb-8">
+          <p className="text-lg text-[#FFF5E6] mb-8">
             Connect with verified real estate professionals in your area
           </p>
 
@@ -245,7 +245,7 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-gray-900"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none text-gray-900"
                 />
               </div>
               <Button onClick={handleSearch} className="px-8">
@@ -310,7 +310,7 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-8">
             <div className="text-center mb-6">
-              <Lock className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
+              <Lock className="w-16 h-16 text-[#FE9200] mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
                 Unlock Agent Contacts
               </h3>
@@ -319,10 +319,10 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
               </p>
             </div>
 
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
+            <div className="bg-[#FFF5E6] border border-[#FFD4A3] rounded-lg p-4 mb-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-gray-700 font-medium">Premium Access</span>
-                <span className="text-2xl font-bold text-emerald-600">KSh 5,000/mo</span>
+                <span className="text-2xl font-bold text-[#FE9200]">KSh 5,000/mo</span>
               </div>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>✓ View all agent contact details</li>

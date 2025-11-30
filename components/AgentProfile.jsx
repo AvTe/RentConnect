@@ -25,7 +25,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
       <div className="p-6 border-b border-gray-100 flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-900">Edit Agent Profile</h2>
         {isVerified && (
-          <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium">
+          <div className="flex items-center gap-2 px-3 py-1 bg-[#FFF5E6] text-[#E58300] rounded-full text-sm font-medium">
             <ShieldCheck className="w-4 h-4" />
             Verified Agent
           </div>
@@ -45,7 +45,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
             <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-2xl font-bold border-4 border-white shadow-md">
               {(formData.name || 'A').charAt(0)}
             </div>
-            <button type="button" className="absolute bottom-0 right-0 bg-emerald-600 text-white p-2 rounded-full hover:bg-emerald-700 transition-colors shadow-sm">
+            <button type="button" className="absolute bottom-0 right-0 bg-[#FE9200] text-white p-2 rounded-full hover:bg-[#E58300] transition-colors shadow-sm">
               <Camera className="w-4 h-4" />
             </button>
           </div>
@@ -64,7 +64,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>
@@ -77,7 +77,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 type="text"
                 value={formData.agencyName}
                 onChange={(e) => setFormData({...formData, agencyName: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>
@@ -90,7 +90,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>
@@ -103,7 +103,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>
@@ -118,7 +118,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 placeholder="e.g. 5"
                 value={formData.experience}
                 onChange={(e) => setFormData({...formData, experience: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>
@@ -132,7 +132,7 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
                 placeholder="e.g. Lekki, Lagos"
                 value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
           </div>

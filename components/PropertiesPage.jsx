@@ -97,7 +97,7 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
               <input 
                 type="text" 
                 placeholder="Search location..." 
-                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FE9200]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -111,7 +111,7 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
 
         {loading ? (
           <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FE9200]"></div>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -127,7 +127,7 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
                         {lead.requirements?.location || 'Location not specified'}
                       </div>
                     </div>
-                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100">
+                    <Badge className="bg-[#FFF5E6] text-[#E58300] border-[#FFE4C4]">
                       {lead.requirements?.budget ? `₦${parseInt(lead.requirements.budget).toLocaleString()}` : 'Budget N/A'}
                     </Badge>
                   </div>
@@ -152,20 +152,20 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
                   <div className="relative">
                     {currentUser?.type === 'agent' ? (
                       isLeadUnlocked(lead.id) ? (
-                        <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100 animate-in fade-in">
+                        <div className="bg-[#FFF5E6] rounded-xl p-4 border border-[#FFE4C4] animate-in fade-in">
                           <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 rounded-full bg-emerald-200 flex items-center justify-center text-emerald-800 font-bold">
+                            <div className="w-10 h-10 rounded-full bg-[#FFD4A3] flex items-center justify-center text-[#CC7400] font-bold">
                               {(lead.tenant_info?.name || 'U').charAt(0)}
                             </div>
                             <div>
                               <p className="font-bold text-gray-900">{lead.tenant_info?.name || 'Tenant'}</p>
-                              <p className="text-xs text-emerald-700">Verified Tenant</p>
+                              <p className="text-xs text-[#E58300]">Verified Tenant</p>
                             </div>
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             <a 
                               href={`tel:${lead.tenant_info?.phone}`}
-                              className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors text-sm font-medium"
+                              className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-[#FFD4A3] text-[#E58300] rounded-lg hover:bg-[#FFE4C4] transition-colors text-sm font-medium"
                             >
                               <Phone className="w-4 h-4" /> Call
                             </a>
@@ -173,7 +173,7 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
                               href={lead.tenant_info?.whatsapp_link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
+                              className="flex items-center justify-center gap-2 px-3 py-2 bg-[#FE9200] text-white rounded-lg hover:bg-[#E58300] transition-colors text-sm font-medium"
                             >
                               <MessageCircle className="w-4 h-4" /> WhatsApp
                             </a>
@@ -216,7 +216,7 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
                           <Button 
                             variant="link" 
                             onClick={() => onNavigate('login')}
-                            className="text-emerald-600 p-0 h-auto font-medium mt-1"
+                            className="text-[#FE9200] p-0 h-auto font-medium mt-1"
                           >
                             Agent Login
                           </Button>

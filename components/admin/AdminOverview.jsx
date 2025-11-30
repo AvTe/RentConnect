@@ -74,14 +74,14 @@ export const AdminOverview = () => {
           value={stats?.totalLeads || 0} 
           subtext={`${stats?.openLeads || 0} Active • ${stats?.dailyUnlocks || 0} Unlocks (24h)`}
           icon={FileText} 
-          colorClass="bg-emerald-600 text-emerald-600" 
+          colorClass="bg-[#FE9200] text-[#FE9200]" 
         />
         <StatCard 
           title="System Revenue (30d)" 
           value={`₦ ${(stats?.revenueLast30Days || 0).toLocaleString()}`} 
           subtext={`Wallet Balance: ₦ ${(stats?.totalWalletBalance || 0).toLocaleString()}`}
           icon={DollarSign} 
-          colorClass="bg-green-600 text-green-600" 
+          colorClass="bg-[#16A34A] text-[#16A34A]" 
         />
       </div>
 
@@ -104,7 +104,7 @@ export const AdminOverview = () => {
                 <div key={item.id} className="flex gap-4">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                     item.type === 'signup' ? 'bg-blue-100 text-blue-600' :
-                    item.type === 'transaction' ? 'bg-green-100 text-green-600' :
+                    item.type === 'transaction' ? 'bg-[#FFE4C4] text-[#16A34A]' :
                     'bg-orange-100 text-orange-600'
                   }`}>
                     {item.type === 'signup' && <UserPlus className="w-5 h-5" />}
@@ -134,15 +134,15 @@ export const AdminOverview = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Payment Gateway</span>
-                <Badge className="bg-green-100 text-green-800 border-green-200">Operational</Badge>
+                <Badge className="bg-[#FFE4C4] text-green-800 border-[#D4F3D4]">Operational</Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Verification API</span>
-                <Badge className="bg-green-100 text-green-800 border-green-200">Operational</Badge>
+                <Badge className="bg-[#FFE4C4] text-green-800 border-[#D4F3D4]">Operational</Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Database</span>
-                <Badge className="bg-green-100 text-green-800 border-green-200">Healthy</Badge>
+                <Badge className="bg-[#FFE4C4] text-green-800 border-[#D4F3D4]">Healthy</Badge>
               </div>
             </div>
           </div>

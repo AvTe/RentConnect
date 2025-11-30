@@ -103,7 +103,7 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FE9200]"></div>
       </div>
     );
   }
@@ -122,11 +122,11 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white">
+      <div className="bg-gradient-to-r from-[#FE9200] to-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <button 
             onClick={onBack}
-            className="flex items-center text-white hover:text-emerald-100 mb-6"
+            className="flex items-center text-white hover:text-[#FFE4C4] mb-6"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Agents
@@ -139,13 +139,13 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
                 {agent.photoURL ? (
                   <img src={agent.photoURL} alt={agent.name} className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  <span className="text-5xl font-bold text-emerald-600">
+                  <span className="text-5xl font-bold text-[#FE9200]">
                     {agent.name?.charAt(0) || 'A'}
                   </span>
                 )}
               </div>
               {(agent.verified || agent.verificationStatus === 'verified') && (
-                <div className="absolute -bottom-2 -right-2 bg-emerald-500 rounded-full p-2 border-4 border-white">
+                <div className="absolute -bottom-2 -right-2 bg-[#FE9200] rounded-full p-2 border-4 border-white">
                   <CheckCircle className="w-6 h-6 text-white" />
                 </div>
               )}
@@ -156,17 +156,17 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold">{agent.name}</h1>
                 {(agent.verified || agent.verificationStatus === 'verified') && (
-                  <Badge className="bg-white text-emerald-600">Verified</Badge>
+                  <Badge className="bg-white text-[#FE9200]">Verified</Badge>
                 )}
               </div>
               {agent.agencyName && (
-                <p className="text-emerald-100 flex items-center gap-2 mb-2">
+                <p className="text-[#FFE4C4] flex items-center gap-2 mb-2">
                   <Building2 className="w-5 h-5" />
                   {agent.agencyName}
                 </p>
               )}
               {agent.location && (
-                <p className="text-emerald-100 flex items-center gap-2">
+                <p className="text-[#FFE4C4] flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
                   {agent.location}
                 </p>
@@ -178,7 +178,7 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
               {currentUser?.role === 'agent' && currentUser.uid !== agent.id && (
                 <Button 
                   variant="outline" 
-                  className="bg-white text-emerald-600 hover:bg-emerald-50"
+                  className="bg-white text-[#FE9200] hover:bg-[#FFF5E6]"
                   onClick={handleConnect}
                 >
                   <Users className="w-5 h-5 mr-2" />
@@ -188,7 +188,7 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
               {currentUser?.role === 'user' && (
                 <Button 
                   variant="outline" 
-                  className="bg-white text-emerald-600 hover:bg-emerald-50"
+                  className="bg-white text-[#FE9200] hover:bg-[#FFF5E6]"
                   onClick={() => setShowInquiryForm(true)}
                 >
                   <MessageCircle className="w-5 h-5 mr-2" />
@@ -219,7 +219,7 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Rating</span>
-                  <span className="font-bold text-emerald-600 flex items-center gap-1">
+                  <span className="font-bold text-[#FE9200] flex items-center gap-1">
                     <Star className="w-4 h-4 fill-current" />
                     {agent.rating || '4.5'}
                   </span>
@@ -235,7 +235,7 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
                   {agent.phone && (
                     <div className="flex items-center gap-3">
                       <Phone className="w-5 h-5 text-gray-400" />
-                      <a href={`tel:${agent.phone}`} className="text-emerald-600 hover:underline">
+                      <a href={`tel:${agent.phone}`} className="text-[#FE9200] hover:underline">
                         {agent.phone}
                       </a>
                     </div>
@@ -243,7 +243,7 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
                   {agent.email && (
                     <div className="flex items-center gap-3">
                       <Mail className="w-5 h-5 text-gray-400" />
-                      <a href={`mailto:${agent.email}`} className="text-emerald-600 hover:underline truncate">
+                      <a href={`mailto:${agent.email}`} className="text-[#FE9200] hover:underline truncate">
                         {agent.email}
                       </a>
                     </div>
@@ -270,7 +270,7 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Experience</h3>
                 <div className="flex items-center gap-3">
-                  <Award className="w-5 h-5 text-emerald-600" />
+                  <Award className="w-5 h-5 text-[#FE9200]" />
                   <span className="text-gray-700">{agent.experience}</span>
                 </div>
               </div>
@@ -307,7 +307,7 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
                           {property.location}
                         </p>
                         <div className="flex items-center justify-between">
-                          <span className="text-lg font-bold text-emerald-600">
+                          <span className="text-lg font-bold text-[#FE9200]">
                             KSh {property.price?.toLocaleString()}
                           </span>
                           <Button size="sm" variant="outline">View Details</Button>
@@ -335,7 +335,7 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
               value={inquiryMessage}
               onChange={(e) => setInquiryMessage(e.target.value)}
               placeholder="Type your message here..."
-              className="w-full h-32 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none mb-4"
+              className="w-full h-32 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none resize-none mb-4"
             />
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">

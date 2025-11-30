@@ -273,7 +273,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
           <button 
             type="button"
             onClick={handleUseCurrentLocation}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#FE9200] transition-colors"
             title="Use current location"
           >
             {isLocating ? <Loader2 className="w-5 h-5 animate-spin" /> : <MapPin className="w-5 h-5" />}
@@ -281,7 +281,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
           <input
             type="text"
             autoFocus
-            className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-emerald-500 focus:ring-0 outline-none transition-all shadow-sm"
+            className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm"
             placeholder="e.g. Yaba, Lagos"
             value={formData.location}
             onChange={(e) => setFormData({...formData, location: e.target.value})}
@@ -292,7 +292,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
       <Button 
         onClick={handleNext} 
         disabled={!formData.location}
-        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+        className="w-full py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2"
       >
         Next Step <ChevronRight className="w-5 h-5" />
       </Button>
@@ -316,12 +316,12 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
               }}
               className={`p-4 rounded-xl border-2 text-left transition-all flex flex-col gap-2 ${
                 formData.type === type.id
-                  ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500'
-                  : 'border-gray-100 hover:border-emerald-200 hover:bg-gray-50'
+                  ? 'border-[#FE9200] bg-[#FFF5E6] ring-1 ring-[#FE9200]'
+                  : 'border-gray-100 hover:border-[#FFD4A3] hover:bg-gray-50'
               }`}
             >
               <span className="text-2xl">{type.icon}</span>
-              <span className={`font-medium ${formData.type === type.id ? 'text-emerald-900' : 'text-gray-700'}`}>
+              <span className={`font-medium ${formData.type === type.id ? 'text-[#7A00AA]' : 'text-gray-700'}`}>
                 {type.label}
               </span>
             </button>
@@ -331,7 +331,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
       <Button 
         onClick={handleNext} 
         disabled={!formData.type}
-        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+        className="w-full py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2"
       >
         Next Step <ChevronRight className="w-5 h-5" />
       </Button>
@@ -348,7 +348,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
           <input
             type="text"
             autoFocus
-            className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-emerald-500 focus:ring-0 outline-none transition-all shadow-sm"
+            className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm"
             placeholder="e.g. 1,500,000"
             value={formData.budget}
             onChange={(e) => setFormData({...formData, budget: e.target.value})}
@@ -359,7 +359,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
       <Button 
         onClick={handleNext} 
         disabled={!formData.budget}
-        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+        className="w-full py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2"
       >
         Next Step <ChevronRight className="w-5 h-5" />
       </Button>
@@ -384,7 +384,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
               <input
                 type="text"
                 required
-                className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-emerald-500 focus:ring-0 outline-none transition-all shadow-sm"
+                className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm"
                 placeholder="John Doe"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -399,7 +399,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
               <input
                 type="email"
                 required
-                className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-emerald-500 focus:ring-0 outline-none transition-all shadow-sm"
+                className="w-full pl-12 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm"
                 placeholder="john@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -423,10 +423,10 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
                   }
                 }}
                 disabled={verificationStep === 'verified' || verificationStep === 'sent'}
-                className="w-full pl-4 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus-within:border-emerald-500 focus-within:ring-0 transition-all shadow-sm [&>input]:outline-none [&>input]:bg-transparent [&>input]:w-full [&>input]:ml-2"
+                className="w-full pl-4 pr-4 py-4 border-2 border-gray-100 rounded-xl text-lg text-gray-900 focus-within:border-[#FE9200] focus-within:ring-0 transition-all shadow-sm [&>input]:outline-none [&>input]:bg-transparent [&>input]:w-full [&>input]:ml-2"
               />
               {verificationStep === 'verified' && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500">
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[#FE9200]">
                   <ShieldCheck className="w-6 h-6" />
                 </div>
               )}
@@ -444,7 +444,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
                 <button
                   type="button"
                   onClick={handleSendOtp}
-                  className="text-sm font-medium text-emerald-600 hover:text-emerald-700 underline"
+                  className="text-sm font-medium text-[#FE9200] hover:text-[#E58300] underline"
                 >
                   Verify this number
                 </button>
@@ -490,7 +490,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
                     type="button"
                     onClick={() => handleVerifyOtp()}
                     disabled={otp.length !== 6 || verificationStep === 'verifying'}
-                    className="w-full bg-emerald-600 text-white py-3 rounded-lg font-medium"
+                    className="w-full bg-[#FE9200] text-white py-3 rounded-lg font-medium"
                   >
                     {verificationStep === 'verifying' ? (
                       <span className="flex items-center justify-center gap-2">
@@ -520,7 +520,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
                       <button
                         type="button"
                         onClick={handleSendOtp}
-                        className="text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1"
+                        className="text-[#FE9200] hover:text-[#E58300] font-medium flex items-center gap-1"
                       >
                         <RefreshCw className="w-4 h-4" /> Resend Code
                       </button>
@@ -536,16 +536,16 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
               {verificationStep === 'verifying' && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2 bg-gray-50 rounded-xl p-4 border border-gray-100">
                   <div className="text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-2" />
+                    <Loader2 className="w-8 h-8 animate-spin text-[#FE9200] mx-auto mb-2" />
                     <p className="text-sm text-gray-600">Verifying your code...</p>
                   </div>
                 </div>
               )}
 
               {verificationStep === 'verified' && (
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3">
-                  <ShieldCheck className="w-5 h-5 text-green-600" />
-                  <p className="text-sm text-green-700 font-medium">Phone number verified successfully</p>
+                <div className="flex items-center gap-2 bg-[#FFF5E6] border border-[#D4F3D4] rounded-lg p-3">
+                  <ShieldCheck className="w-5 h-5 text-[#16A34A]" />
+                  <p className="text-sm text-[#15803D] font-medium">Phone number verified successfully</p>
                 </div>
               )}
             </div>
@@ -556,7 +556,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
       <Button 
         type="submit" 
         disabled={!formData.name || !isValidEmail(formData.email) || verificationStep !== 'verified' || isSubmitting}
-        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting ? (
           <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -569,7 +569,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
 
   const renderSuccess = () => (
     <div className="text-center py-12 animate-in zoom-in duration-500">
-      <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 shadow-xl shadow-green-100">
+      <div className="w-24 h-24 bg-[#FFE4C4] rounded-full flex items-center justify-center mx-auto mb-6 text-[#16A34A] shadow-xl shadow-[#FFE4C4]">
         <Check className="w-12 h-12 stroke-[3]" />
       </div>
       <h2 className="text-3xl font-bold text-gray-900 mb-4">Congratulations! 🎉</h2>
@@ -579,7 +579,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
       <div className="flex flex-col gap-3 max-w-xs mx-auto">
         <Button 
           onClick={() => onNavigate('landing')} 
-          className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium"
+          className="w-full py-3 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-medium"
         >
           Back to Home
         </Button>
@@ -633,7 +633,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-emerald-500 transition-all duration-500 ease-out"
+                className="h-full bg-[#FE9200] transition-all duration-500 ease-out"
                 style={{ width: `${(step / 4) * 100}%` }}
               ></div>
             </div>
@@ -649,7 +649,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
       {/* Right Side - Image/Testimonial */}
       <div className="hidden md:flex md:w-1/2 bg-[#0f172a] relative items-center justify-center p-12 text-white overflow-hidden">
          {/* Background Gradient/Image */}
-         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 to-slate-900 z-0"></div>
+         <div className="absolute inset-0 bg-gradient-to-br from-[#7A00AA] to-slate-900 z-0"></div>
          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1484154218962-a1c002085d2f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80')] opacity-20 bg-cover bg-center mix-blend-overlay"></div>
          
          <div className="relative z-10 max-w-lg">
@@ -658,13 +658,13 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
             </h2>
             <div className="space-y-4">
                <p className="text-lg text-gray-300 italic leading-relaxed">
-                  &quot;I posted my requirements and got 3 amazing options within hours. Found my new place the same day! RentConnect is a lifesaver.&quot;
+                  &quot;I posted my requirements and got 3 amazing options within hours. Found my new place the same day! Yoombaa is a lifesaver.&quot;
                </p>
                <div className="flex items-center gap-4 mt-8">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-emerald-900/20">C</div>
+                  <div className="w-12 h-12 rounded-full bg-[#FE9200] flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-[#7A00AA]/20">C</div>
                   <div>
                      <p className="font-semibold text-white">Chioma Egwu</p>
-                     <p className="text-sm text-emerald-200">Tenant in Yaba</p>
+                     <p className="text-sm text-[#FFD4A3]">Tenant in Yaba</p>
                   </div>
                </div>
             </div>
@@ -673,7 +673,7 @@ export const TenantForm = ({ onNavigate, onSubmit, initialData, currentUser, onU
             <div className="mt-16 pt-8 border-t border-white/10 flex gap-8 opacity-40 grayscale">
                <div className="flex items-center gap-2">
                  <Building2 className="w-6 h-6" />
-                 <span className="font-bold text-lg">RentConnect</span>
+                 <span className="font-bold text-lg">Yoombaa</span>
                </div>
                <div className="flex items-center gap-2">
                  <span className="font-bold text-lg">Paystack</span>

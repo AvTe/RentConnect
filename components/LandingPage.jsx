@@ -1,25 +1,125 @@
 /* eslint-disable @next/next/no-img-element */
-import React, { useState } from 'react';
-import { MapPin } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 
-export const LandingPage = ({ onNavigate, onSearch, currentUser }) => {
-  const [location, setLocation] = useState('');
-  const [pincode, setPincode] = useState('');
+// Sample leads for carousel
+const sampleLeads = [
+  { id: 1, type: 'Mini Flat', location: 'Bengaluru, Karnataka', budget: '1500000', contactCount: 5 },
+  { id: 2, type: 'Mini Flat', location: 'Bengaluru, Karnataka', budget: '2500000', contactCount: 8 },
+  { id: 3, type: 'Mini Flat', location: 'Bengaluru, Karnataka', budget: '800000', contactCount: 3 },
+  { id: 4, type: 'Mini Flat', location: 'Bengaluru, Karnataka', budget: '1200000', contactCount: 6 },
+  { id: 5, type: 'Mini Flat', location: 'Bengaluru, Karnataka', budget: '3500000', contactCount: 2 },
+];
 
-  const handleSearch = () => {
-    onSearch({ location, pincode });
+// Lead Card matching mockup EXACTLY
+const LeadCard = ({ lead }) => {
+  const formatBudget = (amount) => {
+    const num = parseInt(amount?.toString().replace(/[^0-9]/g, '') || '0');
+    if (num >= 100000) return `₦${(num / 100000).toFixed(1)}L`;
+    return `₦${num.toLocaleString()}`;
   };
 
   return (
-    <div className="h-screen w-screen bg-white font-sans overflow-hidden relative flex flex-col">
-      
-      {/* Floating Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 px-4 pt-6">
-        <div className="max-w-7xl mx-auto bg-white rounded-full shadow-[0_2px_20px_rgba(0,0,0,0.04)] border border-gray-100 px-8 py-4 flex justify-between items-center">
+    <div className="bg-[#FFF5E6] rounded-[20px] p-2 w-[200px] flex-shrink-0">
+      <div className="bg-white rounded-[16px] overflow-hidden border-b-[5px] border-[#FE9200] h-full flex flex-col">
+        {/* Content area with padding */}
+        <div className="p-3 flex flex-col flex-1">
+          {/* Badges at top */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="bg-[#E8F5E9] text-[#2E7D32] px-2.5 py-1 rounded-full text-[10px] font-medium">
+              {lead.contactCount} Contacts
+            </span>
+            <span className="bg-[#FE9200] text-white px-2.5 py-1 rounded-full text-[10px] font-semibold">
+              {formatBudget(lead.budget)}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h3 className="text-base font-bold text-gray-900 mb-0.5">{lead.type}</h3>
+          <p className="text-xs text-gray-400 mb-3">{lead.location}</p>
+
+          {/* 2x2 Specs Grid */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-[#F8F8F8] rounded-xl px-2.5 py-2">
+                <p className="text-[9px] text-gray-500 mb-0.5">Specification:</p>
+                <p className="text-[9px] text-[#FE9200] font-medium">Housing type With</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Contact Section */}
+          <div className="bg-[#FFF5E6] rounded-xl p-2.5 border-2 border-[#FE9200] mt-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 text-center">
+                <p className="text-[8px] text-gray-600 font-medium">Leads Mobile Number</p>
+                <p className="text-[8px] text-gray-400">With Icons</p>
+              </div>
+              <div className="w-px h-6 bg-[#FE9200] mx-2" />
+              <div className="flex-1 text-center">
+                <p className="text-[8px] text-gray-600 font-medium">Leads Email</p>
+                <p className="text-[8px] text-gray-400">With Icons</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const LandingPage = ({ onNavigate, currentUser }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+  const trackRef = useRef(null);
+
+  const cardWidth = 200;
+  const gap = 16;
+  const totalCards = sampleLeads.length;
+
+  // Create extended array for infinite loop (clone first few cards at end)
+  const extendedLeads = [...sampleLeads, ...sampleLeads.slice(0, 5)];
+
+  // Auto-scroll every 3.5 seconds
+  useEffect(() => {
+    if (isPaused) return;
+
+    const timer = setInterval(() => {
+      setCurrentIndex(prev => prev + 1);
+    }, 3500);
+
+    return () => clearInterval(timer);
+  }, [isPaused]);
+
+  // Handle infinite loop reset
+  useEffect(() => {
+    if (currentIndex >= totalCards) {
+      // Wait for transition to complete, then instantly reset
+      const timeout = setTimeout(() => {
+        setIsTransitioning(false);
+        setCurrentIndex(0);
+        // Re-enable transition after reset
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setIsTransitioning(true);
+          });
+        });
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [currentIndex, totalCards]);
+
+  const translateX = -(currentIndex * (cardWidth + gap));
+  const activeIndex = currentIndex % totalCards;
+
+  return (
+    <div className="h-screen w-screen bg-[#F5F5F5] font-sans overflow-hidden flex flex-col">
+      {/* Header - optimized for 1420px */}
+      <div className="px-8 pt-5 pb-3">
+        <div className="max-w-[1380px] mx-auto bg-white rounded-full shadow-sm border border-gray-100 px-8 py-2.5 flex justify-between items-center">
           {/* Logo */}
-          <div className="text-xl font-bold tracking-tight cursor-pointer" onClick={() => onNavigate('landing')}>
-            <span className="text-gray-900">Rent-</span>
-            <span className="text-[#8B5CF6]">Connect</span>
+          <div className="cursor-pointer" onClick={() => onNavigate('landing')}>
+            <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-9 w-auto" />
           </div>
 
           {/* Right Actions */}
@@ -27,29 +127,23 @@ export const LandingPage = ({ onNavigate, onSearch, currentUser }) => {
             {currentUser ? (
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => onNavigate('profile')}>
                 <span className="text-gray-700 font-medium">Hi 👋 {(currentUser.name || 'User').split(' ')[0]}</span>
-                <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm">
-                  {currentUser.avatar ? (
-                    <img src={currentUser.avatar} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[#8B5CF6] to-[#7C3AED] flex items-center justify-center text-white font-bold">
-                      {(currentUser.name || 'U').charAt(0)}
-                    </div>
-                  )}
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FE9200] to-[#7A00AA] flex items-center justify-center text-white font-bold">
+                  {(currentUser.name || 'U').charAt(0)}
                 </div>
               </div>
             ) : (
               <>
-                <button 
+                <button
                   onClick={() => onNavigate('tenant-form')}
-                  className="hidden md:block px-6 py-2.5 rounded-full bg-white border border-[#8B5CF6] text-[#8B5CF6] font-medium hover:bg-purple-50 transition-all"
+                  className="px-6 py-2.5 rounded-full bg-white border-2 border-[#FE9200] text-[#FE9200] font-semibold hover:bg-orange-50 transition-all"
                 >
-                  I Need a place to rent
+                  I Need a Place to Rent
                 </button>
-                <button 
+                <button
                   onClick={() => onNavigate('login')}
-                  className="px-6 py-2.5 rounded-full bg-[#8B5CF6] text-white font-medium hover:bg-[#7C3AED] transition-all shadow-lg shadow-purple-200"
+                  className="px-6 py-2.5 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md"
                 >
-                  I am an Agent
+                  I Am An Agent
                 </button>
               </>
             )}
@@ -57,63 +151,59 @@ export const LandingPage = ({ onNavigate, onSearch, currentUser }) => {
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="flex-1 relative flex flex-col items-center justify-center">
-        
-        {/* Background Circles/Gradient */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-           <div className="w-[500px] h-[500px] bg-emerald-50/80 rounded-full blur-3xl absolute -top-20"></div>
-           <div className="w-[800px] h-[800px] border border-emerald-50 rounded-full absolute"></div>
-           <div className="w-[1100px] h-[1100px] border border-emerald-50 rounded-full absolute"></div>
-           <div className="w-[1400px] h-[1400px] border border-emerald-50 rounded-full absolute"></div>
-           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 to-white"></div>
+      {/* Hero Section - optimized for 1420px */}
+      <div className="flex-1 px-8 pb-5 flex flex-col min-h-0">
+        <div className="flex-1 max-w-[1380px] w-full mx-auto relative rounded-[28px] overflow-hidden shadow-xl">
+          {/* Hero Image */}
+          <img
+            src="/hero-section.jpg"
+            alt="Modern homes"
+            className="w-full h-full object-cover"
+          />
+
+          {/* Cards Carousel at Bottom - Same width as hero */}
+          <div
+            className="absolute bottom-6 left-0 right-0 overflow-hidden"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+          >
+            <div
+              className="mx-auto overflow-hidden px-4"
+              style={{ maxWidth: '1380px' }}
+            >
+              <div
+                ref={trackRef}
+                className="flex"
+                style={{
+                  gap: `${gap}px`,
+                  transform: `translateX(${translateX}px)`,
+                  transition: isTransitioning ? 'transform 0.5s ease-in-out' : 'none',
+                }}
+              >
+                {extendedLeads.map((lead, index) => (
+                  <LeadCard key={`${lead.id}-${index}`} lead={lead} />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="relative z-10 text-center max-w-5xl mx-auto px-4 mt-10">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-black mb-4 tracking-tight leading-tight">
-            Find Your Perfect Home.
-          </h1>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-16 tracking-tight">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#A78BFA] to-[#8B5CF6]">Without the Hassle</span>
-          </h2>
-
-          {/* Search Bar */}
-          <div className="bg-white p-2 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 max-w-3xl mx-auto flex flex-col md:flex-row items-center gap-2 relative z-20">
-            
-            {/* Location Input */}
-            <div className="flex-1 w-full flex items-center px-6 py-3 border-b md:border-b-0 md:border-r border-gray-100">
-              <div className="bg-emerald-100/50 p-2 rounded-full mr-4">
-                <MapPin className="w-5 h-5 text-emerald-600" />
-              </div>
-              <input
-                id="location-input"
-                type="text"
-                placeholder="Search Location"
-                className="w-full outline-none text-gray-900 placeholder-gray-400 bg-transparent text-lg"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-              />
-            </div>
-
-            {/* Pincode Input */}
-            <div className="flex-1 w-full flex items-center px-6 py-3">
-              <input
-                type="text"
-                placeholder="Search By Pincode..."
-                className="w-full outline-none text-gray-900 placeholder-gray-400 bg-transparent text-lg"
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value)}
-              />
-            </div>
-
-            {/* Search Button */}
-            <button 
-              onClick={handleSearch}
-              className="w-full md:w-auto bg-[#8B5CF6] hover:bg-[#7C3AED] text-white px-10 py-4 rounded-full font-medium transition-all duration-200 shadow-lg shadow-purple-200 text-lg"
-            >
-              Search
-            </button>
-          </div>
+        {/* Pagination Dots */}
+        <div className="flex justify-center items-center gap-2.5 py-4">
+          {sampleLeads.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setIsTransitioning(true);
+                setCurrentIndex(index);
+              }}
+              className={`rounded-full transition-all duration-300 ${
+                activeIndex === index
+                  ? 'bg-[#FE9200] w-3.5 h-3.5'
+                  : 'bg-gray-300 w-2.5 h-2.5 hover:bg-gray-400'
+              }`}
+            />
+          ))}
         </div>
       </div>
     </div>

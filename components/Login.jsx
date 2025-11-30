@@ -243,7 +243,7 @@ export const Login = ({ onNavigate, onLogin }) => {
               {isRegistering ? 'Create an account' : 'Welcome Back!'}
             </h2>
             <p className="text-gray-500 mb-8">
-              {isRegistering ? 'Join RentConnect to find your home' : 'Sign in to access your dashboard'}
+              {isRegistering ? 'Join Yoombaa to find your home' : 'Sign in to access your dashboard'}
             </p>
 
             {/* User Type Toggle */}
@@ -281,7 +281,7 @@ export const Login = ({ onNavigate, onLogin }) => {
             )}
             
             {successMessage && (
-              <div className="mb-4 p-3 bg-green-50 text-green-600 text-sm rounded-lg border border-green-100">
+              <div className="mb-4 p-3 bg-[#FFF5E6] text-[#16A34A] text-sm rounded-lg border border-[#FFE4C4]">
                 {successMessage}
               </div>
             )}
@@ -357,7 +357,7 @@ export const Login = ({ onNavigate, onLogin }) => {
                <Button 
                  type="submit" 
                  disabled={loading}
-                 className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-lg shadow-emerald-100 transition-all"
+                 className="w-full py-3 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-lg font-medium shadow-lg shadow-[#FFE4C4] transition-all"
                >
                  {loading ? 'Processing...' : (isRegistering ? 'Sign Up' : 'Sign In')}
                </Button>
@@ -395,7 +395,7 @@ export const Login = ({ onNavigate, onLogin }) => {
       {/* Right Side - Image/Testimonial */}
       <div className="hidden md:flex md:w-1/2 bg-[#0f172a] relative items-center justify-center p-12 text-white overflow-hidden">
          {/* Background Gradient/Image */}
-         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 to-slate-900 z-0"></div>
+         <div className="absolute inset-0 bg-gradient-to-br from-[#7A00AA] to-slate-900 z-0"></div>
          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80')] opacity-20 bg-cover bg-center mix-blend-overlay"></div>
          
          <div className="relative z-10 max-w-lg">
@@ -404,13 +404,13 @@ export const Login = ({ onNavigate, onLogin }) => {
             </h2>
             <div className="space-y-4">
                <p className="text-lg text-gray-300 italic leading-relaxed">
-                  &quot;RentConnect transformed my house hunting experience. I found a verified apartment in Lagos within 2 days! The process was seamless and secure.&quot;
+                  &quot;Yoombaa transformed my house hunting experience. I found a verified apartment in Lagos within 2 days! The process was seamless and secure.&quot;
                </p>
                <div className="flex items-center gap-4 mt-8">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-emerald-900/20">S</div>
+                  <div className="w-12 h-12 rounded-full bg-[#FE9200] flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-[#7A00AA]/20">S</div>
                   <div>
                      <p className="font-semibold text-white">Sarah Johnson</p>
-                     <p className="text-sm text-emerald-200">Tenant in Lekki</p>
+                     <p className="text-sm text-[#FFD4A3]">Tenant in Lekki</p>
                   </div>
                </div>
             </div>
@@ -419,7 +419,7 @@ export const Login = ({ onNavigate, onLogin }) => {
             <div className="mt-16 pt-8 border-t border-white/10 flex gap-8 opacity-40 grayscale">
                <div className="flex items-center gap-2">
                  <Building2 className="w-6 h-6" />
-                 <span className="font-bold text-lg">RentConnect</span>
+                 <span className="font-bold text-lg">Yoombaa</span>
                </div>
                <div className="flex items-center gap-2">
                  <span className="font-bold text-lg">Paystack</span>

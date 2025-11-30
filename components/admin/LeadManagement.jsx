@@ -143,7 +143,7 @@ export const LeadManagement = () => {
                     </td>
                     <td className="px-6 py-4">
                       <Badge className={
-                        lead.status === 'active' ? 'bg-green-100 text-green-800' : 
+                        lead.status === 'active' ? 'bg-[#FFE4C4] text-green-800' : 
                         lead.status === 'closed' ? 'bg-gray-100 text-gray-800' : 
                         'bg-red-100 text-red-800'
                       }>

@@ -143,7 +143,7 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
                     </Button>
                     <Button 
                       onClick={() => handleApproveAgent(agent.id)}
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="bg-[#16A34A] hover:bg-[#15803D] text-white"
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Approve

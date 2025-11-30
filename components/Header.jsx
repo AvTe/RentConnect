@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/Button';
-import { Building2, User, LogOut, LayoutDashboard, Settings, ChevronDown, Menu, X } from 'lucide-react';
+import { User, LogOut, LayoutDashboard, Settings, ChevronDown, Menu, X } from 'lucide-react';
 
 export const Header = ({ onNavigate, currentUser, onLogout }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -35,12 +36,11 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <div 
-            className="flex items-center gap-1 cursor-pointer" 
+          <div
+            className="flex items-center gap-1 cursor-pointer"
             onClick={() => handleNavigate('landing')}
           >
-            <span className="text-xl font-bold text-gray-900 tracking-tight">Rent-</span>
-            <span className="text-xl font-bold text-[#8B5CF6] tracking-tight">Connect</span>
+            <img src="/yoombaa-logo.png" alt="Yoombaa" className="h-8 sm:h-10 w-auto" />
           </div>
 
           {/* Desktop Navigation */}
@@ -110,10 +110,10 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
               </div>
             ) : (
               <div className="ml-4">
-                <button 
+                <button
                   type="button"
                   onClick={() => handleNavigate('login')}
-                  className="bg-black text-white rounded-full px-8 py-2 text-sm font-medium hover:bg-gray-800 transition-all shadow-sm hover:shadow-md"
+                  className="bg-[#FE9200] text-white rounded-full px-8 py-2 text-sm font-medium hover:bg-[#E58300] transition-all shadow-sm hover:shadow-md"
                 >
                   Register
                 </button>
@@ -137,15 +137,15 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 px-4 pt-2 pb-4 shadow-lg absolute w-full left-0 top-20">
           <div className="flex flex-col space-y-2 mb-4">
-             <button onClick={() => handleNavigate('landing')} className="text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-black hover:bg-gray-50 rounded-lg transition-colors">Home</button>
-             <button className="text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-black hover:bg-gray-50 rounded-lg transition-colors">Properties</button>
-             <button className="text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-black hover:bg-gray-50 rounded-lg transition-colors">Agents</button>
+             <button onClick={() => handleNavigate('landing')} className="text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#FE9200] hover:bg-orange-50 rounded-lg transition-colors">Home</button>
+             <button onClick={() => handleNavigate('properties')} className="text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#FE9200] hover:bg-orange-50 rounded-lg transition-colors">Properties</button>
+             <button onClick={() => handleNavigate('agents-listing')} className="text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#FE9200] hover:bg-orange-50 rounded-lg transition-colors">Agents</button>
           </div>
 
           {currentUser ? (
             <div className="space-y-1 border-t border-gray-100 pt-4">
               <div className="flex items-center gap-3 px-3 py-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white font-semibold">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FE9200] to-[#7A00AA] flex items-center justify-center text-white font-semibold">
                   {currentUser.avatar || (currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U')}
                 </div>
                 <div>
@@ -153,24 +153,24 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
                   <p className="text-xs text-gray-500">{currentUser.email}</p>
                 </div>
               </div>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => handleNavigate(currentUser.type === 'agent' ? 'agent-dashboard' : 'user-dashboard')}
-                className="w-full justify-start hover:bg-gray-50"
+                className="w-full justify-start hover:bg-orange-50 hover:text-[#FE9200]"
               >
                 <LayoutDashboard className="w-4 h-4 mr-2" />
                 Dashboard
               </Button>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => handleNavigate('profile')}
-                className="w-full justify-start hover:bg-gray-50"
+                className="w-full justify-start hover:bg-orange-50 hover:text-[#FE9200]"
               >
                 <User className="w-4 h-4 mr-2" />
                 Profile
               </Button>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={handleLogout}
                 className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
               >
@@ -180,10 +180,10 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
             </div>
           ) : (
             <div className="space-y-3 mt-2 border-t border-gray-100 pt-4">
-              <button 
+              <button
                 type="button"
                 onClick={() => handleNavigate('login')}
-                className="w-full flex justify-center py-2 rounded-full bg-black text-white text-sm font-medium hover:bg-gray-800 transition-all shadow-sm"
+                className="w-full flex justify-center py-2 rounded-full bg-[#FE9200] text-white text-sm font-medium hover:bg-[#E58300] transition-all shadow-sm"
               >
                 Register
               </button>

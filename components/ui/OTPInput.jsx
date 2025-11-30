@@ -155,8 +155,8 @@ export const OTPInput = ({
             bg-white text-gray-900
             ${disabled ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}
             ${error ? 'border-red-400 shake' : 'border-gray-200'}
-            ${digit ? 'border-emerald-500 bg-emerald-50' : ''}
-            focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100
+            ${digit ? 'border-[#FE9200] bg-[#FFF5E6]' : ''}
+            focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4]
           `}
           aria-label={`Digit ${index + 1} of ${length}`}
         />

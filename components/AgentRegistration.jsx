@@ -46,7 +46,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                 <input
                   type="text"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   placeholder="John Doe"
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
@@ -61,7 +61,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                 <input
                   type="text"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   placeholder="Lagos Homes Ltd."
                   value={formData.agencyName}
                   onChange={(e) => setFormData({...formData, agencyName: e.target.value})}
@@ -77,7 +77,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                   <input
                     type="email"
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                     placeholder="agent@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -92,7 +92,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                   <input
                     type="tel"
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                     placeholder="+234..."
                     value={formData.phone}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
@@ -108,7 +108,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                 <input
                   type="password"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -123,7 +123,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                 <input
                   type="text"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   placeholder="e.g. Lekki, Lagos"
                   value={formData.location}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
@@ -137,7 +137,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   placeholder="e.g. JOH1234"
                   value={formData.referralCode}
                   onChange={(e) => setFormData({...formData, referralCode: e.target.value})}
@@ -147,7 +147,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Government ID (NIN, Passport, or Driver&apos;s License)</label>
-              <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-emerald-500 transition-colors text-center cursor-pointer">
+              <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-[#FE9200] transition-colors text-center cursor-pointer">
                 <input
                   type="file"
                   required
@@ -159,7 +159,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                   <Upload className="w-8 h-8 text-gray-400" />
                   <p className="text-sm text-gray-500">
                     {formData.idDocument ? (
-                      <span className="text-emerald-600 font-medium">{formData.idDocument.name}</span>
+                      <span className="text-[#FE9200] font-medium">{formData.idDocument.name}</span>
                     ) : (
                       <span>Click to upload or drag and drop</span>
                     )}
@@ -171,14 +171,14 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
 
             <Button 
               type="submit" 
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-lg shadow-emerald-100 transition-all mt-4"
+              className="w-full py-3 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-lg font-medium shadow-lg shadow-[#FFE4C4] transition-all mt-4"
             >
               Create Agent Account
             </Button>
             
             <p className="text-center text-sm text-gray-500 mt-4">
               Already have an account? 
-              <button onClick={() => onNavigate('login')} className="ml-1 font-semibold text-emerald-600 hover:underline">
+              <button onClick={() => onNavigate('login')} className="ml-1 font-semibold text-[#FE9200] hover:underline">
                 Sign In
               </button>
             </p>
@@ -189,22 +189,22 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
       {/* Right Side - Image/Testimonial */}
       <div className="hidden md:flex md:w-1/2 bg-[#0f172a] relative items-center justify-center p-12 text-white overflow-hidden">
          {/* Background Gradient/Image */}
-         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 to-slate-900 z-0"></div>
+         <div className="absolute inset-0 bg-gradient-to-br from-[#7A00AA] to-slate-900 z-0"></div>
          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1073&q=80')] opacity-20 bg-cover bg-center mix-blend-overlay"></div>
          
          <div className="relative z-10 max-w-lg">
             <h2 className="text-4xl font-bold mb-6 leading-tight">
-               Grow your real estate business with RentConnect.
+               Grow your real estate business with Yoombaa.
             </h2>
             <div className="space-y-4">
                <p className="text-lg text-gray-300 italic leading-relaxed">
-                  &quot;Since joining RentConnect, my lead conversion rate has doubled. The quality of tenants is unmatched and the platform is so easy to use.&quot;
+                  &quot;Since joining Yoombaa, my lead conversion rate has doubled. The quality of tenants is unmatched and the platform is so easy to use.&quot;
                </p>
                <div className="flex items-center gap-4 mt-8">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-emerald-900/20">D</div>
+                  <div className="w-12 h-12 rounded-full bg-[#FE9200] flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-[#7A00AA]/20">D</div>
                   <div>
                      <p className="font-semibold text-white">David Okon</p>
-                     <p className="text-sm text-emerald-200">Agent in Ikeja</p>
+                     <p className="text-sm text-[#FFD4A3]">Agent in Ikeja</p>
                   </div>
                </div>
             </div>
@@ -213,7 +213,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
             <div className="mt-16 pt-8 border-t border-white/10 flex gap-8 opacity-40 grayscale">
                <div className="flex items-center gap-2">
                  <Building2 className="w-6 h-6" />
-                 <span className="font-bold text-lg">RentConnect</span>
+                 <span className="font-bold text-lg">Yoombaa</span>
                </div>
                <div className="flex items-center gap-2">
                  <span className="font-bold text-lg">Paystack</span>

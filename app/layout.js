@@ -10,8 +10,14 @@ const dmSans = DM_Sans({
 })
 
 export const metadata = {
-  title: 'RentConnect',
-  description: 'Direct-to-agent rental marketplace',
+  title: 'Yoombaa - Find Your Perfect Home',
+  description: 'Yoombaa connects tenants with trusted agents. Find your perfect rental property without the hassle.',
+  keywords: 'rental, apartments, housing, agents, tenants, property rental',
+  openGraph: {
+    title: 'Yoombaa - Find Your Perfect Home',
+    description: 'Connect with trusted agents and find your perfect rental property.',
+    siteName: 'Yoombaa',
+  },
 }
 
 export default function RootLayout({ children }) {

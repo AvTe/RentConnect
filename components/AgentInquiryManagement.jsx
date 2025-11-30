@@ -60,7 +60,7 @@ export const AgentInquiryManagement = ({ agentId, agentName }) => {
     const statusMap = {
       pending: { icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50', label: 'Pending' },
       responded: { icon: CheckCircle, color: 'text-blue-600', bg: 'bg-blue-50', label: 'Responded' },
-      closed: { icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50', label: 'Closed' },
+      closed: { icon: CheckCircle, color: 'text-[#FE9200]', bg: 'bg-[#FFF5E6]', label: 'Closed' },
       rejected: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-50', label: 'Rejected' }
     };
     return statusMap[status] || statusMap.pending;
@@ -82,7 +82,7 @@ export const AgentInquiryManagement = ({ agentId, agentName }) => {
             Manage inquiries from users. Note: User contact details are private.
           </p>
         </div>
-        <Badge className="bg-emerald-100 text-emerald-700">
+        <Badge className="bg-[#FFE4C4] text-[#E58300]">
           {inquiries.length} Total Leads
         </Badge>
       </div>
@@ -110,7 +110,7 @@ export const AgentInquiryManagement = ({ agentId, agentName }) => {
             onClick={() => setFilterStatus(status)}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               filterStatus === status
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-[#FE9200] text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -178,8 +178,8 @@ export const AgentInquiryManagement = ({ agentId, agentName }) => {
                 </div>
 
                 {inquiry.response && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-3">
-                    <p className="text-xs text-emerald-700 font-medium mb-1">Your Response:</p>
+                  <div className="bg-[#FFF5E6] border border-[#FFD4A3] rounded-lg p-3 mb-3">
+                    <p className="text-xs text-[#E58300] font-medium mb-1">Your Response:</p>
                     <p className="text-gray-700 text-sm">{inquiry.response}</p>
                   </div>
                 )}
@@ -248,7 +248,7 @@ export const AgentInquiryManagement = ({ agentId, agentName }) => {
                 value={responseMessage}
                 onChange={(e) => setResponseMessage(e.target.value)}
                 placeholder="Type your response here..."
-                className="w-full h-32 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
+                className="w-full h-32 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none resize-none"
               />
             </div>
 
