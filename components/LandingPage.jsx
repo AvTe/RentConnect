@@ -1,63 +1,76 @@
 /* eslint-disable @next/next/no-img-element */
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useLeads, useSubscription } from '@/lib/hooks';
-import { trackAgentLeadContact } from '@/lib/firestore';
-import { SkeletonCard } from '@/components/ui/Skeleton';
-import { 
-  Home, 
-  MapPin, 
-  Clock, 
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
+import { useLeads, useSubscription } from "@/lib/hooks";
+import { trackAgentLeadContact } from "@/lib/firestore";
+import {
+  Home,
+  MapPin,
+  Clock,
   Zap,
   Phone,
   Mail,
   Users,
   Lock,
-  CheckCircle
-} from 'lucide-react';
+  CheckCircle,
+} from "lucide-react";
 
-const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick, isMobile }) => {
+const LeadCard = ({
+  lead,
+  currentUser,
+  isPremium,
+  onNavigate,
+  onContactClick,
+  isMobile,
+}) => {
   const formatBudget = (amount) => {
-    const num = parseInt(amount?.toString().replace(/[^0-9]/g, '') || '0');
+    const num = parseInt(amount?.toString().replace(/[^0-9]/g, "") || "0");
     if (num >= 1000000) return `KSh ${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `KSh ${(num / 1000).toFixed(0)}K`;
     return `KSh ${num.toLocaleString()}`;
   };
 
-  const propertyType = lead?.requirements?.property_type || lead?.type || 'Property';
-  const location = lead?.requirements?.location || lead?.location || 'Location';
-  const budget = lead?.requirements?.budget || lead?.budget || '0';
+  const propertyType =
+    lead?.requirements?.property_type || lead?.type || "Property";
+  const location = lead?.requirements?.location || lead?.location || "Location";
+  const budget = lead?.requirements?.budget || lead?.budget || "0";
   const contactCount = lead?.contacts || 0;
-  const tenantPhone = lead?.tenant_info?.phone || '';
-  const tenantEmail = lead?.tenant_info?.email || '';
-  const status = lead?.status || 'active';
-  const area = lead?.requirements?.area || location.split(',')[0] || 'N/A';
+  const tenantPhone = lead?.tenant_info?.phone || "";
+  const tenantEmail = lead?.tenant_info?.email || "";
+  const status = lead?.status || "active";
+  const area = lead?.requirements?.area || location.split(",")[0] || "N/A";
 
   const handleOverlayClick = () => {
     if (!currentUser) {
-      onNavigate('login');
+      onNavigate("login");
       return;
     }
     if (!isPremium) {
-      onNavigate('subscription');
+      onNavigate("subscription");
       return;
     }
   };
 
   const handleContactClick = async (type) => {
     if (!currentUser) {
-      onNavigate('login');
+      onNavigate("login");
       return;
     }
 
     if (!isPremium) {
-      onNavigate('subscription');
+      onNavigate("subscription");
       return;
     }
-    
+
     await trackAgentLeadContact(currentUser.uid, lead.id, type);
-    
+
     if (onContactClick) {
       await onContactClick(lead.id, type, tenantPhone, tenantEmail);
     }
@@ -71,7 +84,6 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick, is
       <div className="bg-[#FFF5E6] rounded-xl p-1.5 w-[calc(50vw-28px)] flex-shrink-0 select-none">
         <div className="bg-white rounded-lg overflow-hidden border-b-[3px] border-[#FE9200] h-full flex flex-col shadow-sm">
           <div className="p-2 flex flex-col flex-1">
-            
             {/* Top badges - compact */}
             <div className="flex items-center justify-between mb-1.5 gap-1">
               <div className="flex items-center gap-0.5 bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">
@@ -86,29 +98,42 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick, is
             </div>
 
             {/* Property info - compact */}
-            <h3 className="text-xs font-bold text-gray-900 mb-0.5 truncate leading-tight">{propertyType}</h3>
+            <h3 className="text-xs font-bold text-gray-900 mb-0.5 truncate leading-tight">
+              {propertyType}
+            </h3>
             <p className="text-[9px] text-gray-500 mb-2 truncate">{location}</p>
 
             {/* Icon-based info grid - 2x2 compact */}
             <div className="grid grid-cols-2 gap-1 mb-2">
               <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
                 <Home size={10} className="text-[#FE9200] flex-shrink-0" />
-                <span className="text-[8px] text-gray-700 truncate font-medium">{propertyType.split(' ')[0]}</span>
+                <span className="text-[8px] text-gray-700 truncate font-medium">
+                  {propertyType.split(" ")[0]}
+                </span>
               </div>
-              
+
               <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
                 <MapPin size={10} className="text-[#FE9200] flex-shrink-0" />
-                <span className="text-[8px] text-gray-700 truncate font-medium">{area.split(' ')[0]}</span>
+                <span className="text-[8px] text-gray-700 truncate font-medium">
+                  {area.split(" ")[0]}
+                </span>
               </div>
-              
+
               <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
-                <CheckCircle size={10} className="text-[#2E7D32] flex-shrink-0" />
-                <span className="text-[8px] text-[#2E7D32] capitalize font-medium">{status}</span>
+                <CheckCircle
+                  size={10}
+                  className="text-[#2E7D32] flex-shrink-0"
+                />
+                <span className="text-[8px] text-[#2E7D32] capitalize font-medium">
+                  {status}
+                </span>
               </div>
-              
+
               <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
                 <Zap size={10} className="text-[#FE9200] flex-shrink-0" />
-                <span className="text-[8px] text-gray-700 font-medium">Ready</span>
+                <span className="text-[8px] text-gray-700 font-medium">
+                  Ready
+                </span>
               </div>
             </div>
 
@@ -117,14 +142,14 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick, is
               <div className="bg-[#E8F5E9] rounded-lg p-1.5 mt-auto">
                 <div className="flex items-center justify-around">
                   <button
-                    onClick={() => handleContactClick('phone')}
+                    onClick={() => handleContactClick("phone")}
                     className="flex items-center justify-center w-7 h-7 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors"
                   >
                     <Phone size={12} className="text-white" />
                   </button>
                   <div className="w-px h-5 bg-[#2E7D32]/30" />
                   <button
-                    onClick={() => handleContactClick('email')}
+                    onClick={() => handleContactClick("email")}
                     className="flex items-center justify-center w-7 h-7 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors"
                   >
                     <Mail size={12} className="text-white" />
@@ -138,7 +163,9 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick, is
               >
                 <div className="flex items-center justify-center gap-1">
                   <Lock size={10} className="text-[#FE9200]" />
-                  <span className="text-[8px] text-[#FE9200] font-semibold">Subscribe</span>
+                  <span className="text-[8px] text-[#FE9200] font-semibold">
+                    Subscribe
+                  </span>
                 </div>
               </button>
             )}
@@ -153,7 +180,6 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick, is
     <div className="bg-[#FFF5E6] rounded-[16px] p-2 w-[240px] flex-shrink-0 select-none">
       <div className="bg-white rounded-[12px] overflow-hidden border-b-4 border-[#FE9200] h-full flex flex-col shadow-sm">
         <div className="p-3 flex flex-col flex-1">
-          
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1.5 rounded-full">
               <Users size={11} className="text-[#2E7D32]" />
@@ -166,7 +192,9 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick, is
             </span>
           </div>
 
-          <h3 className="text-base font-bold text-gray-900 mb-0.5 truncate">{propertyType}</h3>
+          <h3 className="text-base font-bold text-gray-900 mb-0.5 truncate">
+            {propertyType}
+          </h3>
           <p className="text-xs text-gray-500 mb-3 truncate">{location}</p>
 
           <div className="grid grid-cols-2 gap-2 mb-3">
@@ -175,31 +203,39 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick, is
                 <Home size={11} className="text-gray-400" />
                 <span className="text-[9px] text-gray-400">Type</span>
               </div>
-              <p className="text-[11px] text-[#2E7D32] font-semibold truncate">{propertyType}</p>
+              <p className="text-[11px] text-[#2E7D32] font-semibold truncate">
+                {propertyType}
+              </p>
             </div>
-            
+
             <div className="bg-[#F5F5F5] rounded-lg p-2">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <MapPin size={11} className="text-gray-400" />
                 <span className="text-[9px] text-gray-400">Area</span>
               </div>
-              <p className="text-[11px] text-[#2E7D32] font-semibold truncate">{area}</p>
+              <p className="text-[11px] text-[#2E7D32] font-semibold truncate">
+                {area}
+              </p>
             </div>
-            
+
             <div className="bg-[#F5F5F5] rounded-lg p-2">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <Clock size={11} className="text-gray-400" />
                 <span className="text-[9px] text-gray-400">Status</span>
               </div>
-              <p className="text-[11px] text-[#2E7D32] font-semibold capitalize">{status}</p>
+              <p className="text-[11px] text-[#2E7D32] font-semibold capitalize">
+                {status}
+              </p>
             </div>
-            
+
             <div className="bg-[#F5F5F5] rounded-lg p-2">
               <div className="flex items-center gap-1.5 mb-0.5">
                 <Zap size={11} className="text-gray-400" />
                 <span className="text-[9px] text-gray-400">Ready</span>
               </div>
-              <p className="text-[11px] text-[#2E7D32] font-semibold">Available</p>
+              <p className="text-[11px] text-[#2E7D32] font-semibold">
+                Available
+              </p>
             </div>
           </div>
 
@@ -207,23 +243,27 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick, is
             <div className="bg-[#E8F5E9] rounded-lg p-2.5 border-2 border-[#2E7D32] mt-auto">
               <div className="flex items-center justify-around">
                 <button
-                  onClick={() => handleContactClick('phone')}
+                  onClick={() => handleContactClick("phone")}
                   className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity"
                 >
                   <div className="w-6 h-6 rounded-full bg-[#2E7D32] flex items-center justify-center">
                     <Phone size={11} className="text-white" />
                   </div>
-                  <span className="text-[8px] text-[#2E7D32] font-medium">Call</span>
+                  <span className="text-[8px] text-[#2E7D32] font-medium">
+                    Call
+                  </span>
                 </button>
                 <div className="w-px h-8 bg-[#2E7D32]/30" />
                 <button
-                  onClick={() => handleContactClick('email')}
+                  onClick={() => handleContactClick("email")}
                   className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity"
                 >
                   <div className="w-6 h-6 rounded-full bg-[#2E7D32] flex items-center justify-center">
                     <Mail size={11} className="text-white" />
                   </div>
-                  <span className="text-[8px] text-[#2E7D32] font-medium">Email</span>
+                  <span className="text-[8px] text-[#2E7D32] font-medium">
+                    Email
+                  </span>
                 </button>
               </div>
             </div>
@@ -261,7 +301,7 @@ const SkeletonCardSmall = ({ isMobile }) => {
           <div className="h-3 bg-gray-200 rounded w-3/4 mb-1"></div>
           <div className="h-2 bg-gray-200 rounded w-1/2 mb-2"></div>
           <div className="grid grid-cols-2 gap-1 mb-2">
-            {[1,2,3,4].map(i => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-6 bg-gray-100 rounded"></div>
             ))}
           </div>
@@ -281,7 +321,7 @@ const SkeletonCardSmall = ({ isMobile }) => {
         <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
         <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
         <div className="grid grid-cols-2 gap-2 mb-3">
-          {[1,2,3,4].map(i => (
+          {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-12 bg-gray-100 rounded-lg"></div>
           ))}
         </div>
@@ -292,6 +332,8 @@ const SkeletonCardSmall = ({ isMobile }) => {
 };
 
 export const LandingPage = ({ onNavigate, currentUser }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
@@ -301,7 +343,7 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
   const containerRef = useRef(null);
   const cardRef = useRef(null);
   const isDraggingRef = useRef(false);
-  
+
   // Drag scroll state
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -316,71 +358,138 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 640);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Measure actual card width from DOM to ensure drag calculations match rendered width
   useEffect(() => {
     if (!cardRef.current) return;
-    
+
     const measureCard = () => {
       if (cardRef.current) {
         const width = cardRef.current.offsetWidth;
         if (width > 0) setCardWidth(width);
       }
     };
-    
+
     // Initial measurement
     measureCard();
-    
+
     // Re-measure on resize
     const observer = new ResizeObserver(measureCard);
     observer.observe(cardRef.current);
-    
+
     return () => observer.disconnect();
   }, [isMobile, loading]); // Re-run when mobile state or loading changes
 
   const displayLeads = useMemo(() => {
     return leads && leads.length > 0 ? leads : [];
   }, [leads]);
-  
+
   // Responsive gap
   const gap = isMobile ? 8 : 12;
   const totalCards = displayLeads.length || 1;
 
-  const extendedLeads = displayLeads.length > 0 
-    ? [...displayLeads, ...displayLeads.slice(0, Math.min(5, displayLeads.length))]
-    : [];
+  const extendedLeads =
+    displayLeads.length > 0
+      ? [
+          ...displayLeads,
+          ...displayLeads.slice(0, Math.min(5, displayLeads.length)),
+        ]
+      : [];
 
   // Auto-scroll effect
   useEffect(() => {
     if (isPaused || displayLeads.length === 0 || isDragging) return;
+    const cardWidth = 280;
+    const gap = 16;
 
-    const timer = setInterval(() => {
-      setCurrentIndex(prev => prev + 1);
-    }, 4000);
+    // Fetch real leads from Firebase on mount
+    useEffect(() => {
+      const fetchLeads = async () => {
+        try {
+          setIsLoading(true);
+          const result = await getAllLeads({ status: "active", limit: 10 });
 
-    return () => clearInterval(timer);
-  }, [isPaused, displayLeads.length, isDragging]);
+          if (result.success && result.data.length > 0) {
+            // Use real leads from database
+            setLeads(result.data);
+          } else {
+            // Use fallback leads only if no real data exists
+            console.log("No leads in database, using fallback data");
+            setLeads(fallbackLeads);
+          }
+        } catch (error) {
+          console.error("Error fetching leads:", error);
+          setLeads(fallbackLeads);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchLeads();
+    }, []);
+
+    // Check subscription status for logged-in agents
+    useEffect(() => {
+      const checkSubscription = async () => {
+        if (currentUser?.uid && currentUser?.role === "agent") {
+          try {
+            const result = await checkSubscriptionStatus(currentUser.uid);
+            setIsSubscribed(result.isPremium || false);
+          } catch (error) {
+            console.error("Error checking subscription:", error);
+            setIsSubscribed(false);
+          }
+        } else {
+          setIsSubscribed(false);
+        }
+      };
+
+      checkSubscription();
+    }, [currentUser]);
+
+    const totalCards = leads.length || 1;
+
+    // Create extended array for infinite loop (clone first few cards at end)
+    const extendedLeads =
+      leads.length > 0
+        ? [...leads, ...leads.slice(0, Math.min(5, leads.length))]
+        : [];
+
+    // Auto-scroll every 3.5 seconds
+    useEffect(() => {
+      if (isPaused || leads.length === 0) return;
+
+      const timer = setInterval(() => {
+        setCurrentIndex((prev) => prev + 1);
+      }, 4000);
+
+      return () => clearInterval(timer);
+    }, [isPaused, displayLeads.length, isDragging]);
+  }, [isPaused, leads.length]);
 
   // Reset carousel when reaching end
   useEffect(() => {
     if (displayLeads.length === 0) return;
-    
-    if (currentIndex >= totalCards) {
+
+    if (currentIndex >= totalCards && totalCards > 0) {
+      // Wait for transition to complete, then instantly reset
       const timeout = setTimeout(() => {
         setIsTransitioning(false);
         setCurrentIndex(0);
         setDragOffset(0);
+
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             setIsTransitioning(true);
           });
         });
       }, 500);
+
       return () => clearTimeout(timeout);
     }
   }, [currentIndex, totalCards, displayLeads.length]);
@@ -396,40 +505,46 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
     setDragOffset(0);
   }, []);
 
-  const handleMouseMove = useCallback((e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const x = e.pageX || e.touches?.[0]?.pageX || 0;
-    const walk = (startX - x);
-    
-    if (Math.abs(walk) > 5) {
-      setHasDragged(true);
-    }
-    
-    setDragOffset(walk);
-  }, [isDragging, startX]);
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const x = e.pageX || e.touches?.[0]?.pageX || 0;
+      const walk = startX - x;
+
+      if (Math.abs(walk) > 5) {
+        setHasDragged(true);
+      }
+
+      setDragOffset(walk);
+    },
+    [isDragging, startX],
+  );
 
   const handleMouseUp = useCallback(() => {
     const wasDragging = isDraggingRef.current;
-    
+
     if (!wasDragging) {
       setIsPaused(false);
       return;
     }
-    
+
     isDraggingRef.current = false;
     setIsDragging(false);
-    
+
     const cardFullWidth = cardWidth + gap;
     const indexChange = Math.round(dragOffset / cardFullWidth);
     const newIndex = currentIndex + indexChange;
-    
-    const clampedIndex = Math.max(0, Math.min(newIndex, displayLeads.length - 1));
-    
+
+    const clampedIndex = Math.max(
+      0,
+      Math.min(newIndex, displayLeads.length - 1),
+    );
+
     setIsTransitioning(true);
     setCurrentIndex(clampedIndex);
     setDragOffset(0);
-    
+
     setTimeout(() => {
       setIsPaused(false);
       setHasDragged(false);
@@ -447,17 +562,20 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
     setDragOffset(0);
   }, []);
 
-  const handleTouchMove = useCallback((e) => {
-    if (!isDragging) return;
-    const x = e.touches[0].pageX;
-    const walk = (startX - x);
-    
-    if (Math.abs(walk) > 5) {
-      setHasDragged(true);
-    }
-    
-    setDragOffset(walk);
-  }, [isDragging, startX]);
+  const handleTouchMove = useCallback(
+    (e) => {
+      if (!isDragging) return;
+      const x = e.touches[0].pageX;
+      const walk = startX - x;
+
+      if (Math.abs(walk) > 5) {
+        setHasDragged(true);
+      }
+
+      setDragOffset(walk);
+    },
+    [isDragging, startX],
+  );
 
   const handleTouchEnd = useCallback(() => {
     handleMouseUp();
@@ -466,9 +584,9 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
   const handleContactClick = async (leadId, type, phone, email) => {
     if (hasDragged) return;
     console.log(`Contact clicked: Lead ${leadId}, Type: ${type}`);
-    if (type === 'phone' && phone) {
+    if (type === "phone" && phone) {
       window.location.href = `tel:${phone}`;
-    } else if (type === 'email' && email) {
+    } else if (type === "email" && email) {
       window.location.href = `mailto:${email}`;
     }
   };
@@ -482,29 +600,40 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
       {/* Header - Compact on mobile */}
       <div className="px-3 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-2 sm:pb-3">
         <div className="max-w-[1380px] mx-auto bg-white rounded-full shadow-sm border border-gray-100 px-3 sm:px-8 py-1.5 sm:py-2.5 flex justify-between items-center">
-          <div className="cursor-pointer" onClick={() => onNavigate('landing')}>
-            <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-6 sm:h-9 w-auto" />
+          <div className="cursor-pointer" onClick={() => onNavigate("landing")}>
+            <img
+              src="/yoombaa-logo.svg"
+              alt="Yoombaa"
+              className="h-6 sm:h-9 w-auto"
+            />
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-4">
             {currentUser ? (
-              <div className="flex items-center gap-1.5 sm:gap-3 cursor-pointer" onClick={() => onNavigate('profile')}>
-                <span className="hidden sm:block text-gray-700 font-medium text-sm">Hi {(currentUser.name || 'User').split(' ')[0]}</span>
+              <div
+                className="flex items-center gap-1.5 sm:gap-3 cursor-pointer"
+                onClick={() => onNavigate("profile")}
+              >
+                <span className="hidden sm:block text-gray-700 font-medium text-sm">
+                  Hi {(currentUser.name || "User").split(" ")[0]}
+                </span>
                 <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FE9200] to-[#7A00AA] flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                  {(currentUser.name || 'U').charAt(0)}
+                  {(currentUser.name || "U").charAt(0)}
                 </div>
               </div>
             ) : (
               <>
                 <button
-                  onClick={() => onNavigate('tenant-form')}
+                  onClick={() => onNavigate("tenant-form")}
                   className="px-2.5 sm:px-6 py-1.5 sm:py-2.5 rounded-full bg-white border-2 border-[#FE9200] text-[#FE9200] font-semibold hover:bg-orange-50 transition-all text-[10px] sm:text-sm whitespace-nowrap"
                 >
-                  <span className="hidden sm:inline">I Need a Place to Rent</span>
+                  <span className="hidden sm:inline">
+                    I Need a Place to Rent
+                  </span>
                   <span className="sm:hidden">Find Home</span>
                 </button>
                 <button
-                  onClick={() => onNavigate('login')}
+                  onClick={() => onNavigate("login")}
                   className="px-2.5 sm:px-6 py-1.5 sm:py-2.5 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md text-[10px] sm:text-sm whitespace-nowrap"
                 >
                   <span className="hidden sm:inline">I Am An Agent</span>
@@ -533,18 +662,21 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
             ref={containerRef}
             className="absolute bottom-3 sm:bottom-6 left-0 right-0 overflow-hidden touch-pan-y"
             onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => { if (isDraggingRef.current) handleMouseUp(); else setIsPaused(false); }}
+            onMouseLeave={() => {
+              if (isDraggingRef.current) handleMouseUp();
+              else setIsPaused(false);
+            }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+            style={{ cursor: isDragging ? "grabbing" : "grab" }}
           >
             <div
               className="mx-auto overflow-visible px-3 sm:px-4"
-              style={{ maxWidth: '1380px' }}
+              style={{ maxWidth: "1380px" }}
             >
               {loading ? (
                 <div className="flex gap-2 sm:gap-3 px-1 sm:px-2">
@@ -559,12 +691,18 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
                   style={{
                     gap: `${gap}px`,
                     transform: `translateX(${translateX}px)`,
-                    transition: isTransitioning && !isDragging ? 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
+                    transition:
+                      isTransitioning && !isDragging
+                        ? "transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+                        : "none",
                   }}
                 >
                   {extendedLeads.map((lead, index) => (
-                    <div key={`${lead.id}-${index}`} ref={index === 0 ? cardRef : null}>
-                      <LeadCard 
+                    <div
+                      key={`${lead.id}-${index}`}
+                      ref={index === 0 ? cardRef : null}
+                    >
+                      <LeadCard
                         lead={lead}
                         currentUser={currentUser}
                         isPremium={isPremium}
@@ -577,32 +715,37 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-32 sm:h-64 text-gray-500 bg-white/80 backdrop-blur-sm rounded-xl mx-2 sm:mx-4">
-                  <p className="text-xs sm:text-base">No property leads available yet</p>
+                  <p className="text-xs sm:text-base">
+                    No property leads available yet
+                  </p>
                 </div>
               )}
             </div>
           </div>
         </div>
-
         {/* Pagination dots - Smaller on mobile */}
         {displayLeads.length > 0 && (
           <div className="flex justify-center items-center gap-1.5 sm:gap-2 py-2 sm:py-4">
-            {displayLeads.slice(0, Math.min(displayLeads.length, isMobile ? 6 : 8)).map((_, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setIsTransitioning(true);
-                  setCurrentIndex(index);
-                }}
-                className={`rounded-full transition-all duration-300 ${
-                  activeIndex === index
-                    ? 'bg-[#FE9200] w-2.5 h-2.5 sm:w-3.5 sm:h-3.5'
-                    : 'bg-gray-300 w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 hover:bg-gray-400'
-                }`}
-              />
-            ))}
+            {displayLeads
+              .slice(0, Math.min(displayLeads.length, isMobile ? 6 : 8))
+              .map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setIsTransitioning(true);
+                    setCurrentIndex(index);
+                  }}
+                  className={`rounded-full transition-all duration-300 ${
+                    activeIndex === index
+                      ? "bg-[#FE9200] w-2.5 h-2.5 sm:w-3.5 sm:h-3.5"
+                      : "bg-gray-300 w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 hover:bg-gray-400"
+                  }`}
+                />
+              ))}
             {displayLeads.length > (isMobile ? 6 : 8) && (
-              <span className="text-[10px] sm:text-xs text-gray-400 ml-0.5 sm:ml-1">+{displayLeads.length - (isMobile ? 6 : 8)}</span>
+              <span className="text-[10px] sm:text-xs text-gray-400 ml-0.5 sm:ml-1">
+                +{displayLeads.length - (isMobile ? 6 : 8)}
+              </span>
             )}
           </div>
         )}
