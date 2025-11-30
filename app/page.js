@@ -14,6 +14,7 @@ import { AgentDetailPage } from '@/components/AgentDetailPage';
 import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { PropertiesPage } from '@/components/PropertiesPage';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { auth, isFirebaseReady } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/firestore';
@@ -96,11 +97,7 @@ export default function RentalLeadApp() {
   }, []); // Removed view dependency to prevent re-running on view change
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   const handleLogin = async (user) => {
