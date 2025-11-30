@@ -1,0 +1,41 @@
+**Currency Localization Update: Convert Entire Application to Kenyan Shillings (KES)**
+
+Please update the entire RentConnect application to use Kenyan Shillings (KES) instead of Nigerian Naira (₦). This is a comprehensive currency localization change for the Kenya market.
+
+**Scope of Changes:**
+
+1. **Currency Symbol & Code:**
+   - Replace all instances of `₦` (Naira symbol) with `KSh` or `KES` (Kenyan Shilling)
+   - Update currency formatting functions throughout the application
+
+2. **Files to Update:**
+   - `components/LandingPage.jsx` - Lead card budget display
+   - `components/TenantForm.jsx` - Budget input and display
+   - `components/AgentDashboard.jsx` - Lead pricing, wallet balance
+   - `components/PropertiesPage.jsx` - Property prices
+   - `components/SubscriptionPage.jsx` - Subscription plan pricing
+   - `components/UserSubscriptionPage.jsx` - User subscription pricing
+   - Any other components displaying monetary values
+   - API routes handling payments (Paystack configuration)
+   - Email templates with pricing information
+   - Database schema documentation (if currency is stored)
+
+3. **Specific Changes Needed:**
+   - Update `formatBudget()` and similar currency formatting functions
+   - Change hardcoded currency symbols from `₦` to `KSh`
+   - Update Paystack integration to use `KES` currency code
+   - Update all pricing displays in subscription plans
+   - Update wallet/credit system currency display
+   - Update email notification templates with currency references
+   - Update any placeholder text or examples showing prices
+
+4. **Location References:**
+   - Update default location examples from Nigerian cities (Lagos, Abuja, Port Harcourt) to Kenyan cities (Nairobi, Mombasa, Kisumu)
+   - Update location placeholders in forms
+
+5. **Testing Requirements:**
+   - Verify all monetary displays show KSh/KES correctly
+   - Ensure payment gateway integration works with KES
+   - Check that budget calculations and comparisons still work correctly
+
+**Goal:** Complete localization of the application for the Kenyan market with proper currency formatting and location references throughout.

@@ -19,10 +19,9 @@ import {
 const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick }) => {
   const formatBudget = (amount) => {
     const num = parseInt(amount?.toString().replace(/[^0-9]/g, '') || '0');
-    if (num >= 10000000) return `₦${(num / 1000000).toFixed(1)}M`;
-    if (num >= 100000) return `₦${(num / 100000).toFixed(1)}L`;
-    if (num >= 1000) return `₦${(num / 1000).toFixed(0)}K`;
-    return `₦${num.toLocaleString()}`;
+    if (num >= 1000000) return `KSh ${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `KSh ${(num / 1000).toFixed(0)}K`;
+    return `KSh ${num.toLocaleString()}`;
   };
 
   const propertyType = lead?.requirements?.property_type || lead?.type || 'Property';
