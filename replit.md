@@ -22,7 +22,20 @@ RentConnect (branded as Yoombaa) is a comprehensive rental property marketplace 
 - **Optimized loading states with Next.js best practices**
 - **High-performance image delivery with Next.js Image optimization**
 
-## Recent Changes (Real Database Integration & Performance - November 30, 2025)
+## Recent Changes (Enhanced LeadCard Design - November 30, 2025)
+
+### Enhanced LeadCard Component
+- **Icon-Based Feature Labels:** Replaced text labels with modern lucide-react icons:
+  - Home icon → Property Type
+  - MapPin icon → Area/Location
+  - CheckCircle2 icon → Status
+  - Zap icon → Active status with live indicator
+- **Blurred Contact Details:** Phone and email shown in blurred/masked state for non-subscribers
+- **Subscription Overlay:** Lock icon with "Contact details available for subscribed agents" message
+- **Click-to-Subscribe:** Non-premium users redirected to subscription page on contact click
+- **Agent Engagement Counter:** Shows "X agents contacted this lead" per card (USP feature)
+- **Unique Agent Tracking:** Uses Firestore transaction with increment() for atomic counting
+- **Real-Time Updates:** Contact counts update in real-time across all cards
 
 ### Database & Real Data Implementation
 - **Landing Page Carousel:** Updated to fetch real property leads from Firebase Firestore
@@ -36,6 +49,12 @@ RentConnect (branded as Yoombaa) is a comprehensive rental property marketplace 
   - `contacts` → Contact count from database
 - **Smart Fallbacks:** Handles missing fields gracefully with defaults
 - **Loading States:** Skeleton loaders during data fetch for better UX
+
+### Agent Contact Tracking (New Feature)
+- **Unique Tracking:** `trackAgentLeadContact()` function with Firestore transactions
+- **Deduplication:** Uses subcollection `requests/{leadId}/agentContacts/{agentId}` to track unique contacts
+- **Atomic Increments:** Uses `increment(1)` for thread-safe counter updates
+- **Contact Analytics:** Tracks `contactTypes` array, first/last contact timestamps
 
 ### Performance Optimizations Implemented
 - **Loading States:** Created `loading.js` files with skeleton loaders for seamless Suspense boundaries
