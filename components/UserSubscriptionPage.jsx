@@ -7,7 +7,7 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
 
   const plans = {
     monthly: {
-      price: 5000,
+      price: 500,
       period: 'month',
       features: [
         'View all agent contact details',
@@ -18,25 +18,25 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
       ]
     },
     quarterly: {
-      price: 12000,
+      price: 1200,
       period: '3 months',
       savings: '20% off',
       features: [
         'All monthly features',
-        'Save ₦ 3,000',
+        'Save KSh 300',
         'Extended support access',
         'Priority listings notifications',
         'Cancel anytime'
       ]
     },
     yearly: {
-      price: 40000,
+      price: 4000,
       period: 'year',
       savings: '33% off',
       popular: true,
       features: [
         'All quarterly features',
-        'Save ₦ 20,000',
+        'Save KSh 2,000',
         'Dedicated account manager',
         'Early access to new features',
         'Exclusive agent network'
@@ -145,7 +145,7 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
                   )}
                   <div className="flex justify-center items-baseline mb-2">
                     <span className="text-4xl font-bold text-gray-900">
-                      ₦ {plan.price.toLocaleString()}
+                      KSh {plan.price.toLocaleString()}
                     </span>
                   </div>
                   <span className="text-gray-500">per {plan.period}</span>

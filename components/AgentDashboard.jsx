@@ -11,9 +11,9 @@ import { SmileIDVerification } from './SmileIDVerification';
 
 // Mock Properties Data
 const MOCK_PROPERTIES = [
-  { id: 1, name: "Luxury 3 Bedroom Apartment", price: "₦ 3,500,000/yr", status: "Active", location: "Lekki Phase 1" },
-  { id: 2, name: "Cozy Studio Flat", price: "₦ 800,000/yr", status: "Pending", location: "Yaba" },
-  { id: 3, name: "4 Bedroom Duplex", price: "₦ 8,000,000/yr", status: "Sold", location: "Ikoyi" },
+  { id: 1, name: "Luxury 3 Bedroom Apartment", price: "KSh 350,000/yr", status: "Active", location: "Westlands" },
+  { id: 2, name: "Cozy Studio Flat", price: "KSh 80,000/yr", status: "Pending", location: "Kilimani" },
+  { id: 3, name: "4 Bedroom Duplex", price: "KSh 800,000/yr", status: "Sold", location: "Karen" },
 ];
 
 export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'leads', currentUser, onUpdateUser, onLogout }) => {
@@ -29,11 +29,11 @@ export const AgentDashboard = ({ onNavigate, leads, onUnlock, initialTab = 'lead
   const agent = currentUser || {
     id: 'mock-agent-id',
     name: 'John Doe',
-    agencyName: 'Lagos Premier Homes',
-    email: 'john@lagoshomes.com',
-    phone: '+234 809 876 5432',
+    agencyName: 'Nairobi Premier Homes',
+    email: 'john@nairobihomes.co.ke',
+    phone: '+254 712 345 678',
     experience: '5 Years',
-    location: 'Lekki, Lagos',
+    location: 'Westlands, Nairobi',
     referralCode: 'JOH1234'
   };
 
