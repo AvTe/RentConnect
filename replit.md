@@ -1,15 +1,15 @@
 # RentConnect (Yoombaa) - Replit Project
 
 ## Overview
-RentConnect (branded as Yoombaa) is a comprehensive rental property marketplace platform that connects tenants with verified real estate agents. The platform features real-time updates, payment integration via Paystack, and multi-channel notifications.
+RentConnect (branded as Yoombaa) is a comprehensive rental property marketplace platform that connects tenants with verified real estate agents. The platform features real-time updates, payment integration via Pesapal (M-Pesa supported), and multi-channel notifications.
 
 ## Project Structure
 
 ### Tech Stack
 - **Framework:** Next.js 14 (App Router)
 - **Frontend:** React 18, Tailwind CSS
-- **Backend:** Firebase (Auth, Firestore, Storage, Analytics)
-- **Payment:** Paystack (Kenyan Shillings - KES)
+- **Backend:** Firebase (Auth, Firestore, Storage, Analytics), PostgreSQL (Payment tracking)
+- **Payment:** Pesapal (M-Pesa, Airtel Money, Cards) - Kenyan Shillings (KES)
 - **Notifications:** SendGrid (Email), Twilio (WhatsApp/SMS)
 
 ### Key Features
@@ -19,94 +19,60 @@ RentConnect (branded as Yoombaa) is a comprehensive rental property marketplace 
 - Property listings with image uploads
 - Multi-channel notifications
 - Admin dashboard for platform management
-- **Optimized loading states with Next.js best practices**
-- **High-performance image delivery with Next.js Image optimization**
+- **M-Pesa Express (STK Push) payment support**
+- **Durable payment tracking with PostgreSQL**
+- **Secure HMAC-signed payment metadata**
+- **IPN-driven payment fulfillment (server-side)**
 
-## Recent Changes (Currency Localization to Kenya - November 30, 2025)
+## Recent Changes (Secure Pesapal Integration - November 30, 2025)
 
-### Full Currency Migration to Kenyan Shillings (KES)
-- **Currency Symbol:** Changed from Nigerian Naira (₦) to Kenyan Shillings (KSh)
-- **Currency Code:** Updated from NGN to KES throughout application
-- **Format Function:** Updated `formatBudget()` to use K/M suffixes (e.g., KSh 50K, KSh 1.5M)
-- **Locale:** Changed from 'en-NG' to 'en-KE' for number formatting
-- **Paystack Integration:** Updated currency to KES, subscription amount to KSh 1,500
-- **Phone Numbers:** Changed default country from Nigeria (+234) to Kenya (+254)
-- **Location Context:** Replaced Nigerian cities (Lagos, Lekki, Yaba, Abuja) with Kenyan equivalents (Nairobi, Westlands, Kilimani, Mombasa)
+### Complete Payment Architecture Overhaul
+- **PostgreSQL Integration:** Added durable payment tracking with `pending_payments` table
+- **HMAC Signature Security:** Payment metadata is cryptographically signed to prevent tampering
+- **Three-Phase Payment Status:** Payments move through `pending` → `completed` → `fulfilled` states
+- **Server-Side Fulfillment:** IPN handler can fulfill subscriptions/credits directly with Firebase Admin SDK
+- **Idempotent Processing:** Duplicate IPN/callback calls are safely handled
 
-### Files Updated for Currency Localization
-- `lib/paystack.js` - SUBSCRIPTION_PLANS amount and currency
-- `components/LandingPage.jsx` - formatBudget function and display
-- `components/TenantForm.jsx` - Default country, budget options, placeholders
-- `components/SubscriptionPage.jsx` - Pricing display
-- `components/AgentDashboard.jsx` - Wallet and pricing
-- `components/PropertiesPage.jsx` - Budget display
-- `components/UserSubscriptionPage.jsx` - Plan pricing
-- `components/UserDashboard.jsx` - Budget display
-- `components/admin/*` - All admin finance components
-- `app/api/paystack/initialize/route.js` - Payment currency
-- `app/page.js` - Lead requirements currency
+### Payment Flow Architecture
+1. **Initialize:** Store metadata + HMAC signature in PostgreSQL → Submit to Pesapal → Store tracking ID
+2. **IPN Handler:** Verify with Pesapal → Mark payment 'completed' → Attempt server-side fulfillment
+3. **Callback Page:** Verify payment → Check if already fulfilled → Complete fulfillment if needed
+4. **Reconciliation:** Admin endpoint for viewing/processing pending payments
 
-## Recent Changes (Enhanced LeadCard Design - November 30, 2025)
+### Security Features
+- HMAC-SHA256 signed metadata (using Pesapal consumer secret)
+- Server-side signature verification before fulfillment
+- Amount verification against Pesapal response
+- Durable idempotency via PostgreSQL status tracking
 
-### Enhanced LeadCard Component
-- **Icon-Based Feature Labels:** Replaced text labels with modern lucide-react icons:
-  - Home icon → Property Type
-  - MapPin icon → Area/Location
-  - CheckCircle2 icon → Status
-  - Zap icon → Active status with live indicator
-- **Blurred Contact Details:** Phone and email shown in blurred/masked state for non-subscribers
-- **Subscription Overlay:** Lock icon with "Contact details available for subscribed agents" message
-- **Click-to-Subscribe:** Non-premium users redirected to subscription page on contact click
-- **Agent Engagement Counter:** Shows "X agents contacted this lead" per card (USP feature)
-- **Unique Agent Tracking:** Uses Firestore transaction with increment() for atomic counting
-- **Real-Time Updates:** Contact counts update in real-time across all cards
+### Files Created/Updated for Secure Pesapal Integration
+- `lib/pesapal.js` - Added HMAC signing functions
+- `lib/firebase-admin.js` - Firebase Admin SDK for server-side Firestore operations
+- `app/api/pesapal/initialize/route.js` - Stores payment in PostgreSQL, signs metadata
+- `app/api/pesapal/ipn/route.js` - Server-side fulfillment with Firebase Admin
+- `app/api/pesapal/process-payment/route.js` - Secure payment verification endpoint
+- `app/api/admin/reconcile-payments/route.js` - Admin payment reconciliation endpoint
+- `app/payment/callback/page.js` - Updated to use process-payment API
 
-### Database & Real Data Implementation
-- **Landing Page Carousel:** Updated to fetch real property leads from Firebase Firestore
-- **Removed Demo Data:** Replaced hardcoded `sampleLeads` with live database queries
-- **Real-Time Updates:** Implemented `useLeads` hook for real-time lead data subscriptions
-- **Lead Structure:** Properly mapped real database fields:
-  - `requirements.property_type` → Property type
-  - `requirements.location` → Location  
-  - `requirements.budget` → Budget amount
-  - `tenant_info.name` & `tenant_info.phone` & `tenant_info.email` → Tenant details
-  - `contacts` → Contact count from database
-- **Smart Fallbacks:** Handles missing fields gracefully with defaults
-- **Loading States:** Skeleton loaders during data fetch for better UX
-
-### Agent Contact Tracking (New Feature)
-- **Unique Tracking:** `trackAgentLeadContact()` function with Firestore transactions
-- **Deduplication:** Uses subcollection `requests/{leadId}/agentContacts/{agentId}` to track unique contacts
-- **Atomic Increments:** Uses `increment(1)` for thread-safe counter updates
-- **Contact Analytics:** Tracks `contactTypes` array, first/last contact timestamps
-
-### Performance Optimizations Implemented
-- **Loading States:** Created `loading.js` files with skeleton loaders for seamless Suspense boundaries
-- **Image Optimization:** 
-  - Configured `remotePatterns` for Firebase images
-  - Added WebP and AVIF format support
-  - Implemented 1-year cache for optimized images
-- **Code Splitting:** 
-  - Dynamic imports for heavy components
-  - Tree-shaking enabled with `optimizePackageImports`
-- **Font Optimization:**
-  - Preloaded DM Sans with `display: swap`
-  - Optimized font loading strategy
-- **Script Optimization:**
-  - reCAPTCHA loaded with `afterInteractive` strategy
-  - Firebase SDK deferred with `lazyOnload`
-- **Security Headers:**
-  - Added `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`
-  - Configured proper `Cache-Control` headers
-- **Middleware:** Created performance-focused middleware for header optimization
-- **Caching Strategy:**
-  - Static assets: 1-year cache with immutable flag
-  - API routes: No-cache to ensure fresh data
-- **Accessibility:** Respects `prefers-reduced-motion` for users with motion sensitivities
-- **CSS Optimizations:**
-  - Utility animations with GPU acceleration
-  - Smooth transitions throughout app
-  - Professional skeleton loaders
+### PostgreSQL Schema
+```sql
+CREATE TABLE pending_payments (
+  id SERIAL PRIMARY KEY,
+  order_id VARCHAR(100) UNIQUE NOT NULL,
+  order_tracking_id VARCHAR(100),
+  metadata JSONB NOT NULL,
+  signature VARCHAR(255) NOT NULL,
+  amount DECIMAL(10, 2) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  status VARCHAR(50) DEFAULT 'pending',
+  fulfillment_status VARCHAR(50) DEFAULT 'pending',
+  fulfillment_receipt JSONB,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  completed_at TIMESTAMP,
+  fulfilled_at TIMESTAMP,
+  pesapal_status JSONB
+);
+```
 
 ## Environment Variables Required
 
@@ -132,10 +98,45 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
-### Payment Integration (Optional - for subscriptions)
+### Firebase Admin (Optional but Recommended for IPN Fulfillment)
+For automatic server-side subscription/credit fulfillment via IPN, add:
+1. Go to Firebase Console → Project Settings → Service Accounts
+2. Click "Generate new private key" to download JSON
+3. Copy the entire JSON content and add as environment variable:
+
 ```
-PAYSTACK_PUBLIC_KEY=your_paystack_public_key
-PAYSTACK_SECRET_KEY=your_paystack_secret_key
+FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"...","private_key":"...","client_email":"..."}
+```
+
+**Note:** Without Firebase Admin credentials, payment fulfillment will only work when users return to the callback page. With credentials, IPN can fulfill payments automatically even if users don't return.
+
+### Pesapal Payment Integration (Required for subscriptions)
+Register at https://www.pesapal.com/business to get credentials:
+```
+PESAPAL_CONSUMER_KEY=your_consumer_key
+PESAPAL_CONSUMER_SECRET=your_consumer_secret
+PESAPAL_IPN_ID=your_registered_ipn_id
+PESAPAL_ENV=sandbox  # Use 'production' for live payments
+NEXT_PUBLIC_APP_URL=https://your-app-url.replit.app
+```
+
+### Pesapal Setup Steps
+1. Register a merchant account at pesapal.com/business
+2. Get Consumer Key and Consumer Secret from dashboard
+3. Register your IPN URL using the `/api/pesapal/register-ipn` endpoint
+4. Store the returned `ipn_id` as `PESAPAL_IPN_ID` environment variable
+5. Test with sandbox credentials before going live
+
+### Admin API (Optional - for payment reconciliation)
+```
+ADMIN_API_KEY=your_secure_random_string
+```
+
+### PostgreSQL Database (Auto-configured)
+The Replit PostgreSQL database is automatically configured with:
+```
+DATABASE_URL=postgresql://...
+PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE
 ```
 
 ### Email Service (Optional - for notifications)
@@ -170,6 +171,7 @@ The application is configured to run on port 5000. The workflow "Start applicati
 2. Create Firestore database (start in test mode)
 3. Deploy security rules from `firestore.rules`
 4. Deploy storage rules from `storage.rules`
+5. PostgreSQL tables are auto-created on first use
 
 ### Admin Access
 The application auto-promotes `kartikamit171@gmail.com` to admin role.
@@ -187,112 +189,81 @@ Modify this in `app/page.js` lines 65-66 if needed.
 All the same environment variables used in development must be added to the production deployment.
 Use Replit's deployment environment variable settings.
 
-## User Preferences
-
-### Project Conventions
-- Uses Next.js App Router architecture
-- Client components marked with `'use client'`
-- Firebase operations centralized in `lib/` directory
-- Tailwind CSS for styling with custom brand colors
-- Lucide React for icons
-- Performance-focused with skeleton loaders and code splitting
+**Important:** 
+- Set `PESAPAL_ENV=production` for live payments
+- Add `FIREBASE_SERVICE_ACCOUNT` for server-side fulfillment
+- PostgreSQL DATABASE_URL is automatically configured
 
 ## Project Architecture
 
 ### Directory Structure
 ```
 ├── app/
-│   ├── api/              # API routes (email, payments, SMS)
-│   ├── loading.js        # Root loading state with Suspense
-│   ├── page.js           # Main application controller
-│   ├── layout.js         # Root layout with optimization
-│   └── globals.css       # Global styles with animations
+│   ├── api/
+│   │   ├── admin/           # Admin endpoints (reconciliation)
+│   │   └── pesapal/         # Pesapal payment endpoints
+│   │       ├── auth/        # Token authentication
+│   │       ├── initialize/  # Payment initialization
+│   │       ├── verify/      # Payment verification
+│   │       ├── ipn/         # IPN webhook handler
+│   │       ├── process-payment/ # Secure payment processing
+│   │       └── register-ipn/ # IPN URL registration
+│   ├── payment/             # Payment callback pages
+│   ├── loading.js           # Root loading state
+│   ├── page.js              # Main application controller
+│   ├── layout.js            # Root layout
+│   └── globals.css          # Global styles
 ├── components/
-│   ├── admin/            # Admin dashboard components
-│   ├── ui/               # Reusable UI components (Skeleton, LoadingScreen)
-│   └── [features]        # Feature-specific components
+│   ├── admin/               # Admin dashboard components
+│   ├── ui/                  # Reusable UI components
+│   └── [features]           # Feature-specific components
 ├── lib/
-│   ├── firebase.js       # Firebase initialization
-│   ├── firestore.js      # Database operations
-│   ├── storage.js        # File upload utilities
-│   ├── paystack.js       # Payment integration
-│   ├── notifications.js  # Email/WhatsApp utilities
-│   ├── hooks.js          # Custom React hooks
-│   └── performance.js    # Performance utilities & optimization
-├── middleware.js         # Performance & security middleware
-├── public/               # Static assets
-└── next.config.js        # Next.js config with optimizations
+│   ├── firebase.js          # Firebase client initialization
+│   ├── firebase-admin.js    # Firebase Admin SDK for server
+│   ├── firestore.js         # Database operations
+│   ├── storage.js           # File upload utilities
+│   ├── pesapal.js           # Pesapal integration + HMAC signing
+│   ├── notifications.js     # Email/WhatsApp utilities
+│   ├── hooks.js             # Custom React hooks
+│   └── performance.js       # Performance utilities
+├── middleware.js            # Performance & security middleware
+├── public/                  # Static assets
+└── next.config.js           # Next.js config
 ```
 
 ### Key Files
 - `app/page.js` - Main app controller with routing logic
-- `app/layout.js` - Root layout with performance optimizations
-- `app/loading.js` - Suspense boundary loading state
-- `components/ui/SkeletonLoadingScreen.jsx` - Animated skeleton loader
-- `lib/firestore.js` - All database CRUD operations
-- `lib/hooks.js` - Real-time data hooks (useLeads, useSubscription, etc.)
-- `lib/performance.js` - Performance utilities (preload, prefetch, debounce, throttle)
-- `middleware.js` - Performance & security headers
-
-## Performance Optimizations
-
-### Loading States
-- **Root Loading:** `app/loading.js` with animated skeleton
-- **Suspense Boundaries:** Implemented throughout app
-- **Skeleton Components:** Reusable skeleton loaders in `components/ui/Skeleton.jsx`
-
-### Image Optimization
-- Next.js `remotePatterns` for Firebase storage
-- WebP and AVIF format support
-- 1-year cache TTL with immutable flag
-- Lazy loading with Intersection Observer
-
-### Script Optimization
-- reCAPTCHA: `afterInteractive` strategy
-- Firebase SDK: `lazyOnload` strategy
-- Preconnect to external resources in layout
-
-### Code Splitting
-- Dynamic imports for heavy components
-- Tree-shaking with `optimizePackageImports`
-- Route-based code splitting
-
-### Caching Strategy
-- Static assets: `public, max-age=31536000, immutable`
-- API routes: `no-cache, no-store, must-revalidate`
-- Middleware-based cache optimization
+- `lib/pesapal.js` - Pesapal API integration with HMAC signing
+- `lib/firebase-admin.js` - Server-side Firebase operations
+- `app/api/pesapal/ipn/route.js` - IPN handler with server fulfillment
+- `app/api/pesapal/process-payment/route.js` - Secure payment verification
 
 ## Notes
 
 ### Current Status
 ✅ Application is running successfully on Replit
-✅ All dependencies installed
+✅ All dependencies installed (firebase-admin, pg included)
 ✅ Development server configured for port 5000
-✅ Firebase fully configured and operational
-✅ Paystack payment integration configured
+✅ Firebase client SDK fully operational
+✅ **Pesapal payment integration with security hardening**
+✅ **PostgreSQL payment tracking configured**
 ✅ SendGrid email notifications configured
 ✅ Twilio WhatsApp/SMS integration configured
 ✅ All API secrets securely stored in Replit Secrets
-✅ Custom LoadingScreen with Yoombaa logo and bouncing dots animation
-✅ **Performance-optimized with Next.js best practices**
-✅ **Loading states implemented with Suspense & skeleton loaders**
-✅ **Image optimization with remotePatterns & format support**
-✅ **Security headers & caching strategy configured**
+
+### Payment Security Features
+- **HMAC Signatures:** Prevents metadata tampering
+- **Server-Side Verification:** Validates payments with Pesapal API
+- **Amount Validation:** Ensures payment amount matches expected
+- **Idempotency:** Safe handling of duplicate IPN/callback calls
+- **Audit Trail:** Full payment history in PostgreSQL
 
 ### Configured Services
 - **Firebase**: Authentication, Firestore database, Cloud Storage
-- **Paystack**: Payment processing for subscriptions (test mode)
+- **PostgreSQL**: Payment tracking and audit logs
+- **Pesapal**: Payment processing with M-Pesa Express (STK Push)
 - **SendGrid**: Email notifications
 - **Twilio**: WhatsApp and SMS notifications
-- **Performance**: Next.js optimizations, code splitting, image optimization
-
-### Performance Improvements
-- **Faster loading times** with skeleton loaders and Suspense
-- **Reduced bundle size** with code splitting and tree-shaking
-- **Optimized images** with WebP/AVIF support
-- **Smart caching** for static assets and API routes
-- **Security headers** for safe content delivery
-- **Accessibility** respecting motion preferences
 
 ### Demo Mode (if Firebase not configured)
 The app includes graceful fallback when Firebase environment variables are not set:
@@ -301,7 +272,8 @@ The app includes graceful fallback when Firebase environment variables are not s
 - No runtime errors occur when Firebase is not configured
 
 ### Optional Integrations
-- Paystack: Required only for premium subscription payments
+- Pesapal: Required for M-Pesa and card payments
+- Firebase Admin: Recommended for automatic IPN fulfillment
 - SendGrid: Required only for email notifications
 - Twilio: Required only for WhatsApp/SMS notifications
 - reCAPTCHA: Required only for form spam protection

@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { getApiUrl, getPaymentStatusLabel, calculateSubscriptionEndDate } from '@/lib/pesapal';
-import { createSubscription, createUserSubscription, addCredits, updateLead } from '@/lib/firestore';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { 
+  isFirebaseAdminConfigured, 
+  createAgentSubscription, 
+  createUserSubscription, 
+  addAgentCredits 
+} from '@/lib/firebase-admin';
+import pg from 'pg';
 
 const PESAPAL_CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
 const PESAPAL_CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET;
+
+// PostgreSQL connection
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 // Token cache
 let tokenCache = {
@@ -45,6 +55,45 @@ async function getValidToken() {
   }
 
   throw new Error('Failed to authenticate with Pesapal');
+}
+
+// Fulfill payment by updating Firebase
+async function fulfillPayment(metadata, pesapalData, orderId) {
+  const startDate = new Date();
+  const endDate = calculateSubscriptionEndDate(startDate, metadata.planType || 'monthly');
+
+  const subscriptionData = {
+    startDate,
+    endDate,
+    paymentReference: orderId,
+    trackingId: pesapalData.order_tracking_id,
+    amount: pesapalData.amount,
+    paymentMethod: pesapalData.payment_method,
+    confirmationCode: pesapalData.confirmation_code
+  };
+
+  let fulfillmentResult = null;
+
+  if (metadata.type === 'agent_subscription' && metadata.agentId) {
+    fulfillmentResult = await createAgentSubscription(metadata.agentId, subscriptionData);
+    console.log('Agent subscription created via IPN:', fulfillmentResult);
+
+  } else if (metadata.type === 'user_subscription' && metadata.userId) {
+    subscriptionData.planType = metadata.planType;
+    fulfillmentResult = await createUserSubscription(metadata.userId, subscriptionData);
+    console.log('User subscription created via IPN:', fulfillmentResult);
+
+  } else if (metadata.type === 'credit_purchase' && metadata.agentId && metadata.credits > 0) {
+    fulfillmentResult = await addAgentCredits(metadata.agentId, metadata.credits, {
+      amount: pesapalData.amount,
+      paymentMethod: pesapalData.payment_method,
+      paymentReference: orderId,
+      confirmationCode: pesapalData.confirmation_code
+    });
+    console.log('Credits added via IPN:', fulfillmentResult);
+  }
+
+  return fulfillmentResult;
 }
 
 // Handle both GET and POST IPN notifications
@@ -99,88 +148,118 @@ async function handleIPN(request, method) {
     const statusData = await statusResponse.json();
     console.log('Transaction status:', statusData);
 
+    // Find the pending payment record
+    const merchantRef = orderMerchantReference || statusData.merchant_reference;
+    
+    // Try to find by tracking ID first, then by merchant reference
+    let paymentResult = await pool.query(
+      `SELECT * FROM pending_payments WHERE order_tracking_id = $1`,
+      [orderTrackingId]
+    );
+    
+    if (paymentResult.rows.length === 0 && merchantRef) {
+      paymentResult = await pool.query(
+        `SELECT * FROM pending_payments WHERE order_id = $1`,
+        [merchantRef]
+      );
+    }
+
+    if (paymentResult.rows.length === 0) {
+      console.log('Payment record not found for:', { orderTrackingId, merchantRef });
+      return NextResponse.json({
+        orderNotificationType,
+        orderTrackingId,
+        orderMerchantReference: merchantRef,
+        status: 'RECORD_NOT_FOUND'
+      });
+    }
+
+    const paymentRecord = paymentResult.rows[0];
+
+    // Check if already fulfilled (idempotency)
+    if (paymentRecord.fulfillment_status === 'fulfilled') {
+      console.log('Payment already fulfilled:', paymentRecord.order_id);
+      return NextResponse.json({
+        orderNotificationType,
+        orderTrackingId,
+        orderMerchantReference: paymentRecord.order_id,
+        status: 'ALREADY_FULFILLED'
+      });
+    }
+
     // Check if payment was successful (status_code 1 = COMPLETED)
     if (statusData.status_code === 1) {
-      // Get stored payment metadata
-      const paymentRef = doc(db, 'pending_payments', orderMerchantReference);
-      const paymentDoc = await getDoc(paymentRef);
-      
-      if (paymentDoc.exists()) {
-        const paymentData = paymentDoc.data();
-        const metadata = paymentData.metadata || {};
+      const metadata = typeof paymentRecord.metadata === 'string' 
+        ? JSON.parse(paymentRecord.metadata) 
+        : paymentRecord.metadata;
 
-        // Handle different payment types
-        if (metadata.type === 'agent_subscription') {
-          // Agent subscription
-          const startDate = new Date();
-          const endDate = calculateSubscriptionEndDate(startDate, 'monthly');
+      // Mark payment as completed
+      await pool.query(
+        `UPDATE pending_payments 
+         SET status = 'completed', 
+             completed_at = NOW(), 
+             pesapal_status = $1,
+             order_tracking_id = COALESCE(order_tracking_id, $2)
+         WHERE order_id = $3 AND status NOT IN ('completed', 'fulfilled')`,
+        [JSON.stringify(statusData), orderTrackingId, paymentRecord.order_id]
+      );
 
-          await createSubscription({
-            agentId: metadata.agentId,
-            status: 'active',
-            startDate,
-            endDate,
-            paymentReference: orderMerchantReference,
-            pesapalTrackingId: orderTrackingId,
-            amount: statusData.amount,
-            paymentMethod: statusData.payment_method
-          });
-
-          console.log('Agent subscription created for:', metadata.agentId);
-
-        } else if (metadata.type === 'user_subscription') {
-          // User subscription
-          const startDate = new Date();
-          const endDate = calculateSubscriptionEndDate(startDate, metadata.planType || 'monthly');
-
-          await createUserSubscription({
-            userId: metadata.userId,
-            planType: metadata.planType,
-            status: 'active',
-            startDate,
-            endDate,
-            paymentReference: orderMerchantReference,
-            pesapalTrackingId: orderTrackingId,
-            amount: statusData.amount,
-            paymentMethod: statusData.payment_method
-          });
-
-          console.log('User subscription created for:', metadata.userId);
-
-        } else if (metadata.type === 'credit_purchase') {
-          // Credit purchase
-          const credits = metadata.credits || 0;
-          if (credits > 0 && metadata.agentId) {
-            await addCredits(metadata.agentId, credits, `Credit purchase via M-Pesa (${statusData.payment_method})`);
-            console.log('Credits added for agent:', metadata.agentId, 'Credits:', credits);
+      // Attempt server-side fulfillment if Firebase Admin is configured
+      if (isFirebaseAdminConfigured()) {
+        try {
+          const fulfillmentResult = await fulfillPayment(metadata, statusData, paymentRecord.order_id);
+          
+          if (fulfillmentResult) {
+            // Mark as fulfilled with receipt
+            await pool.query(
+              `UPDATE pending_payments 
+               SET fulfillment_status = 'fulfilled',
+                   fulfilled_at = NOW(),
+                   fulfillment_receipt = $1
+               WHERE order_id = $2`,
+              [JSON.stringify(fulfillmentResult), paymentRecord.order_id]
+            );
+            
+            console.log('Payment fulfilled via IPN:', paymentRecord.order_id);
           }
+        } catch (fulfillError) {
+          console.error('Fulfillment error (will retry via callback):', fulfillError);
+          // Don't fail the IPN - fulfillment can be retried via callback
+          await pool.query(
+            `UPDATE pending_payments 
+             SET fulfillment_status = 'pending',
+                 fulfillment_receipt = $1
+             WHERE order_id = $2`,
+            [JSON.stringify({ error: fulfillError.message, attemptedAt: new Date() }), paymentRecord.order_id]
+          );
         }
-
-        // Mark payment as completed
-        await setDoc(paymentRef, {
-          ...paymentData,
-          status: 'completed',
-          completedAt: new Date(),
-          pesapalStatus: statusData
-        }, { merge: true });
+      } else {
+        console.log('Firebase Admin not configured - fulfillment will happen via callback');
+        await pool.query(
+          `UPDATE pending_payments SET fulfillment_status = 'pending' WHERE order_id = $1`,
+          [paymentRecord.order_id]
+        );
       }
+
     } else if (statusData.status_code === 2) {
       // Payment failed
-      console.log('Payment failed for:', orderMerchantReference);
+      console.log('Payment failed for:', paymentRecord.order_id);
       
-      const paymentRef = doc(db, 'pending_payments', orderMerchantReference);
-      await setDoc(paymentRef, {
-        status: 'failed',
-        failedAt: new Date(),
-        pesapalStatus: statusData
-      }, { merge: true });
+      await pool.query(
+        `UPDATE pending_payments 
+         SET status = 'failed', 
+             pesapal_status = $1,
+             fulfillment_status = 'not_applicable'
+         WHERE order_id = $2`,
+        [JSON.stringify(statusData), paymentRecord.order_id]
+      );
     }
 
     // Return success to acknowledge IPN receipt
     return NextResponse.json({
       orderNotificationType,
       orderTrackingId,
-      orderMerchantReference,
+      orderMerchantReference: paymentRecord.order_id,
       status: getPaymentStatusLabel(statusData.status_code)
     });
 

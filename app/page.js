@@ -334,62 +334,69 @@ export default function RentalLeadApp() {
 
   const handleSubscribe = async (paymentData) => {
     try {
-      const { initializePayment } = await import('@/lib/paystack');
+      // Check if Firebase is ready before proceeding
+      if (!isFirebaseReady) {
+        alert('Payment service is not available in demo mode. Please configure Firebase to enable payments.');
+        return;
+      }
+
+      const { initializePayment, SUBSCRIPTION_PLANS } = await import('@/lib/pesapal');
       
-      // Determine if this is agent or user subscription
+      let metadata = {};
+      let amount = 0;
+      let description = '';
+      
+      // Determine payment type and prepare metadata
       if (paymentData.userId) {
         // User subscription for viewing agent contacts
-        const result = await initializePayment(
-          currentUser.email,
-          paymentData.amount,
-          {
-            userId: paymentData.userId,
-            planType: paymentData.planType,
-            subscriptionType: 'user'
-          }
-        );
-        
-        if (result.success) {
-          window.location.href = result.authorizationUrl;
-        } else {
-          alert('Error initializing payment. Please try again.');
-        }
+        metadata = {
+          type: 'user_subscription',
+          userId: paymentData.userId,
+          planType: paymentData.planType
+        };
+        amount = paymentData.amount;
+        description = `Yoombaa ${paymentData.planType} User Subscription`;
       } else if (paymentData.credits) {
         // Agent buying credits
-        const result = await initializePayment(
-          currentUser.email,
-          parseInt(paymentData.price.replace(/[^0-9]/g, '')), // Extract amount from string like "KSh 500"
-          {
-            agentId: currentUser.uid,
-            agentName: currentUser.name,
-            credits: paymentData.credits,
-            type: 'credit_purchase'
-          }
-        );
-        
-        if (result.success) {
-          window.location.href = result.authorizationUrl;
-        } else {
-          alert('Error initializing payment. Please try again.');
-        }
+        metadata = {
+          type: 'credit_purchase',
+          agentId: currentUser.uid,
+          agentName: currentUser.name,
+          credits: paymentData.credits
+        };
+        // Extract amount from string like "KSh 500" or use price directly
+        amount = typeof paymentData.price === 'string' 
+          ? parseInt(paymentData.price.replace(/[^0-9]/g, ''))
+          : paymentData.price;
+        description = `Yoombaa Credit Purchase - ${paymentData.credits} Credits`;
       } else {
-        // Fallback for legacy subscription calls (if any)
-        const { SUBSCRIPTION_PLANS } = await import('@/lib/paystack');
-        const result = await initializePayment(
-          currentUser.email,
-          SUBSCRIPTION_PLANS.PREMIUM.amount,
-          {
-            agentId: currentUser.uid,
-            agentName: currentUser.name,
-            plan: 'premium'
-          }
-        );
-        
-        if (result.success) {
-          window.location.href = result.authorizationUrl;
-        } else {
-          alert('Error initializing payment. Please try again.');
-        }
+        // Agent premium subscription
+        metadata = {
+          type: 'agent_subscription',
+          agentId: currentUser.uid,
+          agentName: currentUser.name
+        };
+        amount = SUBSCRIPTION_PLANS.PREMIUM.amount;
+        description = 'Yoombaa Premium Agent Subscription';
+      }
+      
+      // Initialize payment with Pesapal (metadata stored server-side in API route)
+      const result = await initializePayment({
+        email: currentUser.email,
+        phone: currentUser.phone || '',
+        amount: amount,
+        description: description,
+        firstName: currentUser.name?.split(' ')[0] || '',
+        lastName: currentUser.name?.split(' ').slice(1).join(' ') || '',
+        metadata: metadata,
+        callbackUrl: `${window.location.origin}/payment/callback`
+      });
+      
+      if (result.success && result.redirectUrl) {
+        // Redirect to Pesapal payment page
+        window.location.href = result.redirectUrl;
+      } else {
+        alert(result.error || 'Error initializing payment. Please try again.');
       }
     } catch (error) {
       console.error('Error subscribing:', error);

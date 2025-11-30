@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
-import { getApiUrl, generateOrderId } from '@/lib/pesapal';
+import { getApiUrl, generateOrderId, signMetadata } from '@/lib/pesapal';
+import pg from 'pg';
 
 const PESAPAL_CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
 const PESAPAL_CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET;
 const PESAPAL_IPN_ID = process.env.PESAPAL_IPN_ID;
+const PAYMENT_SIGNING_SECRET = process.env.PESAPAL_CONSUMER_SECRET || 'yoombaa-payment-secret';
+
+// PostgreSQL connection
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 // Token cache
 let tokenCache = {
@@ -50,7 +58,7 @@ export async function POST(request) {
     if (!PESAPAL_CONSUMER_KEY || !PESAPAL_CONSUMER_SECRET) {
       console.error('Pesapal credentials not configured');
       return NextResponse.json(
-        { success: false, error: 'Payment service not configured' },
+        { success: false, error: 'Payment service not configured. Please add Pesapal credentials.' },
         { status: 500 }
       );
     }
@@ -58,7 +66,7 @@ export async function POST(request) {
     if (!PESAPAL_IPN_ID) {
       console.error('Pesapal IPN ID not configured');
       return NextResponse.json(
-        { success: false, error: 'Payment notifications not configured' },
+        { success: false, error: 'Payment notifications not configured. Please register your IPN URL.' },
         { status: 500 }
       );
     }
@@ -87,13 +95,44 @@ export async function POST(request) {
     // Generate unique order ID
     const orderId = generateOrderId();
 
+    // Create signed metadata payload
+    const metadataWithTimestamp = {
+      ...metadata,
+      orderId,
+      amount: parseFloat(amount),
+      email,
+      createdAt: Date.now()
+    };
+    
+    const signature = await signMetadata(metadataWithTimestamp, PAYMENT_SIGNING_SECRET);
+
+    // Store pending payment in PostgreSQL for durable persistence
+    try {
+      await pool.query(
+        `INSERT INTO pending_payments (order_id, metadata, signature, amount, email, status) 
+         VALUES ($1, $2, $3, $4, $5, 'pending')`,
+        [orderId, JSON.stringify(metadataWithTimestamp), signature, parseFloat(amount), email]
+      );
+      console.log('Pending payment stored:', orderId);
+    } catch (dbError) {
+      console.error('Failed to store pending payment:', dbError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to initialize payment. Please try again.' },
+        { status: 500 }
+      );
+    }
+
+    // Build callback URL with order reference
+    const baseCallbackUrl = callbackUrl || `${process.env.NEXT_PUBLIC_APP_URL || ''}/payment/callback`;
+    const callbackWithRef = `${baseCallbackUrl}?ref=${orderId}`;
+
     // Prepare order request
     const orderPayload = {
       id: orderId,
       currency: 'KES',
       amount: parseFloat(amount),
       description: description || 'Yoombaa Payment',
-      callback_url: callbackUrl || `${process.env.NEXT_PUBLIC_APP_URL || ''}/payment/callback`,
+      callback_url: callbackWithRef,
       cancellation_url: `${process.env.NEXT_PUBLIC_APP_URL || ''}/payment/cancelled`,
       notification_id: PESAPAL_IPN_ID,
       billing_address: {
@@ -125,14 +164,22 @@ export async function POST(request) {
     const data = await response.json();
 
     if (data.redirect_url && data.order_tracking_id) {
+      // Update with Pesapal tracking ID
+      await pool.query(
+        `UPDATE pending_payments SET order_tracking_id = $1 WHERE order_id = $2`,
+        [data.order_tracking_id, orderId]
+      );
+
       return NextResponse.json({
         success: true,
         redirectUrl: data.redirect_url,
         orderTrackingId: data.order_tracking_id,
-        merchantReference: data.merchant_reference || orderId,
-        metadata: metadata
+        merchantReference: orderId
       });
     }
+
+    // Clean up failed payment record
+    await pool.query(`DELETE FROM pending_payments WHERE order_id = $1`, [orderId]);
 
     console.error('Pesapal order submission failed:', data);
     return NextResponse.json(

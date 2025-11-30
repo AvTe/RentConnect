@@ -179,13 +179,13 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
             Secure & Trusted
           </h3>
           <p className="text-gray-700 mb-4">
-            Your payment information is secure with Paystack, Kenya&apos;s trusted payment processor. 
-            All agents are verified for your safety. Cancel your subscription anytime with no hidden fees.
+            Your payment is secure with Pesapal, East Africa&apos;s trusted payment processor. 
+            Pay easily with M-Pesa, cards, or mobile money. All agents are verified for your safety.
           </p>
           <div className="flex items-center justify-center gap-8 text-sm text-gray-600">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-[#FE9200]" />
-              <span>256-bit SSL Encryption</span>
+              <span>M-Pesa Supported</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-[#FE9200]" />
@@ -217,7 +217,7 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
                 What payment methods do you accept?
               </h4>
               <p className="text-gray-600">
-                We accept M-Pesa, credit cards, and debit cards through Paystack, Kenya&apos;s most trusted payment platform.
+                We accept M-Pesa, Airtel Money, credit cards, and debit cards through Pesapal, East Africa&apos;s trusted payment platform.
               </p>
             </div>
             <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
