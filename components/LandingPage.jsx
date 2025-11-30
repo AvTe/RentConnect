@@ -8,20 +8,18 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { 
   Home, 
   MapPin, 
-  CheckCircle2, 
+  Clock, 
   Zap,
   Phone,
   Mail,
   Users,
-  Lock,
-  Eye
+  Lock
 } from 'lucide-react';
 
 const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick }) => {
-  const [isRevealing, setIsRevealing] = useState(false);
-
   const formatBudget = (amount) => {
     const num = parseInt(amount?.toString().replace(/[^0-9]/g, '') || '0');
+    if (num >= 10000000) return `₦${(num / 1000000).toFixed(1)}M`;
     if (num >= 100000) return `₦${(num / 100000).toFixed(1)}L`;
     if (num >= 1000) return `₦${(num / 1000).toFixed(0)}K`;
     return `₦${num.toLocaleString()}`;
@@ -34,7 +32,7 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick }) 
   const tenantPhone = lead?.tenant_info?.phone || '';
   const tenantEmail = lead?.tenant_info?.email || '';
   const status = lead?.status || 'active';
-  const area = lead?.requirements?.area || lead?.area || 'N/A';
+  const area = lead?.requirements?.area || location.split(',')[0] || 'N/A';
 
   const handleOverlayClick = () => {
     if (!currentUser) {
@@ -57,163 +55,108 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick }) 
       onNavigate('subscription');
       return;
     }
-
-    setIsRevealing(true);
     
     await trackAgentLeadContact(currentUser.uid, lead.id, type);
     
     if (onContactClick) {
       await onContactClick(lead.id, type, tenantPhone, tenantEmail);
     }
-    
-    setTimeout(() => setIsRevealing(false), 300);
-  };
-
-  const maskValue = (value, type) => {
-    if (!value) return '—';
-    if (isPremium && currentUser) return value;
-    
-    if (type === 'phone') {
-      return value.substring(0, 4) + '****' + value.substring(value.length - 2);
-    }
-    if (type === 'email') {
-      const [name, domain] = value.split('@');
-      return name.substring(0, 2) + '***@' + (domain || '***');
-    }
-    return value;
   };
 
   return (
-    <div className="bg-[#FFF5E6] rounded-[20px] p-2 w-[220px] flex-shrink-0 transform hover:scale-[1.02] transition-transform duration-300">
+    <div className="bg-[#FFF5E6] rounded-[20px] p-2.5 w-[280px] flex-shrink-0">
       <div className="bg-white rounded-[16px] overflow-hidden border-b-[5px] border-[#FE9200] h-full flex flex-col shadow-sm">
-        <div className="p-3.5 flex flex-col flex-1">
+        <div className="p-4 flex flex-col flex-1">
           
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-1.5 bg-[#E8F5E9] px-2.5 py-1.5 rounded-full">
-              <Users size={12} className="text-[#2E7D32]" />
-              <span className="text-[10px] font-semibold text-[#2E7D32]">
-                {contactCount} Agents
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-1.5 bg-[#E8F5E9] px-3 py-2 rounded-full">
+              <Users size={14} className="text-[#2E7D32]" />
+              <span className="text-[11px] font-semibold text-[#2E7D32]">
+                {contactCount} Agents Contacted
               </span>
             </div>
-            <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-3 py-1.5 rounded-full text-[10px] font-bold shadow-sm">
+            <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-3 py-2 rounded-full text-[11px] font-bold shadow-sm">
               {formatBudget(budget)}
             </span>
           </div>
 
-          <h3 className="text-base font-bold text-gray-900 mb-0.5 leading-tight">{propertyType}</h3>
-          <div className="flex items-center gap-1 mb-3">
-            <MapPin size={11} className="text-gray-400" />
-            <p className="text-[11px] text-gray-500">{location}</p>
-          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-1">{propertyType}</h3>
+          <p className="text-sm text-gray-500 mb-4">{location}</p>
 
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <div className="bg-gradient-to-br from-[#F8F8F8] to-[#F0F0F0] rounded-xl px-2.5 py-2.5 flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-[#FFF5E6] flex items-center justify-center">
-                <Home size={12} className="text-[#FE9200]" />
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-[#F5F5F5] rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Home size={14} className="text-gray-400" />
+                <span className="text-[11px] text-gray-400">Type</span>
               </div>
-              <div>
-                <p className="text-[8px] text-gray-400 uppercase tracking-wide">Type</p>
-                <p className="text-[10px] text-gray-800 font-semibold truncate max-w-[50px]">{propertyType.split(' ')[0]}</p>
-              </div>
+              <p className="text-[13px] text-[#2E7D32] font-semibold">{propertyType}</p>
             </div>
             
-            <div className="bg-gradient-to-br from-[#F8F8F8] to-[#F0F0F0] rounded-xl px-2.5 py-2.5 flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-[#E8F5E9] flex items-center justify-center">
-                <MapPin size={12} className="text-[#2E7D32]" />
+            <div className="bg-[#F5F5F5] rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <MapPin size={14} className="text-gray-400" />
+                <span className="text-[11px] text-gray-400">Area</span>
               </div>
-              <div>
-                <p className="text-[8px] text-gray-400 uppercase tracking-wide">Area</p>
-                <p className="text-[10px] text-gray-800 font-semibold truncate max-w-[50px]">{area !== 'N/A' ? area : location.split(',')[0]}</p>
-              </div>
+              <p className="text-[13px] text-[#2E7D32] font-semibold">{area}</p>
             </div>
             
-            <div className="bg-gradient-to-br from-[#F8F8F8] to-[#F0F0F0] rounded-xl px-2.5 py-2.5 flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-[#E3F2FD] flex items-center justify-center">
-                <CheckCircle2 size={12} className="text-[#1976D2]" />
+            <div className="bg-[#F5F5F5] rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock size={14} className="text-gray-400" />
+                <span className="text-[11px] text-gray-400">Status</span>
               </div>
-              <div>
-                <p className="text-[8px] text-gray-400 uppercase tracking-wide">Status</p>
-                <p className="text-[10px] text-gray-800 font-semibold capitalize">{status}</p>
-              </div>
+              <p className="text-[13px] text-[#2E7D32] font-semibold capitalize">{status}</p>
             </div>
             
-            <div className="bg-gradient-to-br from-[#F8F8F8] to-[#F0F0F0] rounded-xl px-2.5 py-2.5 flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-[#FCE4EC] flex items-center justify-center">
-                <Zap size={12} className="text-[#C2185B]" />
+            <div className="bg-[#F5F5F5] rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Zap size={14} className="text-gray-400" />
+                <span className="text-[11px] text-gray-400">Ready</span>
               </div>
-              <div>
-                <p className="text-[8px] text-gray-400 uppercase tracking-wide">Active</p>
-                <p className="text-[10px] text-gray-800 font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                  Live
-                </p>
-              </div>
+              <p className="text-[13px] text-[#2E7D32] font-semibold">Available</p>
             </div>
           </div>
 
-          <div className="relative bg-gradient-to-br from-[#FFF5E6] to-[#FFE8CC] rounded-xl p-3 border-2 border-[#FE9200] mt-auto overflow-hidden">
-            {!isPremium && (
-              <button
-                onClick={handleOverlayClick}
-                className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/80 to-white/60 z-10 flex flex-col items-center justify-center backdrop-blur-[2px] cursor-pointer hover:from-white/90 hover:via-white/75 transition-all"
-              >
-                <Lock size={16} className="text-[#FE9200] mb-1" />
-                <p className="text-[7px] text-gray-600 text-center px-2 leading-tight font-medium">
-                  Contact details available for subscribed agents
-                </p>
-                <span className="mt-1.5 text-[8px] bg-[#FE9200] text-white px-2.5 py-0.5 rounded-full font-semibold">
-                  Subscribe Now
-                </span>
-              </button>
-            )}
-            
-            <div className={`flex items-stretch justify-between gap-2 ${!isPremium ? 'blur-[3px]' : ''}`}>
-              <button
-                onClick={() => handleContactClick('phone')}
-                disabled={!isPremium}
-                className={`flex-1 flex flex-col items-center justify-center p-2 rounded-lg transition-all ${
-                  isPremium 
-                    ? 'bg-white/80 hover:bg-white cursor-pointer hover:shadow-md' 
-                    : 'bg-white/50 pointer-events-none'
-                }`}
-              >
-                <div className="w-7 h-7 rounded-full bg-[#FE9200]/10 flex items-center justify-center mb-1">
-                  <Phone size={13} className="text-[#FE9200]" />
-                </div>
-                <p className="text-[8px] text-gray-500 font-medium">Phone</p>
-                <p className="text-[9px] text-[#FE9200] font-bold truncate max-w-[70px]">
-                  {maskValue(tenantPhone, 'phone')}
-                </p>
-              </button>
-              
-              <div className="w-px bg-[#FE9200]/30 my-1" />
-              
-              <button
-                onClick={() => handleContactClick('email')}
-                disabled={!isPremium}
-                className={`flex-1 flex flex-col items-center justify-center p-2 rounded-lg transition-all ${
-                  isPremium 
-                    ? 'bg-white/80 hover:bg-white cursor-pointer hover:shadow-md' 
-                    : 'bg-white/50 pointer-events-none'
-                }`}
-              >
-                <div className="w-7 h-7 rounded-full bg-[#FE9200]/10 flex items-center justify-center mb-1">
-                  <Mail size={13} className="text-[#FE9200]" />
-                </div>
-                <p className="text-[8px] text-gray-500 font-medium">Email</p>
-                <p className="text-[9px] text-[#FE9200] font-bold truncate max-w-[70px]">
-                  {maskValue(tenantEmail, 'email')}
-                </p>
-              </button>
+          {isPremium ? (
+            <div className="bg-[#E8F5E9] rounded-xl p-3 border-2 border-[#2E7D32] mt-auto">
+              <div className="flex items-center justify-around">
+                <button
+                  onClick={() => handleContactClick('phone')}
+                  className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#2E7D32] flex items-center justify-center">
+                    <Phone size={14} className="text-white" />
+                  </div>
+                  <span className="text-[10px] text-[#2E7D32] font-medium">Call</span>
+                </button>
+                <div className="w-px h-10 bg-[#2E7D32]/30" />
+                <button
+                  onClick={() => handleContactClick('email')}
+                  className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#2E7D32] flex items-center justify-center">
+                    <Mail size={14} className="text-white" />
+                  </div>
+                  <span className="text-[10px] text-[#2E7D32] font-medium">Email</span>
+                </button>
+              </div>
             </div>
-          </div>
-
-          <div className="flex items-center justify-center gap-1.5 mt-2 py-1.5 bg-gradient-to-r from-[#E8F5E9] to-[#C8E6C9] rounded-lg">
-            <Eye size={10} className="text-[#2E7D32]" />
-            <p className="text-[9px] font-semibold text-[#2E7D32]">
-              {contactCount} agent{contactCount !== 1 ? 's' : ''} contacted this lead
-            </p>
-          </div>
+          ) : (
+            <button
+              onClick={handleOverlayClick}
+              className="bg-[#FFF5E6] rounded-xl p-4 border-2 border-[#FE9200] mt-auto hover:bg-[#FFE8CC] transition-colors cursor-pointer"
+            >
+              <div className="flex flex-col items-center justify-center gap-1">
+                <Lock size={20} className="text-[#FE9200]" />
+                <p className="text-[12px] text-gray-600 text-center">
+                  Contact details available for
+                </p>
+                <p className="text-[13px] text-[#FE9200] font-semibold">
+                  Subscribed Agents
+                </p>
+              </div>
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -233,7 +176,7 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
     return leads && leads.length > 0 ? leads : [];
   }, [leads]);
 
-  const cardWidth = 220;
+  const cardWidth = 280;
   const gap = 16;
   const totalCards = displayLeads.length || 1;
 
@@ -336,7 +279,7 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
               {loading ? (
                 <div className="flex gap-4 px-2">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="w-[220px] flex-shrink-0">
+                    <div key={i} className="w-[280px] flex-shrink-0">
                       <SkeletonCard />
                     </div>
                   ))}
