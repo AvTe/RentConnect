@@ -13,10 +13,11 @@ import {
   Phone,
   Mail,
   Users,
-  Lock
+  Lock,
+  CheckCircle
 } from 'lucide-react';
 
-const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick }) => {
+const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick, isMobile }) => {
   const formatBudget = (amount) => {
     const num = parseInt(amount?.toString().replace(/[^0-9]/g, '') || '0');
     if (num >= 1000000) return `KSh ${(num / 1000000).toFixed(1)}M`;
@@ -62,8 +63,94 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick }) 
     }
   };
 
+  // Mobile compact card (optimized for exactly 2 per screen)
+  // Width calculation: (100vw - container padding - inner padding - gap) / 2
+  // = (100vw - 24px - 24px - 8px) / 2 = 50vw - 28px
+  if (isMobile) {
+    return (
+      <div className="bg-[#FFF5E6] rounded-xl p-1.5 w-[calc(50vw-28px)] flex-shrink-0 select-none">
+        <div className="bg-white rounded-lg overflow-hidden border-b-[3px] border-[#FE9200] h-full flex flex-col shadow-sm">
+          <div className="p-2 flex flex-col flex-1">
+            
+            {/* Top badges - compact */}
+            <div className="flex items-center justify-between mb-1.5 gap-1">
+              <div className="flex items-center gap-0.5 bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">
+                <Users size={8} className="text-[#2E7D32]" />
+                <span className="text-[7px] font-semibold text-[#2E7D32]">
+                  {contactCount}
+                </span>
+              </div>
+              <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-1.5 py-0.5 rounded-full text-[7px] font-bold">
+                {formatBudget(budget)}
+              </span>
+            </div>
+
+            {/* Property info - compact */}
+            <h3 className="text-xs font-bold text-gray-900 mb-0.5 truncate leading-tight">{propertyType}</h3>
+            <p className="text-[9px] text-gray-500 mb-2 truncate">{location}</p>
+
+            {/* Icon-based info grid - 2x2 compact */}
+            <div className="grid grid-cols-2 gap-1 mb-2">
+              <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
+                <Home size={10} className="text-[#FE9200] flex-shrink-0" />
+                <span className="text-[8px] text-gray-700 truncate font-medium">{propertyType.split(' ')[0]}</span>
+              </div>
+              
+              <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
+                <MapPin size={10} className="text-[#FE9200] flex-shrink-0" />
+                <span className="text-[8px] text-gray-700 truncate font-medium">{area.split(' ')[0]}</span>
+              </div>
+              
+              <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
+                <CheckCircle size={10} className="text-[#2E7D32] flex-shrink-0" />
+                <span className="text-[8px] text-[#2E7D32] capitalize font-medium">{status}</span>
+              </div>
+              
+              <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
+                <Zap size={10} className="text-[#FE9200] flex-shrink-0" />
+                <span className="text-[8px] text-gray-700 font-medium">Ready</span>
+              </div>
+            </div>
+
+            {/* Contact section - compact */}
+            {isPremium ? (
+              <div className="bg-[#E8F5E9] rounded-lg p-1.5 mt-auto">
+                <div className="flex items-center justify-around">
+                  <button
+                    onClick={() => handleContactClick('phone')}
+                    className="flex items-center justify-center w-7 h-7 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors"
+                  >
+                    <Phone size={12} className="text-white" />
+                  </button>
+                  <div className="w-px h-5 bg-[#2E7D32]/30" />
+                  <button
+                    onClick={() => handleContactClick('email')}
+                    className="flex items-center justify-center w-7 h-7 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors"
+                  >
+                    <Mail size={12} className="text-white" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={handleOverlayClick}
+                className="bg-[#FFF5E6] rounded-lg p-2 border border-[#FE9200] mt-auto hover:bg-[#FFE8CC] transition-colors"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <Lock size={10} className="text-[#FE9200]" />
+                  <span className="text-[8px] text-[#FE9200] font-semibold">Subscribe</span>
+                </div>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop/tablet card (original design)
   return (
-    <div className="bg-[#FFF5E6] rounded-[16px] p-2 w-[220px] sm:w-[240px] flex-shrink-0 select-none">
+    <div className="bg-[#FFF5E6] rounded-[16px] p-2 w-[240px] flex-shrink-0 select-none">
       <div className="bg-white rounded-[12px] overflow-hidden border-b-4 border-[#FE9200] h-full flex flex-col shadow-sm">
         <div className="p-3 flex flex-col flex-1">
           
@@ -162,30 +249,54 @@ const LeadCard = ({ lead, currentUser, isPremium, onNavigate, onContactClick }) 
   );
 };
 
-const SkeletonCardSmall = () => (
-  <div className="bg-[#FFF5E6] rounded-[16px] p-2 w-[220px] sm:w-[240px] flex-shrink-0 animate-pulse">
-    <div className="bg-white rounded-[12px] p-3 h-[280px]">
-      <div className="flex justify-between mb-3">
-        <div className="h-5 bg-gray-200 rounded-full w-24"></div>
-        <div className="h-5 bg-gray-200 rounded-full w-16"></div>
+const SkeletonCardSmall = ({ isMobile }) => {
+  if (isMobile) {
+    return (
+      <div className="bg-[#FFF5E6] rounded-xl p-1.5 w-[calc(50vw-28px)] flex-shrink-0 animate-pulse">
+        <div className="bg-white rounded-lg p-2 h-[180px]">
+          <div className="flex justify-between mb-2">
+            <div className="h-4 bg-gray-200 rounded-full w-8"></div>
+            <div className="h-4 bg-gray-200 rounded-full w-12"></div>
+          </div>
+          <div className="h-3 bg-gray-200 rounded w-3/4 mb-1"></div>
+          <div className="h-2 bg-gray-200 rounded w-1/2 mb-2"></div>
+          <div className="grid grid-cols-2 gap-1 mb-2">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="h-6 bg-gray-100 rounded"></div>
+            ))}
+          </div>
+          <div className="h-8 bg-gray-100 rounded"></div>
+        </div>
       </div>
-      <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
-      <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        {[1,2,3,4].map(i => (
-          <div key={i} className="h-12 bg-gray-100 rounded-lg"></div>
-        ))}
+    );
+  }
+
+  return (
+    <div className="bg-[#FFF5E6] rounded-[16px] p-2 w-[240px] flex-shrink-0 animate-pulse">
+      <div className="bg-white rounded-[12px] p-3 h-[280px]">
+        <div className="flex justify-between mb-3">
+          <div className="h-5 bg-gray-200 rounded-full w-24"></div>
+          <div className="h-5 bg-gray-200 rounded-full w-16"></div>
+        </div>
+        <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
+        <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="h-12 bg-gray-100 rounded-lg"></div>
+          ))}
+        </div>
+        <div className="h-14 bg-gray-100 rounded-lg"></div>
       </div>
-      <div className="h-14 bg-gray-100 rounded-lg"></div>
     </div>
-  </div>
-);
+  );
+};
 
 export const LandingPage = ({ onNavigate, currentUser }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [cardWidth, setCardWidth] = useState(240);
+  const [isMobile, setIsMobile] = useState(false);
   const trackRef = useRef(null);
   const containerRef = useRef(null);
   const cardRef = useRef(null);
@@ -199,6 +310,17 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
 
   const { leads, loading } = useLeads({}, true);
   const { isPremium } = useSubscription(currentUser?.uid);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Measure actual card width from DOM to ensure drag calculations match rendered width
   useEffect(() => {
@@ -215,16 +337,18 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
     measureCard();
     
     // Re-measure on resize
-    const resizeObserver = new ResizeObserver(measureCard);
-    resizeObserver.observe(cardRef.current);
+    const observer = new ResizeObserver(measureCard);
+    observer.observe(cardRef.current);
     
-    return () => resizeObserver.disconnect();
-  }, [leads]);
+    return () => observer.disconnect();
+  }, [isMobile, loading]); // Re-run when mobile state or loading changes
 
   const displayLeads = useMemo(() => {
     return leads && leads.length > 0 ? leads : [];
   }, [leads]);
-  const gap = 12;
+  
+  // Responsive gap
+  const gap = isMobile ? 8 : 12;
   const totalCards = displayLeads.length || 1;
 
   const extendedLeads = displayLeads.length > 0 
@@ -266,7 +390,7 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
     isDraggingRef.current = true;
     setIsDragging(true);
     setHasDragged(false);
-    setIsPaused(true); // Pause auto-scroll during drag
+    setIsPaused(true);
     setStartX(e.pageX || e.touches?.[0]?.pageX || 0);
     setIsTransitioning(false);
     setDragOffset(0);
@@ -286,12 +410,9 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
   }, [isDragging, startX]);
 
   const handleMouseUp = useCallback(() => {
-    // Use ref to get current drag state (not stale closure value)
     const wasDragging = isDraggingRef.current;
     
-    // Guard: only process if we were actually dragging
     if (!wasDragging) {
-      // Not dragging, just reset pause state immediately
       setIsPaused(false);
       return;
     }
@@ -299,19 +420,16 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
     isDraggingRef.current = false;
     setIsDragging(false);
     
-    // Calculate index change based on drag distance
     const cardFullWidth = cardWidth + gap;
     const indexChange = Math.round(dragOffset / cardFullWidth);
     const newIndex = currentIndex + indexChange;
     
-    // Clamp index within bounds
     const clampedIndex = Math.max(0, Math.min(newIndex, displayLeads.length - 1));
     
     setIsTransitioning(true);
     setCurrentIndex(clampedIndex);
     setDragOffset(0);
     
-    // Resume auto-scroll after a short delay to allow click actions
     setTimeout(() => {
       setIsPaused(false);
       setHasDragged(false);
@@ -346,7 +464,7 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
   }, [handleMouseUp]);
 
   const handleContactClick = async (leadId, type, phone, email) => {
-    if (hasDragged) return; // Prevent clicks after drag
+    if (hasDragged) return;
     console.log(`Contact clicked: Lead ${leadId}, Type: ${type}`);
     if (type === 'phone' && phone) {
       window.location.href = `tel:${phone}`;
@@ -361,18 +479,18 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
 
   return (
     <div className="h-screen w-screen bg-[#F5F5F5] font-sans overflow-hidden flex flex-col">
-      {/* Header */}
-      <div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-5 pb-2 sm:pb-3">
-        <div className="max-w-[1380px] mx-auto bg-white rounded-full shadow-sm border border-gray-100 px-4 sm:px-8 py-2 sm:py-2.5 flex justify-between items-center">
+      {/* Header - Compact on mobile */}
+      <div className="px-3 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-2 sm:pb-3">
+        <div className="max-w-[1380px] mx-auto bg-white rounded-full shadow-sm border border-gray-100 px-3 sm:px-8 py-1.5 sm:py-2.5 flex justify-between items-center">
           <div className="cursor-pointer" onClick={() => onNavigate('landing')}>
-            <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-7 sm:h-9 w-auto" />
+            <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-6 sm:h-9 w-auto" />
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-4">
             {currentUser ? (
-              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={() => onNavigate('profile')}>
+              <div className="flex items-center gap-1.5 sm:gap-3 cursor-pointer" onClick={() => onNavigate('profile')}>
                 <span className="hidden sm:block text-gray-700 font-medium text-sm">Hi {(currentUser.name || 'User').split(' ')[0]}</span>
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FE9200] to-[#7A00AA] flex items-center justify-center text-white font-bold text-sm">
+                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FE9200] to-[#7A00AA] flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                   {(currentUser.name || 'U').charAt(0)}
                 </div>
               </div>
@@ -380,14 +498,14 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
               <>
                 <button
                   onClick={() => onNavigate('tenant-form')}
-                  className="px-3 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white border-2 border-[#FE9200] text-[#FE9200] font-semibold hover:bg-orange-50 transition-all text-xs sm:text-sm whitespace-nowrap"
+                  className="px-2.5 sm:px-6 py-1.5 sm:py-2.5 rounded-full bg-white border-2 border-[#FE9200] text-[#FE9200] font-semibold hover:bg-orange-50 transition-all text-[10px] sm:text-sm whitespace-nowrap"
                 >
                   <span className="hidden sm:inline">I Need a Place to Rent</span>
                   <span className="sm:hidden">Find Home</span>
                 </button>
                 <button
                   onClick={() => onNavigate('login')}
-                  className="px-3 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md text-xs sm:text-sm whitespace-nowrap"
+                  className="px-2.5 sm:px-6 py-1.5 sm:py-2.5 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md text-[10px] sm:text-sm whitespace-nowrap"
                 >
                   <span className="hidden sm:inline">I Am An Agent</span>
                   <span className="sm:hidden">Agent</span>
@@ -399,8 +517,8 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
       </div>
 
       {/* Hero Section */}
-      <div className="flex-1 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-5 flex flex-col min-h-0">
-        <div className="flex-1 max-w-[1380px] w-full mx-auto relative rounded-[20px] sm:rounded-[28px] overflow-hidden shadow-xl">
+      <div className="flex-1 px-3 sm:px-6 lg:px-8 pb-3 sm:pb-5 flex flex-col min-h-0">
+        <div className="flex-1 max-w-[1380px] w-full mx-auto relative rounded-2xl sm:rounded-[28px] overflow-hidden shadow-xl">
           <img
             src="/hero-section.jpg"
             alt="Modern homes"
@@ -408,12 +526,12 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
           />
 
           {/* Gradient overlay for better card visibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent pointer-events-none" />
 
           {/* Cards carousel */}
           <div
             ref={containerRef}
-            className="absolute bottom-4 sm:bottom-6 left-0 right-0 overflow-hidden touch-pan-y"
+            className="absolute bottom-3 sm:bottom-6 left-0 right-0 overflow-hidden touch-pan-y"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => { if (isDraggingRef.current) handleMouseUp(); else setIsPaused(false); }}
             onMouseDown={handleMouseDown}
@@ -425,13 +543,13 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
             style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
           >
             <div
-              className="mx-auto overflow-visible px-4"
+              className="mx-auto overflow-visible px-3 sm:px-4"
               style={{ maxWidth: '1380px' }}
             >
               {loading ? (
-                <div className="flex gap-3 px-2">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <SkeletonCardSmall key={i} />
+                <div className="flex gap-2 sm:gap-3 px-1 sm:px-2">
+                  {(isMobile ? [1, 2, 3, 4] : [1, 2, 3, 4, 5]).map((i) => (
+                    <SkeletonCardSmall key={i} isMobile={isMobile} />
                   ))}
                 </div>
               ) : extendedLeads.length > 0 ? (
@@ -452,23 +570,24 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
                         isPremium={isPremium}
                         onNavigate={onNavigate}
                         onContactClick={handleContactClick}
+                        isMobile={isMobile}
                       />
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-48 sm:h-64 text-gray-500 bg-white/80 backdrop-blur-sm rounded-xl mx-4">
-                  <p className="text-sm sm:text-base">No property leads available yet</p>
+                <div className="flex items-center justify-center h-32 sm:h-64 text-gray-500 bg-white/80 backdrop-blur-sm rounded-xl mx-2 sm:mx-4">
+                  <p className="text-xs sm:text-base">No property leads available yet</p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Pagination dots */}
+        {/* Pagination dots - Smaller on mobile */}
         {displayLeads.length > 0 && (
-          <div className="flex justify-center items-center gap-2 py-3 sm:py-4">
-            {displayLeads.slice(0, Math.min(displayLeads.length, 8)).map((_, index) => (
+          <div className="flex justify-center items-center gap-1.5 sm:gap-2 py-2 sm:py-4">
+            {displayLeads.slice(0, Math.min(displayLeads.length, isMobile ? 6 : 8)).map((_, index) => (
               <button
                 key={index}
                 onClick={() => {
@@ -477,13 +596,13 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
                 }}
                 className={`rounded-full transition-all duration-300 ${
                   activeIndex === index
-                    ? 'bg-[#FE9200] w-3 h-3 sm:w-3.5 sm:h-3.5'
-                    : 'bg-gray-300 w-2 h-2 sm:w-2.5 sm:h-2.5 hover:bg-gray-400'
+                    ? 'bg-[#FE9200] w-2.5 h-2.5 sm:w-3.5 sm:h-3.5'
+                    : 'bg-gray-300 w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 hover:bg-gray-400'
                 }`}
               />
             ))}
-            {displayLeads.length > 8 && (
-              <span className="text-xs text-gray-400 ml-1">+{displayLeads.length - 8}</span>
+            {displayLeads.length > (isMobile ? 6 : 8) && (
+              <span className="text-[10px] sm:text-xs text-gray-400 ml-0.5 sm:ml-1">+{displayLeads.length - (isMobile ? 6 : 8)}</span>
             )}
           </div>
         )}

@@ -24,6 +24,26 @@ RentConnect (branded as Yoombaa) is a comprehensive rental property marketplace 
 - **Secure HMAC-signed payment metadata**
 - **IPN-driven payment fulfillment (server-side)**
 
+## Recent Changes (Mobile UI Optimization - November 30, 2025)
+
+### Mobile-Optimized Landing Page Carousel
+- **2 Cards Per Screen:** Mobile view shows exactly 2 property cards per screen
+- **Responsive Card Design:** Compact mobile cards with width `calc(50vw-28px)` for precise 2-card fit
+- **Icon-Driven Layout:** Minimized text, prominent icons for Type, Area, Status, Ready indicators
+- **Smaller Typography:** 7-10px fonts on mobile for compact, readable cards
+- **Compact Contact Section:** Icon-only contact buttons for premium users, "Subscribe" button for others
+- **Mobile Detection:** Uses `window.innerWidth < 640` with resize listener for responsive switching
+- **Responsive Gap:** 8px gap on mobile vs 12px on desktop for tighter layout
+- **Smaller Pagination:** Compact dots (1.5-2.5px) on mobile, limited to 6 dots max
+- **Compact Header:** Smaller logo (24px height), condensed buttons on mobile
+
+### Mobile Card Features
+- Property type and location with truncation
+- 2x2 icon grid with short labels (e.g., "Mini" instead of "Mini Flat")
+- Green checkmark status indicator
+- Gradient price badge
+- Agent contact count badge
+
 ## Recent Changes (Secure Pesapal Integration - November 30, 2025)
 
 ### Complete Payment Architecture Overhaul
