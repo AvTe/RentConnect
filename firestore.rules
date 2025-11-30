@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper functions
+    // Helper functions (same as storage.rules)
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -11,25 +11,24 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // Check if user is admin (requires reading the user doc)
+    // Check if user is admin
     function isAdmin() {
       return isAuthenticated() && 
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Collection: users (The Agents & Tenants)
+    // Collection: users (The Agents & Tenants) - PATTERN FROM STORAGE.RULES
     match /users/{userId} {
-      // Allow read for everyone to enable phone number uniqueness check during signup
-      // In production, consider using a Cloud Function or Admin SDK for this check to improve security
+      // Anyone can read users (like storage.rules allows read for profiles)
       allow read: if true;
       // Users can write their own data; Admins can write any user data
       allow write: if isOwner(userId) || isAdmin();
     }
 
-    // Collection: requests (The Leads) - PUBLIC READ for active leads (carousel)
+    // Collection: requests (The Leads) - PATTERN FROM STORAGE.RULES (PUBLIC READ)
     match /requests/{requestId} {
-      // ALLOW PUBLIC READ for carousel display
+      // Anyone can read requests (like storage.rules: allow read: if true; for properties)
       allow read: if true;
       // Anyone can create a lead
       allow create: if true;
@@ -38,8 +37,9 @@ service cloud.firestore {
         resource.data.tenant_info.id == request.auth.uid;
     }
     
-    // Collection: properties
+    // Collection: properties - PATTERN FROM STORAGE.RULES
     match /properties/{propertyId} {
+      // Anyone can read properties (like storage.rules allows public read)
       allow read: if true;
       allow write: if isAuthenticated();
     }
@@ -56,8 +56,9 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
     
-    // Collection: credit_bundles
+    // Collection: credit_bundles - PATTERN FROM STORAGE.RULES
     match /credit_bundles/{bundleId} {
+      // Anyone can read credit bundles (like storage.rules: allow read: if true;)
       allow read: if true;
       allow write: if isAuthenticated();
     }
