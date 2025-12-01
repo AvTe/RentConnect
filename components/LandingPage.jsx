@@ -401,76 +401,43 @@ export const LandingPage = ({ onNavigate, currentUser }) => {
         ]
       : [];
 
-  // Auto-scroll effect
+  // Check subscription status for logged-in agents
   useEffect(() => {
-    if (isPaused || displayLeads.length === 0 || isDragging) return;
-    const cardWidth = 280;
-    const gap = 16;
-
-    // Fetch real leads from Firebase on mount
-    useEffect(() => {
-      const fetchLeads = async () => {
+    const checkSubscription = async () => {
+      if (currentUser?.uid && currentUser?.role === "agent") {
         try {
-          setIsLoading(true);
-          const result = await getAllLeads({ status: "active", limit: 10 });
-
-          if (result.success && result.data.length > 0) {
-            // Use real leads from database
-            setLeads(result.data);
-          } else {
-            // Use fallback leads only if no real data exists
-            console.log("No leads in database, using fallback data");
-            setLeads(fallbackLeads);
-          }
+          const { checkSubscriptionStatus } = await import("@/lib/firestore");
+          const result = await checkSubscriptionStatus(currentUser.uid);
+          setIsSubscribed(result.isPremium || false);
         } catch (error) {
-          console.error("Error fetching leads:", error);
-          setLeads(fallbackLeads);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      fetchLeads();
-    }, []);
-
-    // Check subscription status for logged-in agents
-    useEffect(() => {
-      const checkSubscription = async () => {
-        if (currentUser?.uid && currentUser?.role === "agent") {
-          try {
-            const result = await checkSubscriptionStatus(currentUser.uid);
-            setIsSubscribed(result.isPremium || false);
-          } catch (error) {
-            console.error("Error checking subscription:", error);
-            setIsSubscribed(false);
-          }
-        } else {
+          console.error("Error checking subscription:", error);
           setIsSubscribed(false);
         }
-      };
+      } else {
+        setIsSubscribed(false);
+      }
+    };
 
-      checkSubscription();
-    }, [currentUser]);
+    checkSubscription();
+  }, [currentUser?.uid, currentUser?.role]);
 
-    const totalCards = leads.length || 1;
+  // Update loading state when leads hook loading changes
+  useEffect(() => {
+    if (!loading) {
+      setIsLoading(false);
+    }
+  }, [loading]);
 
-    // Create extended array for infinite loop (clone first few cards at end)
-    const extendedLeads =
-      leads.length > 0
-        ? [...leads, ...leads.slice(0, Math.min(5, leads.length))]
-        : [];
+  // Auto-scroll every 3.5 seconds
+  useEffect(() => {
+    if (isPaused || leads.length === 0 || isDragging) return;
 
-    // Auto-scroll every 3.5 seconds
-    useEffect(() => {
-      if (isPaused || leads.length === 0) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => prev + 1);
+    }, 4000);
 
-      const timer = setInterval(() => {
-        setCurrentIndex((prev) => prev + 1);
-      }, 4000);
-
-      return () => clearInterval(timer);
-    }, [isPaused, displayLeads.length, isDragging]);
-  }, [isPaused, leads.length]);
+    return () => clearInterval(timer);
+  }, [isPaused, leads.length, isDragging]);
 
   // Reset carousel when reaching end
   useEffect(() => {

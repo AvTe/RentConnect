@@ -1,10 +1,3 @@
-'use client';
-
-import { SkeletonLoadingScreen } from '@/components/ui/SkeletonLoadingScreen';
-
-export default function RootLoading() {
-  return <SkeletonLoadingScreen />;
-}
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
