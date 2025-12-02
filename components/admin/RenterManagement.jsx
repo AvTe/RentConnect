@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { getAllRenters, getFullRenterProfile } from '@/lib/firestore';
+import { getAllRenters, getFullRenterProfile } from '@/lib/database';
 import { RenterDetail } from './RenterDetail';
 
 export const RenterManagement = () => {

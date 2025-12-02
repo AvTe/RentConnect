@@ -10,7 +10,7 @@ import {
   updateSubscriptionPlan, 
   deleteSubscriptionPlan,
   getAllSubscriptions
-} from '@/lib/firestore';
+} from '@/lib/database';
 
 export const SubscriptionManagement = () => {
   const [activeTab, setActiveTab] = useState('plans'); // plans, subscribers

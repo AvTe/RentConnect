@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Check, Zap, Shield, Coins } from 'lucide-react';
 import { Button } from './ui/Button';
-import { getAllCreditBundles } from '@/lib/firestore';
+import { getAllCreditBundles } from '@/lib/database';
 
 export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
   const [bundles, setBundles] = useState([]);

@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getApiUrl, getPaymentStatusLabel, calculateSubscriptionEndDate, verifyMetadataSignature } from '@/lib/pesapal';
 import { 
-  isFirebaseAdminConfigured, 
-  createAgentSubscription, 
   createUserSubscription, 
   addAgentCredits 
-} from '@/lib/firebase-admin';
+} from '@/lib/database';
 import pg from 'pg';
 
 const PESAPAL_CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
@@ -192,9 +190,9 @@ export async function POST(request) {
       };
     }
 
-    // Try server-side fulfillment if Firebase Admin is configured
+    // Server-side fulfillment for subscriptions and credits
     let serverFulfillmentDone = false;
-    if (isFirebaseAdminConfigured() && paymentRecord.fulfillment_status !== 'fulfilled') {
+    if (paymentRecord.fulfillment_status !== 'fulfilled') {
       try {
         const subscriptionData = {
           startDate: subscriptionDetails ? new Date(subscriptionDetails.startDate) : new Date(),
@@ -209,15 +207,14 @@ export async function POST(request) {
 
         let fulfillmentResult = null;
 
-        if (metadata.type === 'agent_subscription' && metadata.agentId) {
-          fulfillmentResult = await createAgentSubscription(metadata.agentId, subscriptionData);
-        } else if (metadata.type === 'user_subscription' && metadata.userId) {
-          fulfillmentResult = await createUserSubscription(metadata.userId, subscriptionData);
+        if ((metadata.type === 'agent_subscription' || metadata.type === 'user_subscription') && (metadata.agentId || metadata.userId)) {
+          const userId = metadata.agentId || metadata.userId;
+          fulfillmentResult = await createUserSubscription(userId, subscriptionData);
         } else if (metadata.type === 'credit_purchase' && metadata.agentId && metadata.credits > 0) {
           fulfillmentResult = await addAgentCredits(metadata.agentId, metadata.credits, subscriptionData);
         }
 
-        if (fulfillmentResult) {
+        if (fulfillmentResult && fulfillmentResult.success) {
           await pool.query(
             `UPDATE pending_payments 
              SET fulfillment_status = 'fulfilled',

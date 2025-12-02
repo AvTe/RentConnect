@@ -3,7 +3,7 @@ import {
   Users, ShieldCheck, Wallet, FileText, TrendingUp, Activity, 
   AlertCircle, DollarSign, UserPlus, CreditCard, Lock
 } from 'lucide-react';
-import { getDashboardStats, getRecentActivity } from '@/lib/firestore';
+import { getDashboardStats, getRecentActivity } from '@/lib/database';
 import { Badge } from '../ui/Badge';
 
 export const AdminOverview = () => {

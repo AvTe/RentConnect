@@ -12,6 +12,8 @@
     "@google-cloud/recaptcha-enterprise": "^6.3.1",
     "@sendgrid/mail": "^8.1.6",
     "@smileid/web-components": "^11.0.3",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.86.0",
     "canvas-confetti": "^1.9.4",
     "firebase": "^12.6.0",
     "firebase-admin": "^13.6.0",

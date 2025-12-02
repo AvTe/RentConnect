@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { updateLead, deleteLead } from '@/lib/firestore';
+import { updateLead, deleteLead } from '@/lib/database';
 
 export const LeadDetail = ({ lead, onBack, onUpdate }) => {
   const [loading, setLoading] = useState(false);

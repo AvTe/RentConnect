@@ -9,7 +9,7 @@ import {
   updateSupportTicket, 
   resolveSupportTicket,
   createSupportTicket
-} from '@/lib/firestore';
+} from '@/lib/database';
 
 export const SupportManagement = () => {
   const [tickets, setTickets] = useState([]);

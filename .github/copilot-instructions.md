@@ -1,32 +1,26 @@
 ﻿# RentConnect AI Coding Instructions
 
 ## Project Overview
-**RentConnect** is a Next.js 14 rental marketplace connecting tenants with verified agents. It uses Firebase (Auth, Firestore, Storage), Paystack payments, and multi-channel notifications (Email, WhatsApp, In-App).
+**RentConnect** is a Next.js 14 rental marketplace connecting tenants with verified agents. It uses Supabase (PostgreSQL, Auth, Storage), Pesapal payments, and multi-channel notifications (Email, WhatsApp, In-App).
 
 ## Architecture Essentials
 
 ### Data Flow & Collections
-Core data flows through Firestore collections with real-time listeners:
-- **users**  Contains dual role data: `role: 'tenant'|'agent'`, `subscriptionStatus`, `walletBalance`, `referralCode`
+Core data flows through PostgreSQL database with real-time listeners:
+- **users**  Contains dual role data: `role: 'tenant'|'agent'`, `subscription_status`, `wallet_balance`, `referral_code`
 - **leads**  Tenant rental requests; agents subscribe via `subscribeToLeads(filters)` for real-time updates
-- **properties**  Agent listings; connected to users via `agentId` foreign key
-- **subscriptions**  Track premium access; webhook updates from Paystack on `/api/paystack/webhook`
-- **contactHistory**  Tracks every tenant-agent interaction for billing/metrics
+- **properties**  Agent listings; connected to users via `agent_id` foreign key
+- **subscriptions**  Track premium access; webhook updates from Pesapal
+- **contact_history**  Tracks every tenant-agent interaction for billing/metrics
 
-**Key Pattern**: All async operations return `{ success: boolean, data?: any, error?: string }` object (see `lib/firestore.js`).
+**Key Pattern**: All async operations return `{ success: boolean, data?: any, error?: string }` object (see `lib/database.js`).
 
-### Component Routing Pattern
-Single-page app (SPA) with routing via `app/page.js` state management:
-```javascript
-// All navigation is conditional rendering, NOT next/navigation
-const currentPage = user?.role === 'agent' ? 'agent-dashboard' : 'tenant-dashboard';
-```
-Components are pure presentational (no client-side routing library). Update `currentPage` state to change views.
-
-### Firebase Integration Points
-- `lib/firebase.js`  Initializes SDK; exports `auth, db, storage, googleProvider`
-- `lib/firestore.js`  1727 lines of CRUD + real-time subscriptions; every mutation includes `serverTimestamp()`
-- `lib/storage.js`  Image uploads use `/images/$\{userId\}/$\{timestamp\}` path pattern; 5MB limit enforced
+### Supabase Integration Points
+- `utils/supabase/client.js`  Browser client initialization
+- `utils/supabase/server.js`  Server-side client with cookies
+- `lib/database.js`  2200+ lines of CRUD + real-time subscriptions
+- `lib/auth-supabase.js`  Authentication functions (signup, signin, OAuth, password reset)
+- `lib/storage-supabase.js`  Image uploads use `/{userId}/{folder}/{timestamp}` path pattern
 - Real-time listeners in `lib/hooks.js` auto-unsubscribe on cleanup to prevent memory leaks
 
 ### Custom Hooks Architecture

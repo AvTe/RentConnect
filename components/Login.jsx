@@ -1,24 +1,27 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2 } from 'lucide-react';
 import { Button } from './ui/Button';
-import { auth, googleProvider } from '@/lib/firebase';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword } from '@/lib/auth-supabase';
+import { getUser, createUser, updateUser } from '@/lib/database';
 
 const getAuthErrorMessage = (errorCode) => {
   const errorMessages = {
     'auth/invalid-credential': 'Invalid email or password. Please check your credentials and try again.',
-    'auth/user-not-found': 'No account found with this email. Please sign up first.',
-    'auth/wrong-password': 'Incorrect password. Please try again or reset your password.',
+    'auth/user-not-found': 'This email is not registered. Please sign up first.',
+    'auth/wrong-password': 'Incorrect password. Please try again or use "Forgot Password" to reset it.',
     'auth/email-already-in-use': 'This email is already registered. Please sign in instead.',
     'auth/weak-password': 'Password is too weak. Please use at least 6 characters.',
     'auth/invalid-email': 'Please enter a valid email address.',
-    'auth/too-many-requests': 'Too many failed attempts. Please try again later or reset your password.',
+    'auth/too-many-requests': 'Too many failed attempts. Please try again in a few minutes or reset your password.',
+    'auth/rate-limit': 'Too many requests. Please wait a few minutes before trying again.',
     'auth/network-request-failed': 'Network error. Please check your internet connection.',
     'auth/user-disabled': 'This account has been disabled. Please contact support.',
     'auth/operation-not-allowed': 'Email/password sign-in is not enabled. Please contact support.',
     'auth/popup-closed-by-user': 'Sign-in popup was closed. Please try again.',
     'auth/cancelled-popup-request': 'Sign-in was cancelled. Please try again.',
     'auth/popup-blocked': 'Sign-in popup was blocked. Please allow popups for this site.',
+    'auth/email-not-confirmed': 'Please verify your email address before signing in. Check your inbox for the confirmation link.',
+    'auth/unknown': 'An unexpected error occurred. Please try again or contact support if the problem persists.'
   };
 
   return errorMessages[errorCode] || 'An error occurred during authentication. Please try again.';
@@ -66,36 +69,47 @@ export const Login = ({ onNavigate, onLogin }) => {
     setError('');
     setSuccessMessage('');
 
-    if (!auth || !googleProvider) {
-      setError('Authentication service is not available. Please refresh the page and try again.');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-
-      const { getUser, createUser } = await import('@/lib/firestore');
-      const userResult = await getUser(user.uid);
+      const result = await signInWithGoogle();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Google sign-in failed');
+      }
+      
+      const user = result.data.user;
+      const userResult = await getUser(user.id);
 
       if (!userResult.success) {
+        // Extract Google profile data
+        const metadata = user.user_metadata || {};
         const userData = {
           email: user.email,
-          name: user.displayName,
-          avatar: user.photoURL,
+          name: metadata.full_name || metadata.name || user.email?.split('@')[0],
+          avatar: metadata.avatar_url || metadata.picture || null,
           type: userType,
-          phone: null,
-          location: null
+          role: userType,
+          phone: metadata.phone || null,
+          location: null,
+          status: 'active'
         };
-        await createUser(user.uid, userData);
-        onLogin({ ...userData, uid: user.uid });
+        
+        console.log('Creating new user from Google:', userData);
+        await createUser(user.id, userData);
+        onLogin({ ...userData, uid: user.id, id: user.id });
       } else {
-        onLogin({ ...userResult.data, uid: user.uid });
+        // User exists, update avatar if it changed
+        const metadata = user.user_metadata || {};
+        const updatedAvatar = metadata.avatar_url || metadata.picture;
+        
+        if (updatedAvatar && updatedAvatar !== userResult.data.avatar) {
+          await updateUser(user.id, { avatar: updatedAvatar });
+        }
+        
+        onLogin({ ...userResult.data, uid: user.id, id: user.id });
       }
     } catch (err) {
-      const errorCode = err.code || '';
-      setError(getAuthErrorMessage(errorCode));
+      console.error('Google login error:', err);
+      setError(err.message || 'Google sign-in failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -114,20 +128,23 @@ export const Login = ({ onNavigate, onLogin }) => {
       return;
     }
 
-    if (!auth) {
-      setError('Authentication service is not available. Please refresh the page.');
-      return;
-    }
-
     setLoading(true);
     setError('');
     setSuccessMessage('');
     try {
-      await sendPasswordResetEmail(auth, trimmedEmail);
-      setSuccessMessage('Password reset email sent! Check your inbox.');
+      console.log('Requesting password reset for:', trimmedEmail);
+      const result = await resetPassword(trimmedEmail);
+      
+      if (result.success) {
+        setSuccessMessage(result.message || 'Password reset email sent! Check your inbox and spam folder.');
+        setEmail(''); // Clear email field after successful request
+      } else {
+        console.error('Password reset failed:', result.error);
+        setError(result.error || 'Failed to send password reset email. Please try again.');
+      }
     } catch (err) {
-      const errorCode = err.code || '';
-      setError(getAuthErrorMessage(errorCode));
+      console.error('Password reset error:', err);
+      setError(err.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -166,21 +183,21 @@ export const Login = ({ onNavigate, onLogin }) => {
       return;
     }
 
-    if (!auth) {
-      setError('Authentication service is not available. Please refresh the page and try again.');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const { getUser, createUser } = await import('@/lib/firestore');
-      let userCredential;
+      let result;
 
       if (isRegistering) {
-        userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
-        const user = userCredential.user;
-
+        result = await signUpWithEmail(trimmedEmail, password, {
+          name: trimmedName || (userType === 'tenant' ? 'New Tenant' : 'New Agent')
+        });
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Registration failed');
+        }
+        
+        const user = result.data.user;
         const userData = {
           email: user.email,
           name: trimmedName || (userType === 'tenant' ? 'New Tenant' : 'New Agent'),
@@ -189,26 +206,34 @@ export const Login = ({ onNavigate, onLogin }) => {
           location: null,
           avatar: null
         };
-        await createUser(user.uid, userData);
-        onLogin({ ...userData, uid: user.uid });
+        await createUser(user.id, userData);
+        onLogin({ ...userData, uid: user.id, id: user.id });
       } else {
-        userCredential = await signInWithEmailAndPassword(auth, trimmedEmail, password);
-        const user = userCredential.user;
-
-        const userResult = await getUser(user.uid);
+        result = await signInWithEmail(trimmedEmail, password);
+        
+        if (!result.success) {
+          // Use the error code if available, otherwise use the error message
+          const errorMsg = result.errorCode 
+            ? getAuthErrorMessage(result.errorCode)
+            : result.error;
+          throw new Error(errorMsg);
+        }
+        
+        const user = result.data.user;
+        const userResult = await getUser(user.id);
         if (userResult.success) {
-          onLogin({ ...userResult.data, uid: user.uid });
+          onLogin({ ...userResult.data, uid: user.id, id: user.id });
         } else {
           onLogin({
-            uid: user.uid,
+            uid: user.id,
+            id: user.id,
             email: user.email,
             type: userType
           });
         }
       }
     } catch (err) {
-      const errorCode = err.code || '';
-      setError(getAuthErrorMessage(errorCode));
+      setError(err.message || 'Authentication failed. Please try again.');
     } finally {
       setLoading(false);
     }

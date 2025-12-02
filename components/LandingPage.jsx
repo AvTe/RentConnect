@@ -9,7 +9,7 @@ import React, {
   useCallback,
 } from "react";
 import { useLeads, useSubscription } from "@/lib/hooks";
-import { trackAgentLeadContact } from "@/lib/firestore";
+import { trackAgentLeadContact } from "@/lib/database";
 import {
   Home,
   MapPin,

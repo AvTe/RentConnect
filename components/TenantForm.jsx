@@ -17,7 +17,7 @@ import { OTPInput } from "./ui/OTPInput";
 import confetti from "canvas-confetti";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { checkPhoneNumberExists } from "@/lib/firestore";
+import { checkPhoneNumberExists } from "@/lib/database";
 
 const PROPERTY_TYPES = [
   { id: "1 Bedroom", label: "1 Bedroom", icon: "🛏️" },
@@ -142,6 +142,12 @@ export const TenantForm = ({
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to send verification code.");
+      }
+
+      // Show dev OTP in console for development
+      if (data.devOtp) {
+        console.log('🔐 DEV MODE - Your OTP is:', data.devOtp);
+        alert(`DEV MODE - Your verification code is: ${data.devOtp}\n\nIn production, this will be sent via SMS.`);
       }
 
       setVerificationStep("sent");
@@ -316,7 +322,7 @@ export const TenantForm = ({
           <button
             type="button"
             onClick={handleUseCurrentLocation}
-            className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#FE9200] transition-colors"
+            className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#FE9200] transition-colors z-10"
             title="Use current location"
           >
             {isLocating ? (
@@ -335,6 +341,8 @@ export const TenantForm = ({
             onKeyDown={(e) =>
               e.key === "Enter" && formData.location && handleNext()
             }
+            placeholder="e.g., Nairobi, Westlands"
+            className="w-full pl-12 sm:pl-14 pr-4 py-3 sm:py-4 border-2 border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-4 focus:ring-[#FFE4C4] outline-none transition-all text-sm sm:text-base"
           />
         </div>
       </div>

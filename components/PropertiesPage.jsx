@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Filter, Search, Lock, Phone, MessageCircle, Home, Bed, Bath, DollarSign } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
-import { getAllLeads, unlockLead, getUnlockedLeads, getWalletBalance } from '@/lib/firestore';
+import { getAllLeads, unlockLead, getUnlockedLeads, getWalletBalance } from '@/lib/database';
 
 export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
   const [leads, setLeads] = useState([]);

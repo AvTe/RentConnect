@@ -5,6 +5,39 @@ const nextConfig = {
     missingSuspenseWithCSRBailout: false,
     optimizePackageImports: ['lucide-react'],
   },
+
+  // Suppress console warnings in development
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
+
+  // Webpack configuration
+  webpack: (config, { dev, isServer }) => {
+    // Suppress XSS warnings in development (they're handled by CSP headers)
+    if (dev) {
+      config.infrastructureLogging = {
+        level: 'error',
+      };
+    }
+    
+    // Production optimizations
+    if (!dev && !isServer) {
+      const TerserPlugin = require('terser-webpack-plugin');
+      config.optimization.minimizer = [
+        new TerserPlugin({
+          terserOptions: {
+            compress: { 
+              drop_console: true,
+              drop_debugger: true,
+            },
+          },
+        }),
+      ];
+    }
+    
+    return config;
+  },
   
   // Image Optimization
   images: {
@@ -57,23 +90,6 @@ const nextConfig = {
   async redirects() {
     return [];
   },
-
-  // Bundle Analysis (enable with: ANALYZE=true npm run build)
-  ...(process.env.ANALYZE === 'true' && {
-    webpack: (config, { isServer }) => {
-      const TerserPlugin = require('terser-webpack-plugin');
-      if (!isServer) {
-        config.optimization.minimizer = [
-          new TerserPlugin({
-            terserOptions: {
-              compress: { drop_console: true },
-            },
-          }),
-        ];
-      }
-      return config;
-    },
-  }),
 };
 
 module.exports = nextConfig;

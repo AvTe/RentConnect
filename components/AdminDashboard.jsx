@@ -9,7 +9,7 @@ import {
   getPendingAgents, 
   approveAgent, 
   rejectAgent
-} from '@/lib/firestore';
+} from '@/lib/database';
 import { AdminOverview } from './admin/AdminOverview';
 import { AgentManagement } from './admin/AgentManagement';
 import { RenterManagement } from './admin/RenterManagement';

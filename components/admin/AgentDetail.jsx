@@ -14,7 +14,7 @@ import {
   addCredits,
   updateUser,
   softDeleteUser
-} from '@/lib/firestore';
+} from '@/lib/database';
 
 export const AgentDetail = ({ agent, onBack, onUpdate }) => {
   const [loading, setLoading] = useState(false);

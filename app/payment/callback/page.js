@@ -4,8 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle, XCircle, Loader2, Home, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { db, isFirebaseReady } from '@/lib/firebase';
-import { doc, updateDoc, collection, addDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { createUserSubscription, updateUser, addAgentCredits } from '@/lib/database';
 
 export default function PaymentCallbackPage() {
   const searchParams = useSearchParams();
@@ -61,78 +60,36 @@ export default function PaymentCallbackPage() {
         // Payment verified successfully
         const { metadata, pesapalData, subscriptionDetails, serverFulfillmentDone } = result;
 
-        // Only do client-side Firebase updates if server-side fulfillment didn't happen
-        if (!serverFulfillmentDone && isFirebaseReady && metadata) {
+        // Only do client-side updates if server-side fulfillment didn't happen
+        if (!serverFulfillmentDone && metadata) {
           try {
-            if (metadata.type === 'agent_subscription' && metadata.agentId) {
-              // Create subscription record
-              await addDoc(collection(db, 'subscriptions'), {
-                agentId: metadata.agentId,
-                status: 'active',
+            if ((metadata.type === 'agent_subscription' || metadata.type === 'user_subscription') && (metadata.agentId || metadata.userId)) {
+              const userId = metadata.agentId || metadata.userId;
+              const subscriptionData = {
                 startDate: new Date(subscriptionDetails.startDate),
                 endDate: new Date(subscriptionDetails.endDate),
                 paymentReference: pesapalData.merchantReference,
-                pesapalTrackingId: pesapalData.trackingId,
+                trackingId: pesapalData.trackingId,
                 amount: pesapalData.amount,
                 paymentMethod: pesapalData.paymentMethod,
                 confirmationCode: pesapalData.confirmationCode,
-                createdAt: serverTimestamp()
-              });
+                planType: metadata.planType
+              };
 
-              // Update agent's premium status
-              await updateDoc(doc(db, 'users', metadata.agentId), {
-                isPremium: true,
-                subscriptionEndDate: new Date(subscriptionDetails.endDate)
-              });
-
-              console.log('Agent subscription activated for:', metadata.agentId);
-
-            } else if (metadata.type === 'user_subscription' && metadata.userId) {
-              // Create user subscription record
-              await addDoc(collection(db, 'user_subscriptions'), {
-                userId: metadata.userId,
-                planType: metadata.planType,
-                status: 'active',
-                startDate: new Date(subscriptionDetails.startDate),
-                endDate: new Date(subscriptionDetails.endDate),
-                paymentReference: pesapalData.merchantReference,
-                pesapalTrackingId: pesapalData.trackingId,
-                amount: pesapalData.amount,
-                paymentMethod: pesapalData.paymentMethod,
-                confirmationCode: pesapalData.confirmationCode,
-                createdAt: serverTimestamp()
-              });
-
-              // Update user's subscription status
-              await updateDoc(doc(db, 'users', metadata.userId), {
-                hasActiveSubscription: true,
-                subscriptionPlan: metadata.planType,
-                subscriptionEndDate: new Date(subscriptionDetails.endDate)
-              });
-
-              console.log('User subscription activated for:', metadata.userId);
+              await createUserSubscription(userId, subscriptionData);
+              console.log('Subscription activated for:', userId);
 
             } else if (metadata.type === 'credit_purchase' && metadata.agentId) {
               const credits = metadata.credits || 0;
               if (credits > 0) {
-                // Add credits to agent's wallet
-                await updateDoc(doc(db, 'users', metadata.agentId), {
-                  walletBalance: increment(credits)
-                });
-
-                // Log transaction
-                await addDoc(collection(db, 'transactions'), {
-                  userId: metadata.agentId,
-                  type: 'credit_purchase',
-                  credits: credits,
+                const transactionData = {
                   amount: pesapalData.amount,
                   paymentMethod: pesapalData.paymentMethod,
                   paymentReference: pesapalData.merchantReference,
-                  confirmationCode: pesapalData.confirmationCode,
-                  description: `Credit purchase via ${pesapalData.paymentMethod || 'M-Pesa'}`,
-                  createdAt: serverTimestamp()
-                });
+                  confirmationCode: pesapalData.confirmationCode
+                };
 
+                await addAgentCredits(metadata.agentId, credits, transactionData);
                 console.log('Credits added for agent:', metadata.agentId, 'Credits:', credits);
               }
             }

@@ -15,10 +15,9 @@ import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { PropertiesPage } from '@/components/PropertiesPage';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
-import { auth, isFirebaseReady } from '@/lib/firebase';
-import { onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
-import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/firestore';
-import { uploadImage } from '@/lib/storage';
+import { getCurrentSession, signOut, onAuthStateChange } from '@/lib/auth-supabase';
+import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/database';
+import { uploadImage } from '@/lib/storage-supabase';
 import { useLeads, useSubscription } from '@/lib/hooks';
 
 export default function RentalLeadApp() {
@@ -31,7 +30,7 @@ export default function RentalLeadApp() {
   // Use custom hooks for data management
   // Only fetch leads if user is logged in (to avoid permission errors)
   const { leads } = useLeads({}, !!currentUser);
-  const { isPremium } = useSubscription(currentUser?.uid);
+  const { isPremium } = useSubscription(currentUser?.id);
 
   useEffect(() => {
     // Minimum loading time for smooth animation
@@ -44,29 +43,25 @@ export default function RentalLeadApp() {
       setTimeout(() => setLoading(false), remaining);
     };
     
-    // Check if Firebase is initialized before setting up auth listener
-    if (!isFirebaseReady) {
-      console.warn('Firebase not initialized. Running in demo mode.');
-      finishLoading();
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    // Setup Supabase auth listener
+    const unsubscribe = onAuthStateChange(async (event, session) => {
+      const user = session?.user;
       if (user) {
         try {
-          const userResult = await getUser(user.uid);
+          const userResult = await getUser(user.id);
           
           if (userResult.success) {
             let userData = userResult.data;
 
             // Auto-promote specific email to admin
             if (user.email === 'kartikamit171@gmail.com' && userData.role !== 'admin') {
-              await updateUser(user.uid, { role: 'admin' });
+              await updateUser(user.id, { role: 'admin' });
               userData.role = 'admin';
             }
 
             setCurrentUser({
-              uid: user.uid,
+              id: user.id,
+              uid: user.id,
               email: user.email,
               ...userData
             });
@@ -83,10 +78,11 @@ export default function RentalLeadApp() {
             }
           } else {
             setCurrentUser({
-              uid: user.uid,
+              id: user.id,
+              uid: user.id,
               email: user.email,
-              name: user.displayName,
-              avatar: user.photoURL,
+              name: user.user_metadata?.name || user.email?.split('@')[0],
+              avatar: user.user_metadata?.avatar_url,
               type: 'tenant'
             });
           }
@@ -155,14 +151,8 @@ export default function RentalLeadApp() {
   };
 
   const handleLogout = async () => {
-    if (!isFirebaseReady) {
-      console.warn('Firebase not initialized');
-      setCurrentUser(null);
-      setView('landing');
-      return;
-    }
     try {
-      await signOut(auth);
+      await signOut();
       setCurrentUser(null);
       setView('landing');
     } catch (error) {
@@ -180,76 +170,72 @@ export default function RentalLeadApp() {
   };
 
   const handleTenantSubmit = async (formData) => {
-    if (!isFirebaseReady) {
-      console.warn('Firebase not initialized. Cannot submit tenant form.');
-      return { success: false, error: 'Application is not yet configured. Please set up Firebase environment variables to enable this feature.' };
-    }
     try {
-      const { createLead } = await import('@/lib/firestore');
+      const { createLead } = await import('@/lib/database');
       const { sendEmailNotification, EMAIL_TEMPLATES } = await import('@/lib/notifications');
       
-      // 1. Ensure User Account Exists
-      // If phone verification was successful, auth.currentUser should be set (via Phone Auth)
-      let user = auth.currentUser;
-      let userId = user?.uid;
+      // Get current session to check if user is authenticated
+      const { user, session } = await getCurrentSession();
+      let userId = user?.id || null;
 
+      // If user is authenticated, update their profile
       if (user) {
-        // Check if profile exists
-        const userResult = await getUser(user.uid);
-        
-        if (!userResult.success) {
-           // Create new profile
-           const userData = {
-            name: formData.name || 'Valued Tenant',
-            email: formData.email,
-            phone: formData.whatsapp,
-            type: 'tenant',
-            role: 'tenant',
-            status: 'active',
-            avatar: null
-          };
-          await createUser(user.uid, userData);
+        try {
+          const userResult = await getUser(user.id);
           
-          setCurrentUser({
-            uid: user.uid,
-            ...userData
-          });
-        } else {
-          // Profile exists: Update it with the latest form data (Name/Email)
-          // This ensures the account reflects the name entered in the form
-          const updates = {
-            name: formData.name,
-            email: formData.email
-          };
-          await updateUser(user.uid, updates);
-          
-          setCurrentUser(prev => ({
-            ...prev,
-            ...updates
-          }));
+          if (!userResult.success) {
+            // Create new profile
+            const userData = {
+              name: formData.name || 'Valued Tenant',
+              email: formData.email,
+              phone: formData.whatsapp,
+              type: 'tenant',
+              role: 'tenant',
+              status: 'active',
+              avatar: null
+            };
+            await createUser(user.id, userData);
+            
+            setCurrentUser({
+              uid: user.id,
+              id: user.id,
+              ...userData
+            });
+          } else {
+            // Profile exists: Update it with the latest form data
+            const updates = {
+              name: formData.name,
+              email: formData.email,
+              phone: formData.whatsapp
+            };
+            await updateUser(user.id, updates);
+            
+            setCurrentUser(prev => ({
+              ...prev,
+              ...updates
+            }));
+          }
+        } catch (error) {
+          console.error('Error updating user profile:', error);
+          // Continue with lead creation even if profile update fails
         }
-      } else {
-        // Fallback (Should not happen if verification is enforced)
-        console.error("User not authenticated after verification");
-        return { success: false, error: 'Authentication failed. Please verify your phone number.' };
       }
 
+      // Create lead data matching the schema
       const leadData = {
-        tenant_info: {
-          name: formData.name,
-          phone: formData.phone || formData.whatsapp,
-          whatsapp_link: `https://wa.me/${formData.whatsapp}`,
-          whatsapp: formData.whatsapp, // Keeping raw number for easy access
-          email: formData.email || currentUser?.email,
-          id: userId
-        },
+        user_id: userId, // Can be null for non-authenticated users
+        tenant_name: formData.name,
+        tenant_phone: formData.whatsapp,
+        tenant_email: formData.email,
+        location: formData.location,
+        property_type: formData.type,
+        budget: parseFloat(formData.budget) || 0,
+        bedrooms: parseInt(formData.bedrooms) || 1,
+        move_in_date: formData.moveInDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         requirements: {
-          location: formData.location,
-          pincode: formData.pincode,
-          property_type: formData.type,
-          budget: formData.budget,
-          currency: 'KES',
-          move_in_date: 'ASAP' // Defaulting for now
+          additional_requirements: formData.additionalRequirements || '',
+          pincode: formData.pincode || '',
+          amenities: formData.amenities || []
         }
       };
       
@@ -257,18 +243,22 @@ export default function RentalLeadApp() {
       
       if (result.success) {
         // Send confirmation email to tenant
-        if (leadData.tenant_info.email) {
-          const emailContent = EMAIL_TEMPLATES.TENANT_CONFIRMATION(leadData.tenant_info.name, leadData);
-          await sendEmailNotification(leadData.tenant_info.email, 'Request Submitted - Yoombaa', emailContent);
+        if (leadData.tenant_email) {
+          try {
+            const emailContent = EMAIL_TEMPLATES.TENANT_CONFIRMATION(leadData.tenant_name, leadData);
+            await sendEmailNotification(leadData.tenant_email, 'Request Submitted - RentConnect', emailContent);
+          } catch (emailError) {
+            console.error('Error sending confirmation email:', emailError);
+            // Don't fail the submission if email fails
+          }
         }
         
-        // Let the form component handle the success UI
-        return { success: true };
+        return { success: true, data: result.data };
       }
       return { success: false, error: 'Failed to create lead' };
     } catch (error) {
       console.error('Error submitting tenant form:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message || 'Failed to submit request' };
     }
   };
 
@@ -278,22 +268,29 @@ export default function RentalLeadApp() {
   };
 
   const handleAgentRegistration = async (formData) => {
-    if (!isFirebaseReady) {
-      console.warn('Firebase not initialized. Cannot register agent.');
-      return { success: false, error: 'Application is not yet configured. Please set up Firebase environment variables to enable registration.' };
-    }
     try {
       setLoading(true);
+      // Import Supabase auth function
+      const { signUpWithEmail } = await import('@/lib/auth-supabase');
+      
       // 1. Create Auth User
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const user = userCredential.user;
+      const result = await signUpWithEmail(formData.email, formData.password, {
+        name: formData.fullName,
+        phone: formData.phone
+      });
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Registration failed');
+      }
+      
+      const user = result.data.user;
 
       // 2. Upload ID Document
       let idDocumentUrl = null;
       if (formData.idDocument) {
         const uploadResult = await uploadImage(
           formData.idDocument, 
-          `verification_docs/${user.uid}/${formData.idDocument.name}`
+          `verification_docs/${user.id}/${formData.idDocument.name}`
         );
         if (uploadResult.success) {
           idDocumentUrl = uploadResult.url;
@@ -317,11 +314,11 @@ export default function RentalLeadApp() {
         status: 'active'
       };
       
-      await createUser(user.uid, agentData);
+      await createUser(user.id, agentData);
       
       setCurrentUser({
         ...agentData,
-        uid: user.uid
+        uid: user.id
       });
       
       setView('agent-dashboard');
@@ -335,11 +332,6 @@ export default function RentalLeadApp() {
 
   const handleSubscribe = async (paymentData) => {
     try {
-      // Check if Firebase is ready before proceeding
-      if (!isFirebaseReady) {
-        alert('Payment service is not available in demo mode. Please configure Firebase to enable payments.');
-        return;
-      }
 
       const { initializePayment, SUBSCRIPTION_PLANS } = await import('@/lib/pesapal');
       
@@ -529,12 +521,7 @@ export default function RentalLeadApp() {
 
   return (
     <main className="min-h-screen bg-white">
-      {!isFirebaseReady && (
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 text-center" role="alert">
-          <p className="font-medium">Demo Mode</p>
-          <p className="text-sm">Firebase is not configured. Authentication and database features are disabled. Set up Firebase environment variables to enable full functionality.</p>
-        </div>
-      )}
+
       {view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && view !== 'admin-dashboard' && (
         <Header 
           onNavigate={setView} 

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { getAllAgents, getFullAgentProfile } from '@/lib/firestore';
+import { getAllAgents, getFullAgentProfile } from '@/lib/database';
 import { AgentDetail } from './AgentDetail';
 
 export const AgentManagement = () => {

@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { getAllLeads, getLead } from '@/lib/firestore';
+import { getAllLeads, getLead } from '@/lib/database';
 import { LeadDetail } from './LeadDetail';
 
 export const LeadManagement = () => {

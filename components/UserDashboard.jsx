@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { UserProfile } from './UserProfile';
-import { getAllAgents, getAllLeads } from '@/lib/firestore';
+import { getAllAgents, getAllLeads } from '@/lib/database';
 
 export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUser, onUpdateUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState(initialTab);

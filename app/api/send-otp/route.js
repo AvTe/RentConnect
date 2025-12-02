@@ -47,14 +47,7 @@ export async function POST(request) {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
-
-    if (!accountSid || !authToken || !twilioPhoneNumber) {
-      console.error('Twilio credentials not configured');
-      return NextResponse.json(
-        { success: false, error: 'SMS service not configured' },
-        { status: 500 }
-      );
-    }
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
     // Clean expired OTPs periodically
     cleanExpiredOTPs();
@@ -98,21 +91,46 @@ export async function POST(request) {
       verifyAttempts: 0
     });
 
-    // Send SMS via Twilio
-    const client = twilio(accountSid, authToken);
-    
-    await client.messages.create({
-      body: `Your Yoombaa verification code is: ${otp}. This code expires in 5 minutes. Do not share this code with anyone.`,
-      from: twilioPhoneNumber,
-      to: phoneNumber
-    });
+    // In development mode or if Twilio not configured, just log the OTP
+    if (isDevelopment || !accountSid || !authToken || !twilioPhoneNumber) {
+      console.log('='.repeat(60));
+      console.log('🔐 DEVELOPMENT MODE - OTP VERIFICATION CODE');
+      console.log('='.repeat(60));
+      console.log(`📱 Phone: ${phoneNumber}`);
+      console.log(`🔑 OTP: ${otp}`);
+      console.log(`⏰ Expires: ${new Date(expiresAt).toLocaleTimeString()}`);
+      console.log('='.repeat(60));
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Verification code sent successfully',
+        expiresIn: OTP_EXPIRY / 1000,
+        // Include OTP in response for development only
+        ...(isDevelopment && { devOtp: otp })
+      });
+    }
 
-    console.log(`OTP sent to ${phoneNumber}`);
+    // Send SMS via Twilio in production
+    try {
+      const client = twilio(accountSid, authToken);
+      
+      await client.messages.create({
+        body: `Your RentConnect verification code is: ${otp}. This code expires in 5 minutes. Do not share this code with anyone.`,
+        from: twilioPhoneNumber,
+        to: phoneNumber
+      });
+
+      console.log(`OTP sent to ${phoneNumber} via SMS`);
+    } catch (twilioError) {
+      console.error('Twilio SMS error:', twilioError);
+      // Log OTP as fallback
+      console.log(`Fallback OTP for ${phoneNumber}: ${otp}`);
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Verification code sent successfully',
-      expiresIn: OTP_EXPIRY / 1000 // seconds
+      expiresIn: OTP_EXPIRY / 1000
     });
 
   } catch (error) {

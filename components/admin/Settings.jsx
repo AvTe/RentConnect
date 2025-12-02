@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, User, Lock, Settings as SettingsIcon, DollarSign } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { updateUser } from '@/lib/firestore';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { updateUser, getSystemConfig, updateSystemConfig } from '@/lib/database';
 
 export const Settings = ({ user }) => {
   const [loading, setLoading] = useState(false);
@@ -25,10 +23,9 @@ export const Settings = ({ user }) => {
 
   const fetchSystemConfig = async () => {
     try {
-      const docRef = doc(db, 'system_config', 'main');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setSystemConfig(docSnap.data());
+      const result = await getSystemConfig();
+      if (result.success && result.data) {
+        setSystemConfig(result.data);
       }
     } catch (error) {
       console.error('Error fetching system config:', error);
@@ -61,8 +58,12 @@ export const Settings = ({ user }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await setDoc(doc(db, 'system_config', 'main'), systemConfig);
-      alert('System configuration updated successfully');
+      const result = await updateSystemConfig(systemConfig);
+      if (result.success) {
+        alert('System configuration updated successfully');
+      } else {
+        alert('Error updating configuration: ' + result.error);
+      }
     } catch (error) {
       console.error(error);
       alert('Error updating configuration: ' + error.message);

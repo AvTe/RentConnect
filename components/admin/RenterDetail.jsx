@@ -11,9 +11,8 @@ import {
   reactivateUser,
   updateUser,
   softDeleteUser
-} from '@/lib/firestore';
-import { auth } from '@/lib/firebase';
-import { sendPasswordResetEmail as firebaseSendPasswordResetEmail } from 'firebase/auth';
+} from '@/lib/database';
+import { resetPassword } from '@/lib/auth-supabase';
 
 export const RenterDetail = ({ renter, onBack, onUpdate }) => {
   const [loading, setLoading] = useState(false);
@@ -74,8 +73,12 @@ export const RenterDetail = ({ renter, onBack, onUpdate }) => {
     
     setLoading(true);
     try {
-      await firebaseSendPasswordResetEmail(auth, renter.email);
-      alert('Password reset email sent successfully');
+      const result = await resetPassword(renter.email);
+      if (result.success) {
+        alert('Password reset email sent successfully');
+      } else {
+        alert('Error sending password reset email: ' + result.error);
+      }
     } catch (error) {
       console.error(error);
       alert('Error sending password reset email: ' + error.message);

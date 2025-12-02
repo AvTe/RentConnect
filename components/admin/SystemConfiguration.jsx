@@ -9,7 +9,7 @@ import {
   updateNotificationTemplate, 
   deleteNotificationTemplate,
   getAllActivityLogs
-} from '@/lib/firestore';
+} from '@/lib/database';
 
 export const SystemConfiguration = () => {
   const [activeTab, setActiveTab] = useState('notifications'); // notifications, logs

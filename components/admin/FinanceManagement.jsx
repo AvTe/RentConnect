@@ -11,7 +11,7 @@ import {
   updateCreditBundle, 
   deleteCreditBundle,
   addCredits
-} from '@/lib/firestore';
+} from '@/lib/database';
 
 export const FinanceManagement = () => {
   const [activeTab, setActiveTab] = useState('transactions'); // transactions, bundles, reports

@@ -31,7 +31,7 @@ import {
   deductCredits,
   unlockLead,
   getUnlockedLeads,
-} from "@/lib/firestore";
+} from "@/lib/database";
 import { SmileIDVerification } from "./SmileIDVerification";
 
 export const AgentDashboard = ({

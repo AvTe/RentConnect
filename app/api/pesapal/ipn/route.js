@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getApiUrl, getPaymentStatusLabel, calculateSubscriptionEndDate } from '@/lib/pesapal';
 import { 
-  isFirebaseAdminConfigured, 
-  createAgentSubscription, 
   createUserSubscription, 
   addAgentCredits 
-} from '@/lib/firebase-admin';
+} from '@/lib/database';
 import pg from 'pg';
 
 const PESAPAL_CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
@@ -74,14 +72,11 @@ async function fulfillPayment(metadata, pesapalData, orderId) {
 
   let fulfillmentResult = null;
 
-  if (metadata.type === 'agent_subscription' && metadata.agentId) {
-    fulfillmentResult = await createAgentSubscription(metadata.agentId, subscriptionData);
-    console.log('Agent subscription created via IPN:', fulfillmentResult);
-
-  } else if (metadata.type === 'user_subscription' && metadata.userId) {
+  if ((metadata.type === 'agent_subscription' || metadata.type === 'user_subscription') && (metadata.agentId || metadata.userId)) {
+    const userId = metadata.agentId || metadata.userId;
     subscriptionData.planType = metadata.planType;
-    fulfillmentResult = await createUserSubscription(metadata.userId, subscriptionData);
-    console.log('User subscription created via IPN:', fulfillmentResult);
+    fulfillmentResult = await createUserSubscription(userId, subscriptionData);
+    console.log('Subscription created via IPN:', fulfillmentResult);
 
   } else if (metadata.type === 'credit_purchase' && metadata.agentId && metadata.credits > 0) {
     fulfillmentResult = await addAgentCredits(metadata.agentId, metadata.credits, {
@@ -204,40 +199,32 @@ async function handleIPN(request, method) {
         [JSON.stringify(statusData), orderTrackingId, paymentRecord.order_id]
       );
 
-      // Attempt server-side fulfillment if Firebase Admin is configured
-      if (isFirebaseAdminConfigured()) {
-        try {
-          const fulfillmentResult = await fulfillPayment(metadata, statusData, paymentRecord.order_id);
-          
-          if (fulfillmentResult) {
-            // Mark as fulfilled with receipt
-            await pool.query(
-              `UPDATE pending_payments 
-               SET fulfillment_status = 'fulfilled',
-                   fulfilled_at = NOW(),
-                   fulfillment_receipt = $1
-               WHERE order_id = $2`,
-              [JSON.stringify(fulfillmentResult), paymentRecord.order_id]
-            );
-            
-            console.log('Payment fulfilled via IPN:', paymentRecord.order_id);
-          }
-        } catch (fulfillError) {
-          console.error('Fulfillment error (will retry via callback):', fulfillError);
-          // Don't fail the IPN - fulfillment can be retried via callback
+      // Attempt server-side fulfillment
+      try {
+        const fulfillmentResult = await fulfillPayment(metadata, statusData, paymentRecord.order_id);
+        
+        if (fulfillmentResult && fulfillmentResult.success) {
+          // Mark as fulfilled with receipt
           await pool.query(
             `UPDATE pending_payments 
-             SET fulfillment_status = 'pending',
+             SET fulfillment_status = 'fulfilled',
+                 fulfilled_at = NOW(),
                  fulfillment_receipt = $1
              WHERE order_id = $2`,
-            [JSON.stringify({ error: fulfillError.message, attemptedAt: new Date() }), paymentRecord.order_id]
+            [JSON.stringify(fulfillmentResult), paymentRecord.order_id]
           );
+          
+          console.log('Payment fulfilled via IPN:', paymentRecord.order_id);
         }
-      } else {
-        console.log('Firebase Admin not configured - fulfillment will happen via callback');
+      } catch (fulfillError) {
+        console.error('Fulfillment error (will retry via callback):', fulfillError);
+        // Don't fail the IPN - fulfillment can be retried via callback
         await pool.query(
-          `UPDATE pending_payments SET fulfillment_status = 'pending' WHERE order_id = $1`,
-          [paymentRecord.order_id]
+          `UPDATE pending_payments 
+           SET fulfillment_status = 'pending',
+               fulfillment_receipt = $1
+           WHERE order_id = $2`,
+          [JSON.stringify({ error: fulfillError.message, attemptedAt: new Date() }), paymentRecord.order_id]
         );
       }
 
