@@ -1,6 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 
 /**
  * Auth Callback Route Handler
@@ -11,14 +10,21 @@ export async function GET(request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const next = requestUrl.searchParams.get('next') || '/';
+  const error = requestUrl.searchParams.get('error');
+  const errorDescription = requestUrl.searchParams.get('error_description');
   
   // Use localhost instead of 0.0.0.0
   const origin = 'http://localhost:5000';
 
+  // Handle OAuth errors
+  if (error) {
+    console.error('OAuth error:', error, errorDescription);
+    return NextResponse.redirect(`${origin}/?error=auth_failed`);
+  }
+
   if (code) {
     try {
-      const cookieStore = cookies();
-      const supabase = createClient(cookieStore);
+      const supabase = await createClient();
 
       console.log('Processing OAuth callback with code:', code.substring(0, 10) + '...');
 
@@ -27,7 +33,7 @@ export async function GET(request) {
 
       if (error) {
         console.error('Error exchanging code for session:', error);
-        return NextResponse.redirect(`${origin}/login?error=auth_failed`);
+        return NextResponse.redirect(`${origin}/?error=auth_failed`);
       }
 
       // If user data exists, ensure user profile is created in database
@@ -93,10 +99,10 @@ export async function GET(request) {
       
     } catch (error) {
       console.error('Callback error:', error);
-      return NextResponse.redirect(`${origin}/login?error=callback_error`);
+      return NextResponse.redirect(`${origin}/?error=callback_error`);
     }
   }
 
-  // No code present, redirect to login
-  return NextResponse.redirect(`${origin}/login`);
+  // No code present, redirect to home
+  return NextResponse.redirect(`${origin}/`);
 }

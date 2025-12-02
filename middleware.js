@@ -12,12 +12,12 @@ export function middleware(request) {
   // Content Security Policy - allows necessary scripts and resources
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://www.google.com https://maps.googleapis.com;
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://www.google.com https://maps.googleapis.com https://www.gstatic.com https://apis.google.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https: http:;
     font-src 'self' data: https://fonts.gstatic.com;
-    connect-src 'self' https://yydwhwkvrvgkqnmirbrr.supabase.co https://accounts.google.com https://www.googleapis.com;
-    frame-src 'self' https://accounts.google.com;
+    connect-src 'self' https://yydwhwkvrvgkqnmirbrr.supabase.co wss://yydwhwkvrvgkqnmirbrr.supabase.co https://accounts.google.com https://www.googleapis.com https://apis.google.com;
+    frame-src 'self' https://accounts.google.com https://www.google.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword } from '@/lib/auth-supabase';
@@ -53,16 +53,23 @@ const GoogleLogo = () => (
   </svg>
 );
 
-export const Login = ({ onNavigate, onLogin }) => {
+export const Login = ({ onNavigate, onLogin, authError }) => {
   const [userType, setUserType] = useState('tenant');
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(authError || '');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Update error if authError prop changes
+  useEffect(() => {
+    if (authError) {
+      setError(authError);
+    }
+  }, [authError]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -70,49 +77,23 @@ export const Login = ({ onNavigate, onLogin }) => {
     setSuccessMessage('');
 
     try {
+      // signInWithGoogle triggers OAuth popup and redirects to callback
+      // The actual login handling happens in app/auth/callback/route.js
       const result = await signInWithGoogle();
       
       if (!result.success) {
         throw new Error(result.error || 'Google sign-in failed');
       }
       
-      const user = result.data.user;
-      const userResult = await getUser(user.id);
-
-      if (!userResult.success) {
-        // Extract Google profile data
-        const metadata = user.user_metadata || {};
-        const userData = {
-          email: user.email,
-          name: metadata.full_name || metadata.name || user.email?.split('@')[0],
-          avatar: metadata.avatar_url || metadata.picture || null,
-          type: userType,
-          role: userType,
-          phone: metadata.phone || null,
-          location: null,
-          status: 'active'
-        };
-        
-        console.log('Creating new user from Google:', userData);
-        await createUser(user.id, userData);
-        onLogin({ ...userData, uid: user.id, id: user.id });
-      } else {
-        // User exists, update avatar if it changed
-        const metadata = user.user_metadata || {};
-        const updatedAvatar = metadata.avatar_url || metadata.picture;
-        
-        if (updatedAvatar && updatedAvatar !== userResult.data.avatar) {
-          await updateUser(user.id, { avatar: updatedAvatar });
-        }
-        
-        onLogin({ ...userResult.data, uid: user.id, id: user.id });
-      }
+      // The redirect happens automatically via Supabase
+      // User will be brought back to the app after successful auth
+      
     } catch (err) {
       console.error('Google login error:', err);
       setError(err.message || 'Google sign-in failed. Please try again.');
-    } finally {
       setLoading(false);
     }
+    // Don't set loading to false here - the page will redirect
   };
 
   const handlePasswordReset = async () => {

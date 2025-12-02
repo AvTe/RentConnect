@@ -331,7 +331,7 @@ const SkeletonCardSmall = ({ isMobile }) => {
   );
 };
 
-export const LandingPage = ({ onNavigate, currentUser }) => {
+export const LandingPage = ({ onNavigate, currentUser, authError }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);

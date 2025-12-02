@@ -26,11 +26,31 @@ export default function RentalLeadApp() {
   const [prefilledData, setPrefilledData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedAgentId, setSelectedAgentId] = useState(null);
+  const [authError, setAuthError] = useState(null);
   
   // Use custom hooks for data management
   // Only fetch leads if user is logged in (to avoid permission errors)
   const { leads } = useLeads({}, !!currentUser);
   const { isPremium } = useSubscription(currentUser?.id);
+
+  // Check for OAuth callback errors
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const error = params.get('error');
+      
+      if (error === 'callback_error') {
+        setAuthError('Authentication failed. Please try again.');
+        setView('landing');
+        // Clear error from URL
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (error === 'auth_failed') {
+        setAuthError('Google sign-in failed. Please try again.');
+        setView('landing');
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Minimum loading time for smooth animation
@@ -77,14 +97,44 @@ export default function RentalLeadApp() {
               }
             }
           } else {
-            setCurrentUser({
-              id: user.id,
-              uid: user.id,
+            // User profile doesn't exist in database - create it
+            console.log('User authenticated but no profile found. Creating profile...');
+            const metadata = user.user_metadata || {};
+            const newUserData = {
               email: user.email,
-              name: user.user_metadata?.name || user.email?.split('@')[0],
-              avatar: user.user_metadata?.avatar_url,
-              type: 'tenant'
-            });
+              name: metadata.full_name || metadata.name || user.email?.split('@')[0],
+              avatar: metadata.avatar_url || metadata.picture || null,
+              type: 'tenant',
+              role: 'tenant',
+              phone: metadata.phone || null,
+              location: null,
+              status: 'active',
+              wallet_balance: 0
+            };
+            
+            // Create user profile in database
+            const createResult = await createUser(user.id, newUserData);
+            
+            if (createResult.success) {
+              console.log('User profile created successfully');
+              setCurrentUser({
+                id: user.id,
+                uid: user.id,
+                ...newUserData
+              });
+            } else {
+              console.error('Failed to create user profile:', createResult.error);
+              // Still set user with basic info
+              setCurrentUser({
+                id: user.id,
+                uid: user.id,
+                email: user.email,
+                name: metadata.full_name || metadata.name || user.email?.split('@')[0],
+                avatar: metadata.avatar_url || metadata.picture || null,
+                type: 'tenant',
+                role: 'tenant'
+              });
+            }
           }
         } catch (error) {
           console.error("Error fetching user profile:", error);
@@ -405,9 +455,9 @@ export default function RentalLeadApp() {
   const renderView = () => {
     switch (view) {
       case 'landing':
-        return <LandingPage onNavigate={setView} onSearch={handleSearch} currentUser={currentUser} />;
+        return <LandingPage onNavigate={setView} onSearch={handleSearch} currentUser={currentUser} authError={authError} />;
       case 'login':
-        return <Login onNavigate={setView} onLogin={handleLogin} />;
+        return <Login onNavigate={setView} onLogin={handleLogin} authError={authError} />;
       case 'tenant-form':
         return (
           <TenantForm 
