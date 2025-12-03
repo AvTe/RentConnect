@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
-import { getAllAgents, searchAgents, sendConnectionRequest, checkUserCanViewContact } from '../lib/firestore';
+import { getAllAgents, searchAgents, sendConnectionRequest, checkUserCanViewContact } from '../lib/database';
 
 export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile }) => {
   const [agents, setAgents] = useState([]);

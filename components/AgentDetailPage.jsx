@@ -12,7 +12,7 @@ import {
   createInquiry,
   checkUserCanViewContact,
   sendConnectionRequest
-} from '../lib/firestore';
+} from '../lib/database';
 
 export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) => {
   const [agent, setAgent] = useState(null);

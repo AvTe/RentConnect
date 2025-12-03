@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
-import { getAgentInquiries, updateInquiryStatus } from '../lib/firestore';
+import { getAgentInquiries, updateInquiryStatus } from '../lib/database';
 
 export const AgentInquiryManagement = ({ agentId, agentName }) => {
   const [inquiries, setInquiries] = useState([]);
