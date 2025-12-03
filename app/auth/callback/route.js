@@ -13,8 +13,14 @@ export async function GET(request) {
   const error = requestUrl.searchParams.get('error');
   const errorDescription = requestUrl.searchParams.get('error_description');
   
-  // Use localhost instead of 0.0.0.0
-  const origin = 'http://localhost:5000';
+  // Dynamically determine origin based on environment
+  // Use request origin for production, fallback to localhost for dev
+  let origin = requestUrl.origin;
+  
+  // Handle edge case where origin might be 0.0.0.0 (dev server)
+  if (origin.includes('0.0.0.0')) {
+    origin = 'http://localhost:5000';
+  }
 
   // Handle OAuth errors
   if (error) {
