@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Users, CreditCard, FileText, CheckCircle, XCircle, 
-  LogOut, Search, Bell, ShieldCheck, ShieldAlert, DollarSign, Activity, User, Settings as SettingsIcon
+  LogOut, Search, Bell, ShieldCheck, ShieldAlert, DollarSign, Activity, User, Settings as SettingsIcon, Shield
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
@@ -19,6 +19,7 @@ import { SubscriptionManagement } from './admin/SubscriptionManagement';
 import { SupportManagement } from './admin/SupportManagement';
 import { SystemConfiguration } from './admin/SystemConfiguration';
 import { Settings } from './admin/Settings';
+import { AdminManagement } from './admin/AdminManagement';
 
 const SidebarItem = ({ icon: Icon, label, id, active, onClick }) => (
   <button
@@ -173,6 +174,10 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
       return <SystemConfiguration />;
     }
 
+    if (activeTab === 'admin_management') {
+      return <AdminManagement currentUser={currentUser} />;
+    }
+
     return null;
   };
 
@@ -190,6 +195,7 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
 
           <div className="space-y-1">
             <SidebarItem icon={LayoutDashboard} label="Overview" id="overview" active={activeTab === 'overview'} onClick={setActiveTab} />
+            <SidebarItem icon={Shield} label="Admin Management" id="admin_management" active={activeTab === 'admin_management'} onClick={setActiveTab} />
             <SidebarItem icon={Users} label="Agents" id="agents" active={activeTab === 'agents'} onClick={setActiveTab} />
             <SidebarItem icon={User} label="Renters" id="renters" active={activeTab === 'renters'} onClick={setActiveTab} />
             <SidebarItem icon={ShieldCheck} label="Verifications" id="verifications" active={activeTab === 'verifications'} onClick={setActiveTab} />

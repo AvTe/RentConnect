@@ -15,13 +15,14 @@ CREATE TABLE users (
   name TEXT,
   phone TEXT,
   avatar TEXT,
-  role TEXT DEFAULT 'tenant' CHECK (role IN ('tenant', 'agent', 'admin')),
+  role TEXT DEFAULT 'tenant' CHECK (role IN ('tenant', 'agent', 'admin', 'super_admin', 'main_admin', 'sub_admin')),
   type TEXT DEFAULT 'tenant' CHECK (type IN ('tenant', 'agent')),
   location TEXT,
   wallet_balance DECIMAL(10, 2) DEFAULT 0,
   referral_code TEXT UNIQUE,
   referred_by TEXT,
   subscription_status TEXT,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended', 'pending')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

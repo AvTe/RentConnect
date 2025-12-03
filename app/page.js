@@ -73,11 +73,8 @@ export default function RentalLeadApp() {
           if (userResult.success) {
             let userData = userResult.data;
 
-            // Auto-promote specific email to admin
-            if (user.email === 'kartikamit171@gmail.com' && userData.role !== 'admin') {
-              await updateUser(user.id, { role: 'admin' });
-              userData.role = 'admin';
-            }
+            // Check if user is an admin type (super_admin, main_admin, sub_admin, or admin)
+            const isAdminRole = ['admin', 'super_admin', 'main_admin', 'sub_admin'].includes(userData.role);
 
             setCurrentUser({
               id: user.id,
@@ -88,7 +85,7 @@ export default function RentalLeadApp() {
             
             // Redirect based on role if on landing or login page
             if (view === 'landing' || view === 'login') {
-              if (userData.role === 'admin') {
+              if (isAdminRole) {
                 setView('admin-dashboard');
               } else if (userData.type === 'agent' || userData.role === 'agent') {
                 setView('agent-dashboard');
@@ -167,7 +164,7 @@ export default function RentalLeadApp() {
         email: user.email,
         name: user.name,
         type: user.type,
-        role: user.email === 'kartikamit171@gmail.com' ? 'admin' : user.type,
+        role: user.type,
         avatar: user.avatar || null,
         phone: user.phone || null,
         location: user.location || null,
@@ -176,18 +173,16 @@ export default function RentalLeadApp() {
 
       await createUser(user.uid, newUser);
 
-      if (newUser.role === 'admin') {
+      const isNewUserAdmin = ['admin', 'super_admin', 'main_admin', 'sub_admin'].includes(newUser.role);
+      if (isNewUserAdmin) {
         setView('admin-dashboard');
         return;
       }
     } else {
       // If user exists, check if admin
-      if (user.email === 'kartikamit171@gmail.com' && userResult.data.role !== 'admin') {
-        await updateUser(user.uid, { role: 'admin' });
-        userResult.data.role = 'admin';
-      }
+      const isAdminRole = ['admin', 'super_admin', 'main_admin', 'sub_admin'].includes(userResult.data.role);
 
-      if (userResult.data.role === 'admin') {
+      if (isAdminRole) {
         setView('admin-dashboard');
         return;
       }

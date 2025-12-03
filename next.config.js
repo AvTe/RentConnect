@@ -21,21 +21,6 @@ const nextConfig = {
       };
     }
     
-    // Production optimizations
-    if (!dev && !isServer) {
-      const TerserPlugin = require('terser-webpack-plugin');
-      config.optimization.minimizer = [
-        new TerserPlugin({
-          terserOptions: {
-            compress: { 
-              drop_console: true,
-              drop_debugger: true,
-            },
-          },
-        }),
-      ];
-    }
-    
     return config;
   },
   
