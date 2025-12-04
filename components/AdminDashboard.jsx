@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Users, CreditCard, FileText, CheckCircle, XCircle, 
-  LogOut, Search, Bell, ShieldCheck, ShieldAlert, DollarSign, Activity, User, Settings as SettingsIcon, Shield
+  LogOut, Search, Bell, ShieldCheck, ShieldAlert, DollarSign, Activity, User, Settings as SettingsIcon, Shield, Mail, Zap
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
@@ -20,6 +20,9 @@ import { SupportManagement } from './admin/SupportManagement';
 import { SystemConfiguration } from './admin/SystemConfiguration';
 import { Settings } from './admin/Settings';
 import { AdminManagement } from './admin/AdminManagement';
+import { NotificationTemplates } from './admin/NotificationTemplates';
+import { ExternalLeadsManagement } from './admin/ExternalLeadsManagement';
+import { NotificationBell } from './NotificationBell';
 
 const SidebarItem = ({ icon: Icon, label, id, active, onClick }) => (
   <button
@@ -178,6 +181,14 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
       return <AdminManagement currentUser={currentUser} />;
     }
 
+    if (activeTab === 'notification_templates') {
+      return <NotificationTemplates />;
+    }
+
+    if (activeTab === 'external_leads') {
+      return <ExternalLeadsManagement />;
+    }
+
     return null;
   };
 
@@ -203,6 +214,8 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
             <SidebarItem icon={CreditCard} label="Subscriptions" id="subscriptions" active={activeTab === 'subscriptions'} onClick={setActiveTab} />
             <SidebarItem icon={ShieldAlert} label="Support" id="support" active={activeTab === 'support'} onClick={setActiveTab} />
             <SidebarItem icon={Activity} label="System Config" id="system_config" active={activeTab === 'system_config'} onClick={setActiveTab} />
+            <SidebarItem icon={Mail} label="Notification Templates" id="notification_templates" active={activeTab === 'notification_templates'} onClick={setActiveTab} />
+            <SidebarItem icon={Zap} label="External Leads" id="external_leads" active={activeTab === 'external_leads'} onClick={setActiveTab} />
             <SidebarItem icon={FileText} label="All Leads" id="leads" active={activeTab === 'leads'} onClick={setActiveTab} />
             <SidebarItem icon={SettingsIcon} label="Settings" id="settings" active={activeTab === 'settings'} onClick={setActiveTab} />
           </div>
@@ -224,6 +237,18 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
           <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
           <div className="flex items-center gap-4">
+            {/* Notification Bell */}
+            {currentUser?.id && (
+              <NotificationBell 
+                userId={currentUser.id} 
+                onNotificationClick={(notif) => {
+                  // Handle notification click - navigate to relevant section
+                  if (notif.type === 'new_lead' && notif.data?.lead_id) {
+                    setActiveTab('leads');
+                  }
+                }}
+              />
+            )}
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
                 {currentUser?.name?.charAt(0) || 'A'}

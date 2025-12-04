@@ -99,6 +99,34 @@ CREATE INDEX idx_properties_property_type ON properties(property_type);
 CREATE INDEX idx_properties_price ON properties(price);
 
 -- ============================================
+-- SUBSCRIPTION PLANS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS subscription_plans (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  description TEXT,
+  price DECIMAL(10, 2) NOT NULL,
+  currency TEXT DEFAULT 'KES',
+  interval TEXT DEFAULT 'monthly' CHECK (interval IN ('monthly', 'yearly', 'weekly')),
+  features JSONB DEFAULT '[]'::jsonb,
+  is_active BOOLEAN DEFAULT TRUE,
+  sort_order INTEGER DEFAULT 0,
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for subscription_plans
+CREATE INDEX IF NOT EXISTS idx_subscription_plans_active ON subscription_plans(is_active);
+
+-- Insert default plans
+INSERT INTO subscription_plans (name, description, price, interval, features, sort_order) VALUES
+  ('Basic', 'Perfect for getting started', 500, 'monthly', '["5 lead contacts per month", "Basic support", "Email notifications"]'::jsonb, 1),
+  ('Premium', 'Most popular choice', 1500, 'monthly', '["Unlimited lead contacts", "Priority support", "WhatsApp notifications", "Featured agent badge"]'::jsonb, 2),
+  ('Enterprise', 'For agencies and teams', 5000, 'monthly', '["Everything in Premium", "Multiple team members", "Custom branding", "API access", "Dedicated account manager"]'::jsonb, 3)
+ON CONFLICT DO NOTHING;
+
+-- ============================================
 -- SUBSCRIPTIONS TABLE
 -- ============================================
 CREATE TABLE subscriptions (

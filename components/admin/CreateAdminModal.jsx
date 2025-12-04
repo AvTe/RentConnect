@@ -205,7 +205,7 @@ export const CreateAdminModal = ({ isOpen, onClose, onSuccess, currentAdminRole 
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="John Doe"
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                     required
                   />
                 </div>
@@ -219,7 +219,7 @@ export const CreateAdminModal = ({ isOpen, onClose, onSuccess, currentAdminRole 
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="john@example.com"
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                     required
                   />
                 </div>
@@ -271,7 +271,7 @@ export const CreateAdminModal = ({ isOpen, onClose, onSuccess, currentAdminRole 
                   value={formData.customRoleName}
                   onChange={(e) => setFormData({ ...formData, customRoleName: e.target.value })}
                   placeholder="e.g., Finance Manager, Support Lead"
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                 />
               </div>
             </div>
@@ -286,7 +286,7 @@ export const CreateAdminModal = ({ isOpen, onClose, onSuccess, currentAdminRole 
                 value={formData.teamName}
                 onChange={(e) => setFormData({ ...formData, teamName: e.target.value })}
                 placeholder="e.g., Finance, Support, Operations"
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
 
@@ -368,7 +368,7 @@ export const CreateAdminModal = ({ isOpen, onClose, onSuccess, currentAdminRole 
                     onChange={(e) => setFormData({ ...formData, customMessage: e.target.value })}
                     placeholder="Add a personal message to include in the invite email..."
                     rows={3}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none bg-white text-gray-900 placeholder-gray-400"
                   />
                 </div>
               )}

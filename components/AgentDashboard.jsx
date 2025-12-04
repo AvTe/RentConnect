@@ -26,6 +26,7 @@ import {
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
 import { AgentProfile } from "./AgentProfile";
+import { NotificationBell } from "./NotificationBell";
 import {
   getWalletBalance,
   deductCredits,
@@ -620,10 +621,16 @@ export const AgentDashboard = ({
                 className="pl-9 pr-12 py-2 bg-gray-100 border-transparent rounded-lg text-sm focus:bg-white focus:border-gray-300 focus:ring-0 transition-all w-64 text-gray-900 placeholder-gray-400"
               />
             </div>
-            <button className="p-2 text-gray-400 hover:text-gray-600 relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
+            {currentUser?.id && (
+              <NotificationBell 
+                userId={currentUser.id} 
+                onNotificationClick={(notif) => {
+                  if (notif.type === 'new_lead') {
+                    setActiveTab('leads');
+                  }
+                }}
+              />
+            )}
           </div>
         </header>
 

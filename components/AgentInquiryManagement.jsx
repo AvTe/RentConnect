@@ -248,7 +248,7 @@ export const AgentInquiryManagement = ({ agentId, agentName }) => {
                 value={responseMessage}
                 onChange={(e) => setResponseMessage(e.target.value)}
                 placeholder="Type your response here..."
-                className="w-full h-32 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none resize-none"
+                className="w-full h-32 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none resize-none bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
 

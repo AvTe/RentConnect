@@ -15,6 +15,7 @@ import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { PropertiesPage } from '@/components/PropertiesPage';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
+import { ChatWidget, ChatButton, useChat } from '@/components/ChatWidget';
 import { getCurrentSession, signOut, onAuthStateChange } from '@/lib/auth-supabase';
 import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/database';
 import { uploadImage } from '@/lib/storage-supabase';
@@ -32,6 +33,9 @@ export default function RentalLeadApp() {
   // Only fetch leads if user is logged in (to avoid permission errors)
   const { leads } = useLeads({}, !!currentUser);
   const { isPremium } = useSubscription(currentUser?.id);
+  
+  // Chat functionality - must be called unconditionally at top level
+  const chat = useChat(currentUser);
 
   // Check for OAuth callback errors
   useEffect(() => {
@@ -575,6 +579,23 @@ export default function RentalLeadApp() {
         />
       )}
       {renderView()}
+      
+      {/* Chat Widget - Show for logged in users except on admin dashboard */}
+      {currentUser && view !== 'admin-dashboard' && view !== 'landing' && view !== 'login' && (
+        <>
+          <ChatButton 
+            user={currentUser} 
+            onClick={() => chat.openChat()} 
+            unreadCount={chat.unreadCount} 
+          />
+          <ChatWidget 
+            user={currentUser} 
+            isOpen={chat.isOpen} 
+            onClose={chat.closeChat}
+            initialRecipient={chat.initialRecipient}
+          />
+        </>
+      )}
     </main>
   );
 }

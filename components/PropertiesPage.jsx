@@ -97,7 +97,7 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
               <input 
                 type="text" 
                 placeholder="Search location..." 
-                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FE9200]"
+                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FE9200] bg-white text-gray-900 placeholder-gray-400"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

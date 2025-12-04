@@ -342,7 +342,7 @@ export const TenantForm = ({
               e.key === "Enter" && formData.location && handleNext()
             }
             placeholder="e.g., Nairobi, Westlands"
-            className="w-full pl-12 sm:pl-14 pr-4 py-3 sm:py-4 border-2 border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-4 focus:ring-[#FFE4C4] outline-none transition-all text-sm sm:text-base"
+            className="w-full pl-12 sm:pl-14 pr-4 py-3 sm:py-4 border-2 border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-4 focus:ring-[#FFE4C4] outline-none transition-all text-sm sm:text-base bg-white text-gray-900 placeholder-gray-400"
           />
         </div>
       </div>
@@ -413,7 +413,7 @@ export const TenantForm = ({
           <input
             type="text"
             autoFocus
-            className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm"
+            className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm bg-white placeholder-gray-400"
             placeholder="e.g. 1,500,000"
             value={formData.budget}
             onChange={(e) =>
@@ -458,7 +458,7 @@ export const TenantForm = ({
               <input
                 type="text"
                 required
-                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm"
+                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm bg-white placeholder-gray-400"
                 placeholder="John Doe"
                 value={formData.name}
                 onChange={(e) =>
@@ -477,7 +477,7 @@ export const TenantForm = ({
               <input
                 type="email"
                 required
-                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm"
+                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm bg-white placeholder-gray-400"
                 placeholder="john@example.com"
                 value={formData.email}
                 onChange={(e) =>
@@ -507,7 +507,7 @@ export const TenantForm = ({
                 disabled={
                   verificationStep === "verified" || verificationStep === "sent"
                 }
-                className="w-full pl-3 sm:pl-4 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus-within:border-[#FE9200] focus-within:ring-0 transition-all shadow-sm [&>input]:outline-none [&>input]:bg-transparent [&>input]:w-full [&>input]:ml-2"
+                className="w-full pl-3 sm:pl-4 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus-within:border-[#FE9200] focus-within:ring-0 transition-all shadow-sm bg-white [&>input]:outline-none [&>input]:bg-transparent [&>input]:w-full [&>input]:ml-2 [&>input]:text-gray-900"
               />
               {verificationStep === "verified" && (
                 <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-[#FE9200]">

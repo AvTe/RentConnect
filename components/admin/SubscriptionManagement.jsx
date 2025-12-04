@@ -122,28 +122,30 @@ export const SubscriptionManagement = () => {
               <h3 className="font-bold mb-4">{currentPlan ? 'Edit Plan' : 'New Plan'}</h3>
               <form onSubmit={handleSavePlan} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Plan Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Plan Name</label>
                   <input 
-                    className="w-full border rounded p-2" 
+                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400" 
+                    placeholder="e.g., Premium Plan"
                     value={planForm.name}
                     onChange={e => setPlanForm({...planForm, name: e.target.value})}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Price (KSh)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (KSh)</label>
                   <input 
                     type="number"
-                    className="w-full border rounded p-2" 
+                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400" 
+                    placeholder="e.g., 1500"
                     value={planForm.price}
                     onChange={e => setPlanForm({...planForm, price: e.target.value})}
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Interval</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Billing Interval</label>
                   <select 
-                    className="w-full border rounded p-2"
+                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                     value={planForm.interval}
                     onChange={e => setPlanForm({...planForm, interval: e.target.value})}
                   >
@@ -152,17 +154,19 @@ export const SubscriptionManagement = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                   <input 
-                    className="w-full border rounded p-2" 
+                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400" 
+                    placeholder="Brief description of this plan"
                     value={planForm.description}
                     onChange={e => setPlanForm({...planForm, description: e.target.value})}
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-1">Features (comma separated)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Features (comma separated)</label>
                   <textarea 
-                    className="w-full border rounded p-2" 
+                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 placeholder-gray-400" 
+                    placeholder="e.g., Unlimited leads, Priority support, WhatsApp notifications"
                     value={planForm.features}
                     onChange={e => setPlanForm({...planForm, features: e.target.value})}
                     rows="3"
@@ -231,11 +235,11 @@ export const SubscriptionManagement = () => {
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3">Agent ID</th>
+                  <th className="px-6 py-3">User</th>
                   <th className="px-6 py-3">Plan</th>
                   <th className="px-6 py-3">Status</th>
                   <th className="px-6 py-3">Start Date</th>
-                  <th className="px-6 py-3">End Date</th>
+                  <th className="px-6 py-3">Expires</th>
                   <th className="px-6 py-3">Amount</th>
                 </tr>
               </thead>
@@ -247,20 +251,29 @@ export const SubscriptionManagement = () => {
                 ) : (
                   subscriptions.map((sub) => (
                     <tr key={sub.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-gray-900 font-mono text-xs">{sub.agentId}</td>
-                      <td className="px-6 py-4 font-medium">{sub.plan}</td>
+                      <td className="px-6 py-4 text-gray-900">
+                        <div>
+                          <p className="font-medium">{sub.users?.name || 'Unknown'}</p>
+                          <p className="text-xs text-gray-500">{sub.users?.email || sub.user_id}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-medium">{sub.plan_name || sub.plan}</td>
                       <td className="px-6 py-4">
                         <Badge className={
-                          sub.status === 'active' ? 'bg-[#FFE4C4] text-green-800' : 'bg-gray-100 text-gray-800'
+                          sub.status === 'active' ? 'bg-green-100 text-green-800' : 
+                          sub.status === 'expired' ? 'bg-red-100 text-red-800' : 
+                          'bg-gray-100 text-gray-800'
                         }>
                           {sub.status}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-gray-500">
-                        {sub.startDate?.toDate ? sub.startDate.toDate().toLocaleDateString() : 'N/A'}
+                        {sub.starts_at ? new Date(sub.starts_at).toLocaleDateString() : 
+                         sub.startDate?.toDate ? sub.startDate.toDate().toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="px-6 py-4 text-gray-500">
-                        {sub.endDate?.toDate ? sub.endDate.toDate().toLocaleDateString() : 'N/A'}
+                        {sub.expires_at ? new Date(sub.expires_at).toLocaleDateString() : 
+                         sub.endDate?.toDate ? sub.endDate.toDate().toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="px-6 py-4">KSh {parseInt(sub.amount || 0).toLocaleString()}</td>
                     </tr>

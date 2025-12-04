@@ -245,7 +245,7 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none text-gray-900"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none text-gray-900 bg-white placeholder-gray-400"
                 />
               </div>
               <Button onClick={handleSearch} className="px-8">

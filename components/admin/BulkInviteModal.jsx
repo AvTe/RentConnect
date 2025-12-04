@@ -224,7 +224,7 @@ export const BulkInviteModal = ({ isOpen, onClose, onSuccess, currentAdminRole }
                   onChange={(e) => setCsvText(e.target.value)}
                   placeholder="Name, Email, Role (optional)&#10;John Doe, john@example.com&#10;Jane Smith, jane@example.com, sub_admin"
                   rows={8}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-mono text-sm resize-none"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-mono text-sm resize-none bg-white text-gray-900 placeholder-gray-400"
                 />
                 <p className="text-xs text-gray-500 mt-2">
                   Format: Name, Email, Role (one per line). Role is optional.
@@ -240,7 +240,7 @@ export const BulkInviteModal = ({ isOpen, onClose, onSuccess, currentAdminRole }
                   <select
                     value={defaultRole}
                     onChange={(e) => setDefaultRole(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900"
                   >
                     <option value="sub_admin">Sub Admin</option>
                     {currentAdminRole === 'super_admin' && (
@@ -258,7 +258,7 @@ export const BulkInviteModal = ({ isOpen, onClose, onSuccess, currentAdminRole }
                     value={teamName}
                     onChange={(e) => setTeamName(e.target.value)}
                     placeholder="e.g., Support Team"
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   />
                 </div>
               </div>

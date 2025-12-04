@@ -44,9 +44,16 @@ export const LeadManagement = () => {
   };
 
   const filteredLeads = leads.filter(lead => {
+    const location = lead.location || lead.requirements?.location || '';
+    const propertyType = lead.property_type || lead.requirements?.property_type || '';
+    const tenantName = lead.tenant_name || '';
+    const tenantEmail = lead.tenant_email || '';
+    
     const matchesSearch = 
-      lead.requirements?.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.requirements?.property_type?.toLowerCase().includes(searchTerm.toLowerCase());
+      location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      propertyType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tenantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tenantEmail.toLowerCase().includes(searchTerm.toLowerCase());
       
     return matchesSearch;
   });
@@ -130,16 +137,16 @@ export const LeadManagement = () => {
                 filteredLeads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-900">
-                      {lead.requirements?.property_type || 'N/A'}
+                      {lead.property_type || lead.requirements?.property_type || 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
-                        {lead.requirements?.location || 'N/A'}
+                        {lead.location || lead.requirements?.location || 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600">
-                      KSh {lead.requirements?.budget?.toLocaleString() || 'N/A'}
+                      KSh {(lead.budget || lead.requirements?.budget)?.toLocaleString() || 'N/A'}
                     </td>
                     <td className="px-6 py-4">
                       <Badge className={
@@ -151,7 +158,7 @@ export const LeadManagement = () => {
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-gray-500">
-                      {lead.createdAt?.toDate ? lead.createdAt.toDate().toLocaleDateString() : 'N/A'}
+                      {lead.created_at ? new Date(lead.created_at).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Button 

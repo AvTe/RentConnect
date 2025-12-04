@@ -93,7 +93,7 @@ export const Settings = ({ user }) => {
                 type="text"
                 value={profileData.name}
                 onChange={(e) => setProfileData({...profileData, name: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
             <div>
@@ -112,7 +112,7 @@ export const Settings = ({ user }) => {
                 type="tel"
                 value={profileData.phone}
                 onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
             
@@ -142,7 +142,7 @@ export const Settings = ({ user }) => {
                   type="number"
                   value={systemConfig.creditPrice}
                   onChange={(e) => setSystemConfig({...systemConfig, creditPrice: parseInt(e.target.value)})}
-                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-400"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">Cost per credit for agents</p>
@@ -154,7 +154,7 @@ export const Settings = ({ user }) => {
                 type="number"
                 value={systemConfig.freeCredits}
                 onChange={(e) => setSystemConfig({...systemConfig, freeCredits: parseInt(e.target.value)})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
 
@@ -164,7 +164,7 @@ export const Settings = ({ user }) => {
                 type="number"
                 value={systemConfig.referralBonus}
                 onChange={(e) => setSystemConfig({...systemConfig, referralBonus: parseInt(e.target.value)})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
 

@@ -213,7 +213,7 @@ export const EditAdminModal = ({ isOpen, onClose, onSuccess, admin, currentAdmin
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                     required
                   />
                 </div>
@@ -226,7 +226,7 @@ export const EditAdminModal = ({ isOpen, onClose, onSuccess, admin, currentAdmin
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                     required
                   />
                 </div>
@@ -308,7 +308,7 @@ export const EditAdminModal = ({ isOpen, onClose, onSuccess, admin, currentAdmin
                     value={formData.customRoleName}
                     onChange={(e) => setFormData({ ...formData, customRoleName: e.target.value })}
                     placeholder="e.g., Finance Manager"
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
                   />
                 </div>
               </div>
@@ -324,7 +324,7 @@ export const EditAdminModal = ({ isOpen, onClose, onSuccess, admin, currentAdmin
                 value={formData.teamName}
                 onChange={(e) => setFormData({ ...formData, teamName: e.target.value })}
                 placeholder="e.g., Finance, Support, Operations"
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
               />
             </div>
 
