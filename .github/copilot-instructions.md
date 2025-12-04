@@ -1,119 +1,108 @@
 ﻿# RentConnect AI Coding Instructions
 
 ## Project Overview
-**RentConnect** is a Next.js 14 rental marketplace connecting tenants with verified agents. It uses Supabase (PostgreSQL, Auth, Storage), Pesapal payments, and multi-channel notifications (Email, WhatsApp, In-App).
+**RentConnect** is a Next.js 14 rental marketplace connecting tenants with verified agents in Kenya. Uses Supabase (PostgreSQL + Auth + Storage), Pesapal payments (M-Pesa), and multi-channel notifications. Currency: KES (Kenyan Shillings).
 
-## Architecture Essentials
+## Architecture
 
-### Data Flow & Collections
-Core data flows through PostgreSQL database with real-time listeners:
-- **users**  Contains dual role data: `role: 'tenant'|'agent'`, `subscription_status`, `wallet_balance`, `referral_code`
-- **leads**  Tenant rental requests; agents subscribe via `subscribeToLeads(filters)` for real-time updates
-- **properties**  Agent listings; connected to users via `agent_id` foreign key
-- **subscriptions**  Track premium access; webhook updates from Pesapal
-- **contact_history**  Tracks every tenant-agent interaction for billing/metrics
+### Core Data Flow
+All database operations go through `lib/database.js` (4500+ lines). Uses Supabase PostgreSQL with snake_case columns, but components expect camelCase - transformations handled via `transformUserData()` and `transformUpdatesToSnakeCase()`.
 
-**Key Pattern**: All async operations return `{ success: boolean, data?: any, error?: string }` object (see `lib/database.js`).
+**Key Tables** (see `supabase_complete_schema.sql`):
+- `users` - Dual roles: `role: 'tenant'|'agent'|'admin'|'super_admin'|'main_admin'|'sub_admin'`
+- `leads` - Tenant rental requests; agents unlock with credits
+- `properties` - Agent listings linked via `agent_id`
+- `subscriptions` - Premium access tracked with `subscription_expires_at`
+- `credit_transactions` - Wallet/credit audit trail
 
-### Supabase Integration Points
-- `utils/supabase/client.js`  Browser client initialization
-- `utils/supabase/server.js`  Server-side client with cookies
-- `lib/database.js`  2200+ lines of CRUD + real-time subscriptions
-- `lib/auth-supabase.js`  Authentication functions (signup, signin, OAuth, password reset)
-- `lib/storage-supabase.js`  Image uploads use `/{userId}/{folder}/{timestamp}` path pattern
-- Real-time listeners in `lib/hooks.js` auto-unsubscribe on cleanup to prevent memory leaks
+**Return Pattern**: All async database functions return `{ success: boolean, data?: any, error?: string }`.
 
-### Custom Hooks Architecture
-Hooks in `lib/hooks.js` follow this pattern:
-- Accept `filters` object + `enabled` boolean to control subscription
-- Use `useCallback` for query keys to optimize re-renders
-- Return `{ data, loading, error, [action functions] }`
-- Example: `useLeads({ agentId, status }, enabled)` subscribes only if `enabled=true`
-
-### Payment & Subscription
-- **Paystack Integration** (`lib/paystack.js`):
-  - `SUBSCRIPTION_PLANS.PREMIUM.amount = 1500000` (kobo = 15,000)
-  - `initializePayment(email, amount, metadata)` returns auth URL; user redirected externally
-  - Webhook at `/api/paystack/webhook` verifies signature with `PAYSTACK_SECRET_KEY`
-  - Creates `subscriptions` doc with `expiresAt: serverTimestamp() + 30 days`
-- Verify subscription status: `checkSubscriptionStatus(userId)` returns boolean
-
-### Notification System
-Multi-channel pattern in `lib/notifications.js`:
-1. **Email**: POST to `/api/send-email` (SendGrid backend)
-2. **WhatsApp**: `sendWhatsAppMessage(phoneNumber, text)` opens wa.me link; for automation, POST to `/api/whatsapp/send`
-3. **In-App**: Create `notifications` collection docs; UI subscribes via `useNotifications()`
-
-### Environment Variables
-Required in `.env.local`:
+### Supabase Integration
 ```
-NEXT_PUBLIC_FIREBASE_API_KEY, AUTH_DOMAIN, PROJECT_ID, STORAGE_BUCKET
-NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
-PAYSTACK_SECRET_KEY
-SENDGRID_API_KEY (for email)
-NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (for geocoding)
+utils/supabase/client.js   → Browser client (createBrowserClient)
+utils/supabase/server.js   → Server client with cookies (createServerClient)
+lib/database.js            → All CRUD + real-time subscriptions
+lib/auth-supabase.js       → signUpWithEmail, signInWithEmail, signOut, onAuthStateChange
+lib/storage-supabase.js    → uploadImage(file, userId, folder) → path: {userId}/{folder}/{timestamp}-{filename}
 ```
 
-## Common Workflows
-
-### Adding a Database Feature
-1. Add function to `lib/firestore.js` following existing patterns
-2. Create hook in `lib/hooks.js` that wraps the function + manages state
-3. Use hook in component: `const { data, loading } = useLeads()`
-4. Include `serverTimestamp()` for any date fields
-
-### Creating an API Route
-- Store in `app/api/{feature}/route.js`
-- Use `NextResponse` from `next/server`
-- Validate auth via Firebase token if needed (existing pattern in email/webhook routes)
-
-### Handling Real-time Data
-- Always unsubscribe in cleanup: `useEffect(() => { const unsub = onSnapshot(...); return unsub; }, [])`
-- Filter at Firestore level (cheaper): `where('agentId', '==', userId)` not post-query filtering
-- Pagination uses `limit()` + document snapshot cursors, not offset
-
-## Code Patterns
-
-### Error Handling
+### Hooks Pattern (`lib/hooks.js`)
 ```javascript
-// Always return structured response
-try {
-  // operation
-  return { success: true, data: result };
-} catch (error) {
-  console.error('Context:', error);
-  return { success: false, error: error.message };
+// Accept filters + enabled flag to control subscription
+const { leads, loading, error } = useLeads(filters, enabled);
+// Real-time subscriptions auto-cleanup on unmount
+// Memoize filters with useMemo to prevent re-renders
+```
+
+### Payment (Pesapal + M-Pesa)
+- Config in `lib/pesapal.js` - amounts in KES (not cents): `SUBSCRIPTION_PLANS.PREMIUM.amount = 1500`
+- Credit packages: 5 credits = KSh 250, 15 = KSh 600, 30 = KSh 1,000
+- Flow: `initializePayment()` → Pesapal redirect → IPN webhook at `/api/pesapal/callback`
+- API routes use direct PostgreSQL (`pg` pool) for payment tracking
+
+### Notifications (`lib/notifications.js`)
+1. **Email**: POST `/api/send-email` (SendGrid)
+2. **WhatsApp**: `sendWhatsAppMessage()` opens wa.me link; automated via `/api/whatsapp/send` (Twilio)
+3. **In-App**: `createNotification()` in database, subscribed via `useNotifications()`
+
+## Key Patterns
+
+### API Route Structure
+```javascript
+// app/api/{feature}/route.js
+import { NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
+
+export async function POST(request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // ... logic
+  return NextResponse.json({ success: true, data: result });
 }
 ```
 
-### Image Uploads
-```javascript
-// Path: /images/{userId}/{timestamp}
-// Use `uploadImage(file, userId)` from lib/storage.js
-// Returns { success, url } where url is public download link
+### Adding Database Features
+1. Add function to `lib/database.js` with snake_case DB columns
+2. Create hook in `lib/hooks.js` wrapping the function
+3. Transform snake_case → camelCase for component consumption
+
+### Component Organization
+- `app/page.js` - Main router: handles auth state, view switching based on role
+- `components/*.jsx` - Feature components receive data via props
+- `components/admin/*.jsx` - Admin dashboard modules (19 components)
+- `components/ui/*.jsx` - Shared UI primitives (Button, Badge, etc.)
+
+## Environment Variables
+```env
+# Required - Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
+DATABASE_URL=postgresql://...  # For Pesapal API routes
+
+# Payments
+PESAPAL_CONSUMER_KEY, PESAPAL_CONSUMER_SECRET, PESAPAL_IPN_ID
+
+# Services
+SENDGRID_API_KEY
+TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_NUMBER
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY, NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 ```
 
-### Queries with Sorting
-```javascript
-// Example: get user''s leads ordered by date
-const q = query(
-  collection(db, ''leads''),
-  where(''userId'', ''=='', userId),
-  orderBy(''createdAt'', ''desc''),
-  limit(10)
-);
+## Commands
+```bash
+npm run dev      # Starts on port 5000 (not 3000)
+npm run build    # Production build
+npm run lint     # ESLint
 ```
 
-## Testing & Running
-
-- **Dev**: `npm run dev`  http://localhost:3000
-- **Build**: `npm run build` (check for Firebase config before deploying)
-- **Linting**: `next lint`
-
-## Key Files Reference
-- **Entry**: `app/page.js` (contains auth state + page routing logic)
-- **Business Logic**: `lib/firestore.js` (all data operations)
-- **UI Components**: `components/*.jsx` (pure presentation, no API calls)
-- **Hooks**: `lib/hooks.js` (state management + subscriptions)
-- **API Routes**: `app/api/*/route.js` (webhooks, email, external integrations)
+## File Reference
+| Purpose | Location |
+|---------|----------|
+| App entry + routing | `app/page.js` |
+| All database CRUD | `lib/database.js` |
+| Auth functions | `lib/auth-supabase.js` |
+| Custom hooks | `lib/hooks.js` |
+| Payment logic | `lib/pesapal.js` |
+| DB schema | `supabase_complete_schema.sql` |
+| API routes | `app/api/*/route.js` |

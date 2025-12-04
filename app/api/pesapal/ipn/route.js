@@ -55,7 +55,7 @@ async function getValidToken() {
   throw new Error('Failed to authenticate with Pesapal');
 }
 
-// Fulfill payment by updating Firebase
+// Fulfill payment by updating Supabase database
 async function fulfillPayment(metadata, pesapalData, orderId) {
   const startDate = new Date();
   const endDate = calculateSubscriptionEndDate(startDate, metadata.planType || 'monthly');

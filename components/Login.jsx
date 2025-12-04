@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2 } from 'lucide-react';
 import { Button } from './ui/Button';
-import { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword } from '@/lib/auth-supabase';
+import { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, resendConfirmationEmail } from '@/lib/auth-supabase';
 import { getUser, createUser, updateUser } from '@/lib/database';
 
 const getAuthErrorMessage = (errorCode) => {
@@ -63,6 +63,7 @@ export const Login = ({ onNavigate, onLogin, authError }) => {
   const [error, setError] = useState(authError || '');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showResendConfirmation, setShowResendConfirmation] = useState(false);
 
   // Update error if authError prop changes
   useEffect(() => {
@@ -70,6 +71,30 @@ export const Login = ({ onNavigate, onLogin, authError }) => {
       setError(authError);
     }
   }, [authError]);
+
+  const handleResendConfirmation = async () => {
+    if (!email.trim()) {
+      setError('Please enter your email address first.');
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      const result = await resendConfirmationEmail(email.trim());
+      if (result.success) {
+        setSuccessMessage('Confirmation email sent! Please check your inbox and spam folder.');
+        setShowResendConfirmation(false);
+      } else {
+        setError(result.error || 'Failed to send confirmation email.');
+      }
+    } catch (err) {
+      setError('Failed to send confirmation email. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -170,19 +195,29 @@ export const Login = ({ onNavigate, onLogin, authError }) => {
       let result;
 
       if (isRegistering) {
-        result = await signUpWithEmail(trimmedEmail, password, {
-          name: trimmedName || (userType === 'tenant' ? 'New Tenant' : 'New Agent')
-        });
+        // signUpWithEmail(email, password, name, metadata)
+        const displayName = trimmedName || (userType === 'tenant' ? 'New Tenant' : 'New Agent');
+        result = await signUpWithEmail(trimmedEmail, password, displayName, { type: userType });
         
         if (!result.success) {
           throw new Error(result.error || 'Registration failed');
         }
+
+        // Check if email confirmation is required
+        if (result.emailConfirmationRequired) {
+          setSuccessMessage('Registration successful! Please check your email to verify your account before signing in.');
+          setIsRegistering(false);
+          setPassword('');
+          setLoading(false);
+          return;
+        }
         
-        const user = result.data.user;
+        const user = result.user;
         const userData = {
           email: user.email,
-          name: trimmedName || (userType === 'tenant' ? 'New Tenant' : 'New Agent'),
+          name: displayName,
           type: userType,
+          role: userType,
           phone: null,
           location: null,
           avatar: null
@@ -193,6 +228,14 @@ export const Login = ({ onNavigate, onLogin, authError }) => {
         result = await signInWithEmail(trimmedEmail, password);
         
         if (!result.success) {
+          // Check if email not confirmed - show resend option
+          if (result.errorCode === 'auth/email-not-confirmed') {
+            setShowResendConfirmation(true);
+            setError(result.error);
+            setLoading(false);
+            return;
+          }
+          
           // Use the error code if available, otherwise use the error message
           const errorMsg = result.errorCode 
             ? getAuthErrorMessage(result.errorCode)
@@ -200,7 +243,8 @@ export const Login = ({ onNavigate, onLogin, authError }) => {
           throw new Error(errorMsg);
         }
         
-        const user = result.data.user;
+        setShowResendConfirmation(false);
+        const user = result.user;
         const userResult = await getUser(user.id);
         if (userResult.success) {
           onLogin({ ...userResult.data, uid: user.id, id: user.id });
@@ -279,6 +323,16 @@ export const Login = ({ onNavigate, onLogin, authError }) => {
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
               {error}
+              {showResendConfirmation && (
+                <button
+                  type="button"
+                  onClick={handleResendConfirmation}
+                  disabled={loading}
+                  className="block mt-2 text-[#FE9200] hover:text-[#E58300] font-medium underline"
+                >
+                  {loading ? 'Sending...' : 'Resend confirmation email'}
+                </button>
+              )}
             </div>
           )}
           

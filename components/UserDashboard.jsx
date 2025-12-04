@@ -352,10 +352,10 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
         <div className="mt-auto p-4 border-t border-gray-200">
           <div className="flex items-center gap-3 px-2">
             <div className="w-8 h-8 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs">
-              {(user.name || 'U').charAt(0)}
+              {String(user.name || 'U').charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user.name || 'User'}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{String(user.name || 'User')}</p>
               <p className="text-xs text-gray-500 truncate">{user.email}</p>
             </div>
           </div>

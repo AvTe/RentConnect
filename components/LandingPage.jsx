@@ -406,7 +406,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
     const checkSubscription = async () => {
       if (currentUser?.uid && currentUser?.role === "agent") {
         try {
-          const { checkSubscriptionStatus } = await import("@/lib/firestore");
+          const { checkSubscriptionStatus } = await import("@/lib/database");
           const result = await checkSubscriptionStatus(currentUser.uid);
           setIsSubscribed(result.isPremium || false);
         } catch (error) {
@@ -582,10 +582,10 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
                 onClick={() => onNavigate("profile")}
               >
                 <span className="hidden sm:block text-gray-700 font-medium text-sm">
-                  Hi {(currentUser.name || "User").split(" ")[0]}
+                  Hi {String(currentUser.name || "User").split(" ")[0]}
                 </span>
                 <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FE9200] to-[#7A00AA] flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                  {(currentUser.name || "U").charAt(0)}
+                  {String(currentUser.name || "U").charAt(0)}
                 </div>
               </div>
             ) : (

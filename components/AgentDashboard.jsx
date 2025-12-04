@@ -375,11 +375,11 @@ export const AgentDashboard = ({
 
                   <div className="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-lg">
                     <div className="w-10 h-10 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold">
-                      {(lead.tenant_info?.name || lead.name || "U").charAt(0)}
+                      {String(lead.tenant_info?.name || lead.name || "U").charAt(0)}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {lead.tenant_info?.name || lead.name || "User"}
+                        {String(lead.tenant_info?.name || lead.name || "User")}
                       </p>
                       <p className="text-xs text-gray-500">Looking for rent</p>
                     </div>
@@ -529,12 +529,12 @@ export const AgentDashboard = ({
         <div className="p-4 border-t border-gray-200 mt-auto">
           <div className="flex items-center gap-3 px-2">
             <div className="w-8 h-8 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs">
-              {(agent.name || "A").charAt(0)}
+              {String(agent.name || "A").charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {agent.name || "Agent"}
+                  {String(agent.name || "Agent")}
                 </p>
                 {isVerified && (
                   <ShieldCheck className="w-3 h-3 text-[#FE9200]" />

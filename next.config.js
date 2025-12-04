@@ -29,7 +29,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'firebasestorage.googleapis.com',
+        hostname: '*.supabase.co',
       },
     ],
     formats: ['image/avif', 'image/webp'],

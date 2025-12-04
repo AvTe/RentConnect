@@ -27,7 +27,7 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
         <div className="flex items-center gap-6">
           <div className="relative">
             <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-2xl font-bold border-4 border-white shadow-md">
-              {(formData.name || 'U').charAt(0)}
+              {String(formData.name || 'U').charAt(0)}
             </div>
             <button type="button" className="absolute bottom-0 right-0 bg-[#FE9200] text-white p-2 rounded-full hover:bg-[#E58300] transition-colors shadow-sm">
               <Camera className="w-4 h-4" />

@@ -43,7 +43,7 @@ export default function RootLayout({ children }) {
         {/* Preconnect to external resources */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
+        <link rel="preconnect" href="https://yydwhwkvrvgkqnmirbrr.supabase.co" />
         
         {/* DNS Prefetch for performance */}
         <link rel="dns-prefetch" href="https://www.google.com" />

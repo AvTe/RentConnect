@@ -161,7 +161,7 @@ export default function RentalLeadApp() {
   const handleLogin = async (user) => {
     setCurrentUser(user);
     
-    // Create user in Firestore if doesn't exist
+    // Create user in Supabase if doesn't exist
     const userResult = await getUser(user.uid);
     if (!userResult.success) {
       const newUser = {
@@ -322,17 +322,27 @@ export default function RentalLeadApp() {
       // Import Supabase auth function
       const { signUpWithEmail } = await import('@/lib/auth-supabase');
       
-      // 1. Create Auth User
-      const result = await signUpWithEmail(formData.email, formData.password, {
-        name: formData.fullName,
-        phone: formData.phone
-      });
+      // 1. Create Auth User - signUpWithEmail(email, password, name, metadata)
+      const result = await signUpWithEmail(
+        formData.email, 
+        formData.password, 
+        formData.fullName,
+        { phone: formData.phone, type: 'agent' }
+      );
       
       if (!result.success) {
         throw new Error(result.error || 'Registration failed');
       }
+
+      // Check if email confirmation is required
+      if (result.emailConfirmationRequired) {
+        alert('Registration successful! Please check your email to verify your account before signing in.');
+        setView('login');
+        setLoading(false);
+        return;
+      }
       
-      const user = result.data.user;
+      const user = result.user;
 
       // 2. Upload ID Document
       let idDocumentUrl = null;
