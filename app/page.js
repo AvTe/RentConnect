@@ -15,6 +15,9 @@ import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { PropertiesPage } from '@/components/PropertiesPage';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
+import EmailConfirmationSuccess from '@/components/EmailConfirmationSuccess';
+import PasswordResetSuccess from '@/components/PasswordResetSuccess';
+import PasswordResetForm from '@/components/PasswordResetForm';
 import { ChatWidget, ChatButton, useChat } from '@/components/ChatWidget';
 import { getCurrentSession, signOut, onAuthStateChange } from '@/lib/auth-supabase';
 import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/database';
@@ -42,8 +45,19 @@ export default function RentalLeadApp() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const error = params.get('error');
+      const viewParam = params.get('view');
       
-      if (error === 'callback_error') {
+      // Handle view parameter from URL
+      if (viewParam === 'email-confirmed') {
+        setView('email-confirmed');
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (viewParam === 'password-reset-success') {
+        setView('password-reset-success');
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (viewParam === 'reset-password') {
+        setView('reset-password');
+        window.history.replaceState({}, '', window.location.pathname);
+      } else if (error === 'callback_error') {
         setAuthError('Authentication failed. Please try again.');
         setView('landing');
         // Clear error from URL
@@ -573,6 +587,34 @@ export default function RentalLeadApp() {
             isPremium={isPremium}
           />
         );
+      case 'email-confirmed':
+        return (
+          <EmailConfirmationSuccess
+            onContinue={() => {
+              if (currentUser) {
+                const dashboardView = currentUser.role === 'agent' ? 'agent-dashboard' : 'user-dashboard';
+                setView(dashboardView);
+              } else {
+                setView('login');
+              }
+            }}
+            onGoHome={() => setView('landing')}
+          />
+        );
+      case 'password-reset-success':
+        return (
+          <PasswordResetSuccess
+            onContinue={() => setView('login')}
+            onSignIn={() => setView('login')}
+          />
+        );
+      case 'reset-password':
+        return (
+          <PasswordResetForm
+            onSuccess={() => setView('password-reset-success')}
+            onCancel={() => setView('landing')}
+          />
+        );
       default:
         return <LandingPage onNavigate={setView} onSearch={handleSearch} />;
     }
@@ -581,7 +623,7 @@ export default function RentalLeadApp() {
   return (
     <main className="min-h-screen bg-white">
 
-      {view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && view !== 'admin-dashboard' && (
+      {view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && view !== 'admin-dashboard' && view !== 'email-confirmed' && view !== 'password-reset-success' && view !== 'reset-password' && (
         <Header 
           onNavigate={setView} 
           currentUser={currentUser} 
@@ -590,8 +632,8 @@ export default function RentalLeadApp() {
       )}
       {renderView()}
       
-      {/* Chat Widget - Show for logged in users except on admin dashboard */}
-      {currentUser && view !== 'admin-dashboard' && view !== 'landing' && view !== 'login' && (
+      {/* Chat Widget - Show for logged in users except on admin dashboard and success screens */}
+      {currentUser && view !== 'admin-dashboard' && view !== 'landing' && view !== 'login' && view !== 'email-confirmed' && view !== 'password-reset-success' && view !== 'reset-password' && (
         <>
           <ChatButton 
             user={currentUser} 

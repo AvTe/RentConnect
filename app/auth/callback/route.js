@@ -99,8 +99,16 @@ export async function GET(request) {
         }
       }
 
-      // Redirect to the home page
+      // Redirect to the home page with email confirmed flag
       console.log('Redirecting to:', `${origin}${next}`);
+      
+      // Check if this was an email confirmation (no existing session before)
+      const isEmailConfirmation = next === '/' && data.user?.email_confirmed_at;
+      
+      if (isEmailConfirmation) {
+        return NextResponse.redirect(`${origin}/?view=email-confirmed`);
+      }
+      
       return NextResponse.redirect(`${origin}${next}`);
       
     } catch (error) {
