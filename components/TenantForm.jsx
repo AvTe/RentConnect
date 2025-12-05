@@ -651,12 +651,18 @@ export const TenantForm = ({
         </div>
       </div>
 
+      {/* Skip verification notice */}
+      {verificationStep !== "verified" && formData.whatsapp && (
+        <p className="text-xs text-gray-500 text-center">
+          Phone verification is optional. You can submit without verifying.
+        </p>
+      )}
+
       <Button
         type="submit"
         disabled={
           !formData.name ||
           !isValidEmail(formData.email) ||
-          verificationStep !== "verified" ||
           isSubmitting
         }
         className="w-full py-3 sm:py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"

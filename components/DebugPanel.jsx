@@ -66,20 +66,40 @@ export default function DebugPanel() {
       const supabase = createClient();
       const startTime = Date.now();
       
-      // Test basic query
-      const { data, error } = await supabase.from('users').select('count').limit(1);
+      // Use a timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout (5s)')), 5000)
+      );
+      
+      // Test basic query - use a simpler query that doesn't require auth
+      const queryPromise = supabase.from('users').select('id', { count: 'exact', head: true });
+      
+      const { error, count } = await Promise.race([queryPromise, timeoutPromise]);
       const latency = Date.now() - startTime;
       
       if (error) {
-        setStatus(prev => ({
-          ...prev,
-          database: { 
-            status: 'error', 
-            message: error.message,
-            details: { code: error.code, hint: error.hint, latency }
-          }
-        }));
-        addLog('error', 'Database', `Connection failed: ${error.message}`, error);
+        // Check if it's just a permission error (which means DB is connected)
+        if (error.code === 'PGRST301' || error.message?.includes('permission')) {
+          setStatus(prev => ({
+            ...prev,
+            database: { 
+              status: 'connected', 
+              message: `Connected (${latency}ms) - Auth required for data`,
+              details: { latency, note: 'Database reachable, authentication needed for queries' }
+            }
+          }));
+          addLog('success', 'Database', `Connected in ${latency}ms (auth required for data)`);
+        } else {
+          setStatus(prev => ({
+            ...prev,
+            database: { 
+              status: 'error', 
+              message: error.message,
+              details: { code: error.code, hint: error.hint || '', latency }
+            }
+          }));
+          addLog('error', 'Database', `Connection failed: ${error.message}`, { code: error.code, hint: error.hint });
+        }
       } else {
         setStatus(prev => ({
           ...prev,
@@ -92,11 +112,22 @@ export default function DebugPanel() {
         addLog('success', 'Database', `Connected successfully in ${latency}ms`);
       }
     } catch (err) {
+      // Handle network errors gracefully
+      const errorMessage = err.message || 'Unknown error';
+      const isNetworkError = errorMessage.includes('Failed to fetch') || errorMessage.includes('timeout');
+      
       setStatus(prev => ({
         ...prev,
-        database: { status: 'error', message: err.message, details: { error: err.toString() } }
+        database: { 
+          status: 'error', 
+          message: isNetworkError ? 'Network error - check internet connection' : errorMessage,
+          details: { 
+            error: errorMessage,
+            hint: isNetworkError ? 'This may be a temporary network issue. Try refreshing.' : ''
+          }
+        }
       }));
-      addLog('error', 'Database', `Exception: ${err.message}`, err);
+      addLog('error', 'Database', `Exception: ${errorMessage}`, { message: errorMessage });
     }
   }, [addLog]);
 
