@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Bug, X, ChevronDown, ChevronUp, Database, User, Globe, Server, AlertCircle, CheckCircle, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { Bug, X, ChevronDown, ChevronUp, Database, User, Globe, Server, AlertCircle, CheckCircle, Loader2, RefreshCw, Trash2, Copy, Check } from 'lucide-react';
 
 export default function DebugPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [logs, setLogs] = useState([]);
+  const [copiedId, setCopiedId] = useState(null);
   const [status, setStatus] = useState({
     database: { status: 'checking', message: 'Checking...', details: null },
     auth: { status: 'checking', message: 'Checking...', user: null },
@@ -15,10 +16,46 @@ export default function DebugPanel() {
     env: { status: 'checking', message: 'Checking...', vars: {} },
   });
 
+  // Track if initial checks have run to prevent duplicates
+  const hasInitialized = useRef(false);
+  const authSubscriptionRef = useRef(null);
+  const consoleOverrideRef = useRef(false);
+  const fetchOverrideRef = useRef(false);
+
   const addLog = useCallback((type, category, message, details = null) => {
     const timestamp = new Date().toLocaleTimeString();
-    setLogs(prev => [...prev.slice(-50), { id: Date.now(), type, category, message, details, timestamp }]);
+    setLogs(prev => [...prev.slice(-50), { id: Date.now() + Math.random(), type, category, message, details, timestamp }]);
   }, []);
+
+  // Copy error to clipboard
+  const copyToClipboard = async (log) => {
+    const textToCopy = `[${log.timestamp}] [${log.category}] ${log.message}${log.details ? '\n\nDetails: ' + JSON.stringify(log.details, null, 2) : ''}`;
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedId(log.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      // Silently fail
+    }
+  };
+
+  // Copy all errors
+  const copyAllErrors = async () => {
+    const errors = logs.filter(l => l.type === 'error');
+    if (errors.length === 0) return;
+    
+    const textToCopy = errors.map(log => 
+      `[${log.timestamp}] [${log.category}] ${log.message}${log.details ? '\nDetails: ' + JSON.stringify(log.details, null, 2) : ''}`
+    ).join('\n\n---\n\n');
+    
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedId('all');
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      // Silently fail
+    }
+  };
 
   // Check Database Connection
   const checkDatabase = useCallback(async () => {
@@ -129,9 +166,9 @@ export default function DebugPanel() {
     addLog('info', 'API', 'Testing API endpoints...');
     
     const endpoints = [
-      { name: 'Health', path: '/api/health', method: 'GET' },
-      { name: 'Leads', path: '/api/leads', method: 'GET' },
-      { name: 'Send Email', path: '/api/send-email', method: 'OPTIONS' },
+      { name: 'Health', path: '/api/health', method: 'GET', allowedCodes: [200] },
+      { name: 'Leads', path: '/api/leads', method: 'GET', allowedCodes: [200, 401] }, // 401 is OK if not logged in
+      { name: 'Send Email', path: '/api/send-email', method: 'OPTIONS', allowedCodes: [200, 204] },
     ];
 
     const results = {};
@@ -146,14 +183,16 @@ export default function DebugPanel() {
         });
         const latency = Date.now() - startTime;
         
+        const isAllowed = endpoint.allowedCodes.includes(response.status);
+        
         results[endpoint.name] = {
-          status: response.ok ? 'ok' : 'error',
+          status: isAllowed ? 'ok' : 'error',
           httpStatus: response.status,
           latency,
           statusText: response.statusText
         };
 
-        if (!response.ok && response.status !== 405) {
+        if (!isAllowed) {
           hasError = true;
           addLog('error', 'API', `${endpoint.name}: ${response.status} ${response.statusText}`);
         } else {
@@ -215,8 +254,10 @@ export default function DebugPanel() {
     addLog('info', 'System', '=== Diagnostics complete ===');
   }, [checkEnv, checkDatabase, checkAuth, checkAPIs, addLog]);
 
-  // Listen for auth state changes
+  // Listen for auth state changes - only set up once
   useEffect(() => {
+    if (authSubscriptionRef.current) return;
+    
     const supabase = createClient();
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -238,16 +279,28 @@ export default function DebugPanel() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    authSubscriptionRef.current = subscription;
+
+    return () => {
+      subscription.unsubscribe();
+      authSubscriptionRef.current = null;
+    };
   }, [addLog, checkAuth]);
 
-  // Intercept console errors
+  // Intercept console errors - only set up once
   useEffect(() => {
+    if (consoleOverrideRef.current) return;
+    consoleOverrideRef.current = true;
+    
     const originalError = console.error;
     const originalWarn = console.warn;
 
     console.error = (...args) => {
-      addLog('error', 'Console', args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+      const message = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+      // Filter out React dev warnings we handle elsewhere
+      if (!message.includes('Supabase signin error')) {
+        addLog('error', 'Console', message);
+      }
       originalError.apply(console, args);
     };
 
@@ -259,24 +312,37 @@ export default function DebugPanel() {
     return () => {
       console.error = originalError;
       console.warn = originalWarn;
+      consoleOverrideRef.current = false;
     };
   }, [addLog]);
 
-  // Initial check
+  // Initial check - only run once
   useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
     runAllChecks();
   }, [runAllChecks]);
 
-  // Intercept fetch errors globally
+  // Intercept fetch errors globally - only set up once
   useEffect(() => {
+    if (fetchOverrideRef.current) return;
+    fetchOverrideRef.current = true;
+    
     const originalFetch = window.fetch;
     
     window.fetch = async (...args) => {
       const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || 'unknown';
       try {
         const response = await originalFetch.apply(window, args);
+        // Only log actual errors, not 401s for auth endpoints or expected responses
         if (!response.ok && response.status >= 400) {
-          addLog('error', 'Fetch', `${response.status} ${response.statusText}: ${url}`);
+          // Skip logging certain expected errors
+          const isAuthEndpoint = url.includes('/auth/') || url.includes('token');
+          const isExpected401 = response.status === 401 && url.includes('/api/leads');
+          
+          if (!isAuthEndpoint && !isExpected401) {
+            addLog('error', 'Fetch', `${response.status} : ${url}`);
+          }
         }
         return response;
       } catch (err) {
@@ -287,6 +353,7 @@ export default function DebugPanel() {
 
     return () => {
       window.fetch = originalFetch;
+      fetchOverrideRef.current = false;
     };
   }, [addLog]);
 
@@ -310,13 +377,15 @@ export default function DebugPanel() {
 
   const getLogColor = (type) => {
     switch (type) {
-      case 'error': return 'text-red-400 bg-red-900/20';
-      case 'warning': return 'text-yellow-400 bg-yellow-900/20';
-      case 'success': return 'text-green-400 bg-green-900/20';
-      case 'info': return 'text-blue-400 bg-blue-900/20';
-      default: return 'text-gray-400';
+      case 'error': return 'text-red-400 bg-red-900/30 border border-red-800/50';
+      case 'warning': return 'text-yellow-400 bg-yellow-900/20 border border-yellow-800/30';
+      case 'success': return 'text-green-400 bg-green-900/20 border border-green-800/30';
+      case 'info': return 'text-blue-400 bg-blue-900/20 border border-blue-800/30';
+      default: return 'text-gray-400 border border-gray-700';
     }
   };
+
+  const errorCount = logs.filter(l => l.type === 'error').length;
 
   if (!isOpen) {
     return (
@@ -326,9 +395,9 @@ export default function DebugPanel() {
         title="Open Debug Panel"
       >
         <Bug className="w-5 h-5" />
-        {logs.filter(l => l.type === 'error').length > 0 && (
+        {errorCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-            {logs.filter(l => l.type === 'error').length}
+            {errorCount > 9 ? '9+' : errorCount}
           </span>
         )}
       </button>
@@ -336,15 +405,27 @@ export default function DebugPanel() {
   }
 
   return (
-    <div className={`fixed bottom-4 right-4 z-[9999] bg-gray-900 text-white rounded-lg shadow-2xl border border-gray-700 transition-all ${isMinimized ? 'w-80' : 'w-[500px]'}`}>
+    <div className={`fixed bottom-4 right-4 z-[9999] bg-gray-900 text-white rounded-lg shadow-2xl border border-gray-700 transition-all ${isMinimized ? 'w-80' : 'w-[520px]'}`}>
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-gray-700 bg-gray-800 rounded-t-lg">
         <div className="flex items-center gap-2">
           <Bug className="w-4 h-4 text-yellow-500" />
           <span className="font-semibold text-sm">Debug Panel</span>
-          <span className="text-xs text-gray-500">(Temporary)</span>
+          {errorCount > 0 && (
+            <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{errorCount} errors</span>
+          )}
         </div>
         <div className="flex items-center gap-1">
+          {errorCount > 0 && (
+            <button 
+              onClick={copyAllErrors} 
+              className="p-1 hover:bg-gray-700 rounded flex items-center gap-1 text-xs text-red-400" 
+              title="Copy all errors"
+            >
+              {copiedId === 'all' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              <span>Copy Errors</span>
+            </button>
+          )}
           <button onClick={runAllChecks} className="p-1 hover:bg-gray-700 rounded" title="Refresh all">
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -442,21 +523,44 @@ export default function DebugPanel() {
           )}
 
           {/* Logs */}
-          <div className="max-h-48 overflow-y-auto">
-            <div className="px-3 py-1 bg-gray-800 sticky top-0 border-b border-gray-700">
+          <div className="max-h-56 overflow-y-auto">
+            <div className="px-3 py-1 bg-gray-800 sticky top-0 border-b border-gray-700 flex justify-between items-center">
               <span className="text-xs font-medium text-gray-400">Activity Log ({logs.length})</span>
+              <span className="text-xs text-gray-500">Click error to copy</span>
             </div>
             <div className="p-2 space-y-1">
               {logs.length === 0 ? (
                 <p className="text-xs text-gray-500 text-center py-4">No logs yet</p>
               ) : (
                 logs.slice().reverse().map((log) => (
-                  <div key={log.id} className={`text-xs p-1.5 rounded ${getLogColor(log.type)}`}>
+                  <div 
+                    key={log.id} 
+                    className={`text-xs p-2 rounded ${getLogColor(log.type)} ${log.type === 'error' ? 'cursor-pointer hover:opacity-80' : ''}`}
+                    onClick={log.type === 'error' ? () => copyToClipboard(log) : undefined}
+                  >
                     <div className="flex items-start gap-2">
                       <span className="text-gray-500 shrink-0">{log.timestamp}</span>
                       <span className="font-medium shrink-0">[{log.category}]</span>
-                      <span className="break-all">{log.message}</span>
+                      <span className="break-all flex-1">{log.message}</span>
+                      {log.type === 'error' && (
+                        <button 
+                          className="shrink-0 p-0.5 hover:bg-gray-700 rounded"
+                          onClick={(e) => { e.stopPropagation(); copyToClipboard(log); }}
+                          title="Copy error"
+                        >
+                          {copiedId === log.id ? (
+                            <Check className="w-3 h-3 text-green-400" />
+                          ) : (
+                            <Copy className="w-3 h-3 text-gray-400" />
+                          )}
+                        </button>
+                      )}
                     </div>
+                    {log.details && log.type === 'error' && (
+                      <pre className="mt-1 text-[10px] text-gray-500 overflow-x-auto whitespace-pre-wrap">
+                        {typeof log.details === 'object' ? JSON.stringify(log.details, null, 2) : log.details}
+                      </pre>
+                    )}
                   </div>
                 ))
               )}
