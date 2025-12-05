@@ -18,66 +18,69 @@ There are **NO BUGS** in your deployment - it completed successfully!
 ### 1. Environment Variables (Critical!)
 Add these in **Vercel Dashboard → Project → Settings → Environment Variables**:
 
-#### Firebase (Required)
+#### Supabase (Required)
 ```
-NEXT_PUBLIC_FIREBASE_API_KEY
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-NEXT_PUBLIC_FIREBASE_PROJECT_ID
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-NEXT_PUBLIC_FIREBASE_APP_ID
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+#### Site URLs (Required)
+```
+NEXT_PUBLIC_SITE_URL=https://rent-connect-9uvq.vercel.app
+NEXT_PUBLIC_APP_URL=https://rent-connect-9uvq.vercel.app
 ```
 
 #### Payment & Services (Optional but recommended)
 ```
-NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
-PAYSTACK_SECRET_KEY
 SENDGRID_API_KEY
+PESAPAL_CONSUMER_KEY
+PESAPAL_CONSUMER_SECRET
+PESAPAL_IPN_ID
+DATABASE_URL (for Pesapal payment tracking)
 TWILIO_ACCOUNT_SID
 TWILIO_AUTH_TOKEN
-TWILIO_PHONE_NUMBER
 TWILIO_WHATSAPP_NUMBER
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-NEXT_PUBLIC_APP_URL (set to your production URL)
 ```
 
-### 2. Firebase Console Settings
+### 2. Supabase Dashboard Settings
 
-#### A. Authorized Domains
-Go to Firebase Console → Authentication → Settings → Authorized domains
-- Add your Vercel deployment URL: `your-app.vercel.app`
-- Add custom domain if you have one
+#### A. Authentication → URL Configuration
+Go to Supabase Dashboard → Authentication → URL Configuration:
+- **Site URL**: `https://rent-connect-9uvq.vercel.app`
+- **Redirect URLs**: Add:
+  - `https://rent-connect-9uvq.vercel.app/auth/callback`
+  - `https://rent-connect-9uvq.vercel.app/auth/reset-password`
+  - `http://localhost:5000/auth/callback` (for development)
+  - `http://localhost:5000/auth/reset-password` (for development)
 
-#### B. Firestore Rules
-Ensure your `firestore.rules` are deployed:
-```bash
-firebase deploy --only firestore:rules
-```
+#### B. Authentication → Providers → Google
+If using Google OAuth:
+- Enable Google provider
+- Add your Google OAuth credentials
+- Ensure authorized redirect URI in Google Console includes:
+  - `https://yydwhwkvrvgkqnmirbrr.supabase.co/auth/v1/callback`
 
-#### C. Storage Rules
-Deploy storage rules:
-```bash
-firebase deploy --only storage
-```
+#### C. Authentication → Email Templates
+Customize email templates for:
+- Confirm signup
+- Reset password
+- Magic link
 
-### 3. Update Firebase Auth Domain (if needed)
-If using custom domain, update in Firebase Console:
-- Authentication → Settings → Authorized domains
-- Add: `yourdomain.com`
+### 3. Payment Gateway Setup
 
-### 4. Payment Gateway Setup
+#### Pesapal (Kenya - M-Pesa)
+- Register IPN URL: `https://rent-connect-9uvq.vercel.app/api/pesapal/ipn`
+- Update callback URL in Pesapal dashboard
 
-#### Paystack
-- Update callback URL in Paystack dashboard to: `https://your-app.vercel.app/payment/callback`
+### 4. Common Post-Deployment Issues & Fixes
 
-#### Pesapal (if using)
-- Register IPN URL: `https://your-app.vercel.app/api/pesapal/ipn`
+#### Issue: "Password reset redirects to localhost"
+- **Fix**: Ensure `NEXT_PUBLIC_SITE_URL` is set to production URL in Vercel environment variables
 
-### 5. Common Post-Deployment Issues & Fixes
-
-#### Issue: "Firebase not initialized"
+#### Issue: "Google OAuth not working"
 ✅ **Fix**: Add all Firebase env vars in Vercel dashboard, then redeploy
 
 #### Issue: "auth/invalid-credential" in production

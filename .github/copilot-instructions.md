@@ -78,7 +78,11 @@ export async function POST(request) {
 # Required - Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
+SUPABASE_SERVICE_ROLE_KEY=xxx  # For admin operations (password reset links)
 DATABASE_URL=postgresql://...  # For Pesapal API routes
+
+# Site URL (for redirects)
+NEXT_PUBLIC_SITE_URL=https://your-domain.com
 
 # Payments
 PESAPAL_CONSUMER_KEY, PESAPAL_CONSUMER_SECRET, PESAPAL_IPN_ID
