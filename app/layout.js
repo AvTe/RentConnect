@@ -3,6 +3,7 @@ import Script from 'next/script'
 import { DM_Sans } from 'next/font/google'
 import { Suspense } from 'react'
 import { SkeletonLoadingScreen } from '@/components/ui/SkeletonLoadingScreen'
+import DebugPanel from '@/components/DebugPanel'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -56,6 +57,9 @@ export default function RootLayout({ children }) {
         <Suspense fallback={<SkeletonLoadingScreen />}>
           {children}
         </Suspense>
+
+        {/* Debug Panel - TEMPORARY for troubleshooting */}
+        <DebugPanel />
 
         {/* reCAPTCHA Script - Optimized with afterInteractive strategy */}
         <Script
