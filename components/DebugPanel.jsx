@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Bug, X, ChevronDown, ChevronUp, Database, User, Globe, Server, AlertCircle, CheckCircle, Loader2, RefreshCw, Trash2, Copy, Check } from 'lucide-react';
+import { Bug, X, ChevronDown, ChevronUp, Database, User, Globe, Server, AlertCircle, CheckCircle, Loader2, RefreshCw, Trash2, Copy, Check, Filter } from 'lucide-react';
 
 export default function DebugPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [logs, setLogs] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
+  const [filter, setFilter] = useState('all'); // 'all', 'errors', 'warnings', 'info'
+  const [expandedLogs, setExpandedLogs] = useState(new Set());
   const [status, setStatus] = useState({
     database: { status: 'checking', message: 'Checking...', details: null },
     auth: { status: 'checking', message: 'Checking...', user: null },
@@ -325,18 +327,94 @@ export default function DebugPanel() {
     
     const originalError = console.error;
     const originalWarn = console.warn;
+    const originalLog = console.log;
+
+    // Helper to safely stringify objects
+    const safeStringify = (obj, depth = 0) => {
+      if (depth > 2) return '[Object]';
+      if (obj === null) return 'null';
+      if (obj === undefined) return 'undefined';
+      if (typeof obj === 'function') return '[Function]';
+      if (typeof obj === 'symbol') return obj.toString();
+      if (obj instanceof Error) {
+        return `${obj.name}: ${obj.message}${obj.stack ? '\n' + obj.stack.split('\n').slice(0, 3).join('\n') : ''}`;
+      }
+      if (typeof obj === 'object') {
+        try {
+          // Handle circular references
+          const seen = new WeakSet();
+          return JSON.stringify(obj, (key, value) => {
+            if (typeof value === 'object' && value !== null) {
+              if (seen.has(value)) return '[Circular]';
+              seen.add(value);
+            }
+            return value;
+          }, 2);
+        } catch (e) {
+          return '[Object - cannot stringify]';
+        }
+      }
+      return String(obj);
+    };
+
+    // Format console arguments
+    const formatArgs = (args) => {
+      return args.map(arg => safeStringify(arg)).join(' ');
+    };
+
+    // Extract error details
+    const extractErrorDetails = (args) => {
+      for (const arg of args) {
+        if (arg instanceof Error) {
+          return {
+            name: arg.name,
+            message: arg.message,
+            stack: arg.stack?.split('\n').slice(0, 5).join('\n')
+          };
+        }
+        if (typeof arg === 'object' && arg !== null) {
+          if (arg.message || arg.error || arg.stack) {
+            return arg;
+          }
+        }
+      }
+      return null;
+    };
 
     console.error = (...args) => {
-      const message = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
-      // Filter out React dev warnings we handle elsewhere
-      if (!message.includes('Supabase signin error')) {
-        addLog('error', 'Console', message);
+      const message = formatArgs(args);
+      const details = extractErrorDetails(args);
+      
+      // Categorize errors
+      let category = 'Console';
+      if (message.includes('React') || message.includes('component') || message.includes('render')) {
+        category = 'React';
+      } else if (message.includes('Supabase') || message.includes('auth')) {
+        category = 'Auth';
+      } else if (message.includes('fetch') || message.includes('network') || message.includes('CORS')) {
+        category = 'Network';
+      } else if (message.includes('TypeError') || message.includes('ReferenceError') || message.includes('SyntaxError')) {
+        category = 'JS Error';
       }
+      
+      addLog('error', category, message.substring(0, 500), details);
       originalError.apply(console, args);
     };
 
     console.warn = (...args) => {
-      addLog('warning', 'Console', args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '));
+      const message = formatArgs(args);
+      
+      // Skip certain noisy warnings
+      if (message.includes('Warning: Each child') || message.includes('Warning: validateDOMNesting')) {
+        originalWarn.apply(console, args);
+        return;
+      }
+      
+      let category = 'Console';
+      if (message.includes('React')) category = 'React';
+      if (message.includes('deprecat')) category = 'Deprecation';
+      
+      addLog('warning', category, message.substring(0, 500));
       originalWarn.apply(console, args);
     };
 
@@ -344,6 +422,37 @@ export default function DebugPanel() {
       console.error = originalError;
       console.warn = originalWarn;
       consoleOverrideRef.current = false;
+    };
+  }, [addLog]);
+
+  // Global error handler for uncaught errors
+  useEffect(() => {
+    const handleGlobalError = (event) => {
+      const { message, filename, lineno, colno, error } = event;
+      addLog('error', 'Uncaught', `${message} at ${filename}:${lineno}:${colno}`, {
+        message,
+        file: filename,
+        line: lineno,
+        column: colno,
+        stack: error?.stack?.split('\n').slice(0, 5).join('\n')
+      });
+    };
+
+    const handleUnhandledRejection = (event) => {
+      const reason = event.reason;
+      const message = reason instanceof Error ? reason.message : String(reason);
+      addLog('error', 'Promise', `Unhandled rejection: ${message}`, {
+        message,
+        stack: reason?.stack?.split('\n').slice(0, 5).join('\n')
+      });
+    };
+
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
     };
   }, [addLog]);
 
@@ -554,46 +663,118 @@ export default function DebugPanel() {
           )}
 
           {/* Logs */}
-          <div className="max-h-56 overflow-y-auto">
-            <div className="px-3 py-1 bg-gray-800 sticky top-0 border-b border-gray-700 flex justify-between items-center">
-              <span className="text-xs font-medium text-gray-400">Activity Log ({logs.length})</span>
-              <span className="text-xs text-gray-500">Click error to copy</span>
+          <div className="max-h-64 overflow-y-auto">
+            <div className="px-3 py-1.5 bg-gray-800 sticky top-0 border-b border-gray-700 flex justify-between items-center z-10">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-gray-400">Logs ({logs.length})</span>
+                {/* Filter buttons */}
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setFilter('all')}
+                    className={`px-1.5 py-0.5 text-[10px] rounded ${filter === 'all' ? 'bg-gray-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setFilter('errors')}
+                    className={`px-1.5 py-0.5 text-[10px] rounded ${filter === 'errors' ? 'bg-red-600 text-white' : 'text-red-400 hover:text-red-300'}`}
+                  >
+                    Errors ({logs.filter(l => l.type === 'error').length})
+                  </button>
+                  <button
+                    onClick={() => setFilter('warnings')}
+                    className={`px-1.5 py-0.5 text-[10px] rounded ${filter === 'warnings' ? 'bg-yellow-600 text-white' : 'text-yellow-400 hover:text-yellow-300'}`}
+                  >
+                    Warn
+                  </button>
+                </div>
+              </div>
+              <span className="text-[10px] text-gray-500">Click to expand</span>
             </div>
             <div className="p-2 space-y-1">
               {logs.length === 0 ? (
                 <p className="text-xs text-gray-500 text-center py-4">No logs yet</p>
               ) : (
-                logs.slice().reverse().map((log) => (
-                  <div 
-                    key={log.id} 
-                    className={`text-xs p-2 rounded ${getLogColor(log.type)} ${log.type === 'error' ? 'cursor-pointer hover:opacity-80' : ''}`}
-                    onClick={log.type === 'error' ? () => copyToClipboard(log) : undefined}
-                  >
-                    <div className="flex items-start gap-2">
-                      <span className="text-gray-500 shrink-0">{log.timestamp}</span>
-                      <span className="font-medium shrink-0">[{log.category}]</span>
-                      <span className="break-all flex-1">{log.message}</span>
-                      {log.type === 'error' && (
-                        <button 
-                          className="shrink-0 p-0.5 hover:bg-gray-700 rounded"
-                          onClick={(e) => { e.stopPropagation(); copyToClipboard(log); }}
-                          title="Copy error"
-                        >
-                          {copiedId === log.id ? (
-                            <Check className="w-3 h-3 text-green-400" />
-                          ) : (
-                            <Copy className="w-3 h-3 text-gray-400" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                    {log.details && log.type === 'error' && (
-                      <pre className="mt-1 text-[10px] text-gray-500 overflow-x-auto whitespace-pre-wrap">
-                        {typeof log.details === 'object' ? JSON.stringify(log.details, null, 2) : log.details}
-                      </pre>
-                    )}
-                  </div>
-                ))
+                logs
+                  .filter(log => {
+                    if (filter === 'all') return true;
+                    if (filter === 'errors') return log.type === 'error';
+                    if (filter === 'warnings') return log.type === 'warning';
+                    return true;
+                  })
+                  .slice()
+                  .reverse()
+                  .map((log) => {
+                    const isExpanded = expandedLogs.has(log.id);
+                    const getCategoryColor = (cat) => {
+                      const colors = {
+                        'React': 'text-cyan-400',
+                        'Auth': 'text-purple-400',
+                        'Network': 'text-orange-400',
+                        'Fetch': 'text-orange-400',
+                        'JS Error': 'text-red-400',
+                        'Uncaught': 'text-red-500',
+                        'Promise': 'text-pink-400',
+                        'Database': 'text-blue-400',
+                        'API': 'text-green-400',
+                        'Env': 'text-yellow-400',
+                        'System': 'text-gray-400',
+                        'Console': 'text-gray-300',
+                        'Deprecation': 'text-amber-400',
+                      };
+                      return colors[cat] || 'text-gray-400';
+                    };
+
+                    return (
+                      <div 
+                        key={log.id} 
+                        className={`text-xs p-2 rounded cursor-pointer transition-all ${getLogColor(log.type)} ${isExpanded ? 'ring-1 ring-white/20' : ''}`}
+                        onClick={() => {
+                          setExpandedLogs(prev => {
+                            const next = new Set(prev);
+                            if (next.has(log.id)) next.delete(log.id);
+                            else next.add(log.id);
+                            return next;
+                          });
+                        }}
+                      >
+                        <div className="flex items-start gap-2">
+                          <span className="text-gray-500 shrink-0 font-mono text-[10px]">{log.timestamp}</span>
+                          <span className={`font-medium shrink-0 ${getCategoryColor(log.category)}`}>[{log.category}]</span>
+                          <span className={`flex-1 ${isExpanded ? '' : 'truncate'}`}>{log.message}</span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {(log.type === 'error' || log.type === 'warning') && (
+                              <button 
+                                className="p-0.5 hover:bg-gray-700 rounded"
+                                onClick={(e) => { e.stopPropagation(); copyToClipboard(log); }}
+                                title="Copy"
+                              >
+                                {copiedId === log.id ? (
+                                  <Check className="w-3 h-3 text-green-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3 text-gray-400" />
+                                )}
+                              </button>
+                            )}
+                            <ChevronDown className={`w-3 h-3 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </div>
+                        </div>
+                        {isExpanded && log.details && (
+                          <div className="mt-2 pt-2 border-t border-gray-700/50">
+                            <p className="text-[10px] text-gray-500 mb-1 font-medium">Details:</p>
+                            <pre className="text-[10px] text-gray-400 overflow-x-auto whitespace-pre-wrap bg-black/30 p-2 rounded">
+                              {typeof log.details === 'object' ? JSON.stringify(log.details, null, 2) : log.details}
+                            </pre>
+                          </div>
+                        )}
+                        {isExpanded && !log.details && (
+                          <div className="mt-2 pt-2 border-t border-gray-700/50">
+                            <p className="text-[10px] text-gray-500 italic">No additional details</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
               )}
             </div>
           </div>
