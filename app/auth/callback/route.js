@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 /**
  * Auth Callback Route Handler
@@ -12,6 +13,10 @@ export async function GET(request) {
   const next = requestUrl.searchParams.get('next') || '/';
   const error = requestUrl.searchParams.get('error');
   const errorDescription = requestUrl.searchParams.get('error_description');
+  
+  // Get pending user type from cookie (set before OAuth redirect)
+  const cookieStore = await cookies();
+  const pendingUserType = cookieStore.get('pending_user_type')?.value || 'tenant';
   
   // Dynamically determine origin based on environment
   // Use request origin for production, fallback to localhost for dev
@@ -33,6 +38,7 @@ export async function GET(request) {
       const supabase = await createClient();
 
       console.log('Processing OAuth callback with code:', code.substring(0, 10) + '...');
+      console.log('Pending user type from cookie:', pendingUserType);
 
       // Exchange code for session
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -58,6 +64,13 @@ export async function GET(request) {
           console.log('Creating new user profile for:', data.user.email);
           
           const metadata = data.user.user_metadata || {};
+          
+          // Get role from cookie (set during login), then metadata, then default to tenant
+          // Priority: cookie > metadata > default
+          const userRole = pendingUserType || metadata.type || metadata.role || 'tenant';
+          
+          console.log('Creating user with role:', userRole);
+          
           const { error: insertError } = await supabase
             .from('users')
             .insert({
@@ -65,8 +78,8 @@ export async function GET(request) {
               email: data.user.email,
               name: metadata.full_name || metadata.name || data.user.email?.split('@')[0],
               avatar: metadata.avatar_url || metadata.picture || null,
-              role: 'tenant',
-              type: 'tenant',
+              role: userRole,
+              type: userRole,
               phone: metadata.phone || null,
               status: 'active',
               wallet_balance: 0,
@@ -78,7 +91,7 @@ export async function GET(request) {
             console.error('Error creating user profile:', insertError);
             // Continue anyway - profile can be created later
           } else {
-            console.log('User profile created successfully');
+            console.log('User profile created successfully with role:', userRole);
           }
         } else {
           console.log('User profile already exists');
@@ -105,11 +118,17 @@ export async function GET(request) {
       // Check if this was an email confirmation (no existing session before)
       const isEmailConfirmation = next === '/' && data.user?.email_confirmed_at;
       
+      // Create response with cookie cleanup
+      let redirectUrl = `${origin}${next}`;
       if (isEmailConfirmation) {
-        return NextResponse.redirect(`${origin}/?view=email-confirmed`);
+        redirectUrl = `${origin}/?view=email-confirmed`;
       }
       
-      return NextResponse.redirect(`${origin}${next}`);
+      const response = NextResponse.redirect(redirectUrl);
+      // Clear the pending_user_type cookie
+      response.cookies.set('pending_user_type', '', { maxAge: 0, path: '/' });
+      
+      return response;
       
     } catch (error) {
       console.error('Callback error:', error);

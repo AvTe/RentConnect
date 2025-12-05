@@ -103,8 +103,8 @@ export const Login = ({ onNavigate, onLogin, authError }) => {
 
     try {
       // signInWithGoogle triggers OAuth popup and redirects to callback
-      // The actual login handling happens in app/auth/callback/route.js
-      const result = await signInWithGoogle();
+      // Pass the selected userType so it can be stored and used after redirect
+      const result = await signInWithGoogle(userType);
       
       if (!result.success) {
         throw new Error(result.error || 'Google sign-in failed');
