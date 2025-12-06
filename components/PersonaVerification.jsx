@@ -160,7 +160,7 @@ export const PersonaVerification = ({ onClose, onComplete, userId }) => {
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">Identity Verification</h2>
                 <p className="text-gray-600 mt-2">
-                  To verify your agent account, we'll need to verify your identity using a government-issued ID.
+                  To verify your agent account, we&apos;ll need to verify your identity using a government-issued ID.
                 </p>
               </div>
               <ul className="text-left text-sm text-gray-600 space-y-2 max-w-xs mx-auto">
@@ -215,7 +215,7 @@ export const PersonaVerification = ({ onClose, onComplete, userId }) => {
               <h3 className="text-xl font-semibold text-gray-900">Verification Submitted!</h3>
               <p className="text-gray-500 mt-2 mb-6">
                 Your identity verification has been submitted successfully.
-                You'll be notified once it's reviewed.
+                You&apos;ll be notified once it&apos;s reviewed.
               </p>
               <Button
                 onClick={onClose}

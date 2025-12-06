@@ -383,7 +383,7 @@ export const AgentDashboard = ({
             <div>
               <h2 className="text-2xl font-bold text-gray-900">My Properties</h2>
               <p className="text-gray-500 text-sm">
-                Leads you've connected with & subscription status
+                Leads you&apos;ve connected with & subscription status
               </p>
             </div>
           </div>
@@ -542,7 +542,7 @@ export const AgentDashboard = ({
             <div className="p-5 border-b border-gray-200">
               <h3 className="font-bold text-gray-900">My Connected Leads</h3>
               <p className="text-sm text-gray-500">
-                Leads you've paid to connect with ({connectedLeads.length} total)
+                Leads you&apos;ve paid to connect with ({connectedLeads.length} total)
               </p>
             </div>
 
@@ -553,7 +553,7 @@ export const AgentDashboard = ({
                 </div>
                 <h4 className="font-medium text-gray-900 mb-2">No Connected Leads Yet</h4>
                 <p className="text-sm text-gray-500 mb-4">
-                  When you unlock leads from the dashboard, they'll appear here.
+                  When you unlock leads from the dashboard, they&apos;ll appear here.
                 </p>
                 <Button
                   onClick={() => setActiveTab('leads')}
