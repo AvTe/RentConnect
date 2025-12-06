@@ -19,8 +19,9 @@ export async function GET(request) {
       siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'NOT SET',
       appUrl: process.env.NEXT_PUBLIC_APP_URL || 'NOT SET'
     },
-    sendgrid: {
-      configured: !!process.env.SENDGRID_API_KEY
+    email: {
+      provider: 'Supabase Auth',
+      note: 'Emails handled by Supabase Auth built-in email system'
     }
   };
 
@@ -32,7 +33,7 @@ export async function GET(request) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       );
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .select('count')
         .limit(1);

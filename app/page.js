@@ -20,7 +20,7 @@ import PasswordResetSuccess from '@/components/PasswordResetSuccess';
 import PasswordResetForm from '@/components/PasswordResetForm';
 import { ChatWidget, ChatButton, useChat } from '@/components/ChatWidget';
 import { getCurrentSession, signOut, onAuthStateChange } from '@/lib/auth-supabase';
-import { getUser, updateUser, createUser, createUserSubscription } from '@/lib/database';
+import { getUser, updateUser, createUser, createUserSubscription, createSubscription } from '@/lib/database';
 import { uploadImage } from '@/lib/storage-supabase';
 import { useLeads, useSubscription } from '@/lib/hooks';
 
@@ -405,68 +405,97 @@ export default function RentalLeadApp() {
 
   const handleSubscribe = async (paymentData) => {
     try {
+      // DEMO MODE: Pesapal disabled - credits are added directly for testing
+      // TODO: Re-enable Pesapal integration when ready for production
 
-      const { initializePayment, SUBSCRIPTION_PLANS } = await import('@/lib/pesapal');
-      
-      let metadata = {};
-      let amount = 0;
-      let description = '';
-      
-      // Determine payment type and prepare metadata
       if (paymentData.userId) {
         // User subscription for viewing agent contacts
-        metadata = {
-          type: 'user_subscription',
-          userId: paymentData.userId,
-          planType: paymentData.planType
-        };
-        amount = paymentData.amount;
-        description = `Yoombaa ${paymentData.planType} User Subscription`;
+        const startsAt = new Date();
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+
+        const result = await createUserSubscription({
+          user_id: paymentData.userId,
+          plan_name: `${paymentData.planType} Subscription`,
+          status: 'active',
+          amount: paymentData.amount || 0,
+          currency: 'KES',
+          payment_method: 'demo',
+          payment_reference: `demo_user_${Date.now()}`,
+          starts_at: startsAt.toISOString(),
+          expires_at: expiresAt.toISOString(),
+        });
+
+        if (result.success) {
+          alert(`✅ ${paymentData.planType} subscription activated! (Demo Mode)`);
+          setView('user-dashboard');
+        } else {
+          alert('Failed to activate subscription: ' + result.error);
+        }
       } else if (paymentData.credits) {
-        // Agent buying credits
-        metadata = {
-          type: 'credit_purchase',
-          agentId: currentUser.uid,
-          agentName: currentUser.name,
-          credits: paymentData.credits
-        };
-        // Extract amount from string like "KSh 500" or use price directly
-        amount = typeof paymentData.price === 'string' 
-          ? parseInt(paymentData.price.replace(/[^0-9]/g, ''))
-          : paymentData.price;
-        description = `Yoombaa Credit Purchase - ${paymentData.credits} Credits`;
+        // Agent buying credits - add credits directly
+        const userId = currentUser?.uid || currentUser?.id;
+        const newCredits = (currentUser?.credits || 0) + paymentData.credits;
+
+        // Update user credits
+        const updateResult = await updateUser(userId, { credits: newCredits });
+
+        if (updateResult.success) {
+          // Also create a subscription record for tracking
+          const startsAt = new Date();
+          const expiresAt = new Date();
+          expiresAt.setFullYear(expiresAt.getFullYear() + 10); // Credits don't expire
+
+          await createSubscription({
+            user_id: userId,
+            plan_name: `${paymentData.credits} Credits Bundle`,
+            status: 'active',
+            amount: typeof paymentData.price === 'string'
+              ? parseInt(paymentData.price.replace(/[^0-9]/g, ''))
+              : paymentData.price || 0,
+            currency: 'KES',
+            payment_method: 'demo',
+            payment_reference: `demo_credits_${Date.now()}`,
+            starts_at: startsAt.toISOString(),
+            expires_at: expiresAt.toISOString(),
+          });
+
+          // Update local user state
+          setCurrentUser(prev => ({ ...prev, credits: newCredits }));
+          alert(`✅ ${paymentData.credits} credits added! You now have ${newCredits} credits. (Demo Mode)`);
+          setView('agent-dashboard');
+        } else {
+          alert('Failed to add credits: ' + updateResult.error);
+        }
       } else {
         // Agent premium subscription
-        metadata = {
-          type: 'agent_subscription',
-          agentId: currentUser.uid,
-          agentName: currentUser.name
-        };
-        amount = SUBSCRIPTION_PLANS.PREMIUM.amount;
-        description = 'Yoombaa Premium Agent Subscription';
-      }
-      
-      // Initialize payment with Pesapal (metadata stored server-side in API route)
-      const result = await initializePayment({
-        email: currentUser.email,
-        phone: currentUser.phone || '',
-        amount: amount,
-        description: description,
-        firstName: currentUser.name?.split(' ')[0] || '',
-        lastName: currentUser.name?.split(' ').slice(1).join(' ') || '',
-        metadata: metadata,
-        callbackUrl: `${window.location.origin}/payment/callback`
-      });
-      
-      if (result.success && result.redirectUrl) {
-        // Redirect to Pesapal payment page
-        window.location.href = result.redirectUrl;
-      } else {
-        alert(result.error || 'Error initializing payment. Please try again.');
+        const userId = currentUser?.uid || currentUser?.id;
+        const startsAt = new Date();
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+
+        const result = await createSubscription({
+          user_id: userId,
+          plan_name: 'Premium Agent Subscription',
+          status: 'active',
+          amount: 2500,
+          currency: 'KES',
+          payment_method: 'demo',
+          payment_reference: `demo_premium_${Date.now()}`,
+          starts_at: startsAt.toISOString(),
+          expires_at: expiresAt.toISOString(),
+        });
+
+        if (result.success) {
+          alert('✅ Premium subscription activated! (Demo Mode)');
+          setView('agent-dashboard');
+        } else {
+          alert('Failed to activate subscription: ' + result.error);
+        }
       }
     } catch (error) {
       console.error('Error subscribing:', error);
-      alert('Error processing subscription. Please try again.');
+      alert('Error processing subscription: ' + error.message);
     }
   };
 

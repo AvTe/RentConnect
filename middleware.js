@@ -12,12 +12,12 @@ export function middleware(request) {
   // Content Security Policy - allows necessary scripts and resources
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://www.google.com https://maps.googleapis.com https://www.gstatic.com https://apis.google.com;
-    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://www.google.com https://maps.googleapis.com https://www.gstatic.com https://apis.google.com https://*.withpersona.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.withpersona.com;
     img-src 'self' blob: data: https: http:;
-    font-src 'self' data: https://fonts.gstatic.com;
-    connect-src 'self' https://yydwhwkvrvgkqnmirbrr.supabase.co wss://yydwhwkvrvgkqnmirbrr.supabase.co https://accounts.google.com https://www.googleapis.com https://apis.google.com;
-    frame-src 'self' https://accounts.google.com https://www.google.com;
+    font-src 'self' data: https://fonts.gstatic.com https://*.withpersona.com;
+    connect-src 'self' https://yydwhwkvrvgkqnmirbrr.supabase.co wss://yydwhwkvrvgkqnmirbrr.supabase.co https://accounts.google.com https://www.googleapis.com https://apis.google.com https://*.withpersona.com wss://*.withpersona.com;
+    frame-src 'self' https://accounts.google.com https://www.google.com https://*.withpersona.com https://inquiry.withpersona.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
@@ -31,7 +31,8 @@ export function middleware(request) {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  // Allow camera and microphone for Persona identity verification
+  response.headers.set('Permissions-Policy', 'camera=(self "https://inquiry.withpersona.com"), microphone=(self "https://inquiry.withpersona.com"), geolocation=()');
 
   // Cache control for static assets
   if (request.nextUrl.pathname.match(/^\/static\/.*/)) {

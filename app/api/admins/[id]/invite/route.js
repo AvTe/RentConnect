@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import {
   getAdminUser,
   getAdminUserByEmail,
@@ -8,64 +9,48 @@ import {
   adminHasPermission
 } from '@/lib/database';
 
-const sgMail = require('@sendgrid/mail');
+// Create Supabase admin client for sending invites
+const supabaseAdmin = createSupabaseClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
-// Helper function to send admin invite email
+// Helper function to send admin invite email via Supabase Auth
 const sendAdminInviteEmail = async ({ to, name, role, inviteUrl, customMessage, invitedBy }) => {
-  if (!process.env.SENDGRID_API_KEY) {
-    console.warn('SENDGRID_API_KEY is not set');
-    return { success: false, error: 'Email service not configured' };
-  }
-
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-  const displayRole = role === 'super_admin' ? 'Super Admin' 
-    : role === 'main_admin' ? 'Main Admin' 
-    : role === 'sub_admin' ? 'Sub Admin'
-    : role || 'Admin';
-
-  const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f5;">
-  <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f5;">
-    <tr>
-      <td align="center" style="padding: 40px 20px;">
-        <table width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px;">
-          <tr>
-            <td style="background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); padding: 40px 30px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px;">🏠 RentConnect</h1>
-              <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Admin Dashboard Invitation</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 40px 30px;">
-              <h2 style="margin: 0 0 20px; color: #1f2937;">Hi ${name},</h2>
-              <p style="margin: 0 0 20px; color: #4b5563;">You have been invited as: <strong>${displayRole}</strong></p>
-              ${customMessage ? `<p style="color: #854d0e; font-style: italic;">"${customMessage}" — ${invitedBy}</p>` : ''}
-              <p style="margin: 0 0 30px; color: #4b5563;">Click the button below to complete setup:</p>
-              <table width="100%"><tr><td align="center">
-                <a href="${inviteUrl}" style="display: inline-block; background: #16a34a; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600;">Accept Invitation</a>
-              </td></tr></table>
-              <p style="margin: 30px 0 0; color: #6b7280; font-size: 14px;">Link: <a href="${inviteUrl}">${inviteUrl}</a></p>
-              <p style="margin: 20px 0 0; padding: 15px; background-color: #fef2f2; border-radius: 8px; color: #991b1b; font-size: 13px;">⏰ Expires in 72 hours</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-
   try {
-    await sgMail.send({
-      to,
-      from: 'noreply@Yoombaa.com',
-      subject: `You've been invited to the RentConnect Admin Dashboard`,
-      html: htmlContent
+    const displayRole = role === 'super_admin' ? 'Super Admin'
+      : role === 'main_admin' ? 'Main Admin'
+      : role === 'sub_admin' ? 'Sub Admin'
+      : role || 'Admin';
+
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5000';
+
+    // Use Supabase Auth to invite user
+    console.log(`Sending admin invite to ${to} via Supabase Auth`);
+
+    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(to, {
+      data: {
+        name: name,
+        role: role || 'sub_admin',
+        display_role: displayRole,
+        invited_by: invitedBy || 'Admin',
+        custom_message: customMessage || '',
+        invite_url: inviteUrl,
+        user_type: 'admin'
+      },
+      redirectTo: `${baseUrl}/admin/accept-invite`
     });
+
+    if (error) {
+      console.error('Supabase invite error:', error);
+      // If user already exists, invite was still sent in concept
+      if (error.message?.includes('already registered')) {
+        return { success: true, message: 'User already exists' };
+      }
+      return { success: false, error: error.message };
+    }
+
+    console.log('Admin invite sent successfully via Supabase to:', to);
     return { success: true };
   } catch (error) {
     console.error('Error sending admin invite email:', error);

@@ -22,6 +22,14 @@ import {
   ShieldAlert,
   Share2,
   Copy,
+  CreditCard,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Zap,
+  MapPin,
+  Calendar,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
@@ -32,8 +40,12 @@ import {
   deductCredits,
   unlockLead,
   getUnlockedLeads,
+  getAgentConnectedLeads,
+  getActiveSubscription,
+  createSubscription,
 } from "@/lib/database";
-import { SmileIDVerification } from "./SmileIDVerification";
+import { PersonaVerification } from "./PersonaVerification";
+import { initializePayment } from "@/lib/pesapal";
 
 export const AgentDashboard = ({
   onNavigate,
@@ -47,8 +59,12 @@ export const AgentDashboard = ({
   const [activeTab, setActiveTab] = useState(initialTab); // leads, properties, profile, referrals
   const [walletBalance, setWalletBalance] = useState(0);
   const [unlockedLeads, setUnlockedLeads] = useState([]);
+  const [connectedLeads, setConnectedLeads] = useState([]);
+  const [subscription, setSubscription] = useState(null);
   const [referralCode, setReferralCode] = useState("");
   const [showVerification, setShowVerification] = useState(false);
+  const [loadingSubscription, setLoadingSubscription] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
 
   const isVerified = currentUser?.verificationStatus === "verified";
   const isPending = currentUser?.verificationStatus === "pending";
@@ -80,9 +96,29 @@ export const AgentDashboard = ({
       }
     };
 
+    const fetchConnectedLeads = async () => {
+      const result = await getAgentConnectedLeads(userId);
+      if (result.success) {
+        setConnectedLeads(result.data);
+      }
+    };
+
+    const fetchSubscription = async () => {
+      setSubscriptionLoading(true);
+      const result = await getActiveSubscription(userId);
+      if (result.success) {
+        setSubscription(result.data);
+      } else {
+        setSubscription(null);
+      }
+      setSubscriptionLoading(false);
+    };
+
     if (userId) {
       fetchBalance();
       fetchUnlockedLeads();
+      fetchConnectedLeads();
+      fetchSubscription();
       if (currentUser.referralCode) {
         setReferralCode(currentUser.referralCode);
       }
@@ -244,71 +280,349 @@ export const AgentDashboard = ({
     }
 
     if (activeTab === "properties") {
+      // Handler for demo subscription
+      const handleDemoSubscription = async () => {
+        if (!isVerified) {
+          alert("Please verify your account before purchasing a subscription.");
+          return;
+        }
+
+        setLoadingSubscription(true);
+        try {
+          // Create a demo subscription directly (for testing)
+          const userId = currentUser?.uid || currentUser?.id;
+          const startsAt = new Date();
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 7); // 7-day demo
+
+          const result = await createSubscription({
+            user_id: userId,
+            plan_name: 'Demo Subscription',
+            status: 'active',
+            amount: 0,
+            currency: 'KES',
+            payment_method: 'demo',
+            payment_reference: `demo_${Date.now()}`,
+            starts_at: startsAt.toISOString(),
+            expires_at: expiresAt.toISOString(),
+          });
+
+          if (result.success) {
+            setSubscription(result.data);
+            alert("Demo subscription activated! You have 7 days of full access.");
+          } else {
+            alert("Failed to activate demo: " + result.error);
+          }
+        } catch (error) {
+          alert("Error: " + error.message);
+        } finally {
+          setLoadingSubscription(false);
+        }
+      };
+
+      // Handler for real subscription purchase
+      const handleRealSubscription = async (planType) => {
+        if (!isVerified) {
+          alert("Please verify your account before purchasing a subscription.");
+          return;
+        }
+
+        setLoadingSubscription(true);
+        try {
+          const userId = currentUser?.uid || currentUser?.id;
+          const plans = {
+            basic: { name: 'Basic', amount: 500, credits: 10 },
+            premium: { name: 'Premium', amount: 1500, credits: 50 },
+            pro: { name: 'Pro', amount: 3000, credits: 150 },
+          };
+
+          const plan = plans[planType];
+
+          const result = await initializePayment({
+            email: currentUser?.email,
+            phone: currentUser?.phone || '',
+            amount: plan.amount,
+            description: `${plan.name} Subscription - ${plan.credits} Credits`,
+            firstName: currentUser?.name?.split(' ')[0] || '',
+            lastName: currentUser?.name?.split(' ').slice(1).join(' ') || '',
+            metadata: {
+              userId,
+              type: 'subscription',
+              plan: planType,
+              planName: plan.name,
+              credits: plan.credits,
+            },
+          });
+
+          if (result.success && result.redirectUrl) {
+            window.location.href = result.redirectUrl;
+          } else {
+            alert("Failed to initialize payment: " + (result.error || 'Unknown error'));
+          }
+        } catch (error) {
+          alert("Error: " + error.message);
+        } finally {
+          setLoadingSubscription(false);
+        }
+      };
+
+      const getConnectionStatusBadge = (status) => {
+        const statusStyles = {
+          accepted: 'bg-blue-100 text-blue-800 border-blue-200',
+          contacted: 'bg-green-100 text-green-800 border-green-200',
+          converted: 'bg-purple-100 text-purple-800 border-purple-200',
+          lost: 'bg-red-100 text-red-800 border-red-200',
+        };
+        return statusStyles[status] || 'bg-gray-100 text-gray-800 border-gray-200';
+      };
+
       return (
         <div className="space-y-6">
+          {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                My Properties
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900">My Properties</h2>
               <p className="text-gray-500 text-sm">
-                Manage your property listings
+                Leads you've connected with & subscription status
               </p>
             </div>
-            <Button className="flex items-center gap-2 bg-[#FE9200] hover:bg-[#E58300]">
-              <Plus className="w-4 h-4" />
-              Add New Property
-            </Button>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {MOCK_PROPERTIES.map((property) => (
-              <div
-                key={property.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow group"
-              >
-                <div className="h-48 bg-gray-100 relative flex items-center justify-center">
-                  <ImageIcon className="w-12 h-12 text-gray-300" />
-                  <div className="absolute top-4 right-4">
-                    <Badge
-                      className={
-                        property.status === "Active"
-                          ? "bg-[#FFE4C4] text-green-800 border-[#D4F3D4]"
-                          : property.status === "Pending"
-                            ? "bg-yellow-100 text-yellow-800 border-yellow-200"
-                            : "bg-gray-100 text-gray-800 border-gray-200"
-                      }
-                    >
-                      {property.status}
-                    </Badge>
+          {/* Verification & Subscription Status Cards */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Verification Status Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <div className="flex items-center gap-3 mb-4">
+                {isVerified ? (
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5 text-green-600" />
                   </div>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                    {property.name}
-                  </h3>
-                  <p className="text-gray-500 text-sm mb-4">
-                    {property.location}
+                ) : isPending ? (
+                  <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-yellow-600" />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                    <XCircle className="w-5 h-5 text-red-600" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-semibold text-gray-900">Verification Status</h3>
+                  <p className="text-sm text-gray-500">
+                    {isVerified ? 'Verified Agent' : isPending ? 'Verification Pending' : 'Not Verified'}
                   </p>
-                  <div className="flex justify-between items-center mb-6">
-                    <span className="font-bold text-[#FE9200] text-lg">
-                      {property.price}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button className="flex items-center justify-center gap-2 text-xs h-9 bg-[#FE9200] hover:bg-[#E58300] text-white">
-                      <Edit className="w-3 h-3" /> Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex items-center justify-center gap-2 text-xs h-9"
-                    >
-                      <Eye className="w-3 h-3" /> View
-                    </Button>
-                  </div>
                 </div>
               </div>
-            ))}
+              <Badge className={
+                isVerified ? 'bg-green-100 text-green-800 border-green-200' :
+                isPending ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                'bg-red-100 text-red-800 border-red-200'
+              }>
+                {isVerified ? '✓ Verified' : isPending ? '⏳ Pending Review' : '✗ Unverified'}
+              </Badge>
+            </div>
+
+            {/* Subscription Status Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  subscription ? 'bg-purple-100' : 'bg-gray-100'
+                }`}>
+                  <Crown className={`w-5 h-5 ${subscription ? 'text-purple-600' : 'text-gray-400'}`} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Subscription Status</h3>
+                  <p className="text-sm text-gray-500">
+                    {subscriptionLoading ? 'Loading...' :
+                     subscription ? `${subscription.plan_name || subscription.plan || 'Active'} Plan` :
+                     'No Active Subscription'}
+                  </p>
+                </div>
+              </div>
+              {subscription ? (
+                <div className="space-y-2">
+                  <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                    ✓ {subscription.plan_name || subscription.plan}
+                  </Badge>
+                  <p className="text-xs text-gray-500">
+                    Expires: {new Date(subscription.expires_at).toLocaleDateString()}
+                  </p>
+                </div>
+              ) : (
+                <Badge className="bg-gray-100 text-gray-600 border-gray-200">
+                  No Subscription
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Subscription Purchase Section */}
+          {!subscription && (
+            <div className="bg-gradient-to-r from-[#FE9200] to-[#E58300] rounded-xl p-6 text-white">
+              <h3 className="text-xl font-bold mb-2">Get Started with a Subscription</h3>
+              <p className="text-white/80 mb-4">
+                Unlock unlimited access to leads and grow your business
+              </p>
+
+              <div className="grid gap-4 md:grid-cols-4">
+                {/* Demo Subscription */}
+                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4" />
+                    <span className="text-xs font-medium uppercase">Demo</span>
+                  </div>
+                  <p className="text-2xl font-bold mb-1">FREE</p>
+                  <p className="text-xs text-white/70 mb-3">7 days trial</p>
+                  <Button
+                    onClick={handleDemoSubscription}
+                    disabled={loadingSubscription || !isVerified}
+                    className="w-full bg-white text-[#FE9200] hover:bg-white/90 text-sm"
+                  >
+                    {loadingSubscription ? 'Processing...' : 'Start Demo'}
+                  </Button>
+                  <p className="text-[10px] text-white/60 mt-2 text-center">For testing only</p>
+                </div>
+
+                {/* Basic Plan */}
+                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                  <span className="text-xs font-medium uppercase">Basic</span>
+                  <p className="text-2xl font-bold mb-1">KSh 500</p>
+                  <p className="text-xs text-white/70 mb-3">10 Credits</p>
+                  <Button
+                    onClick={() => handleRealSubscription('basic')}
+                    disabled={loadingSubscription || !isVerified}
+                    className="w-full bg-white/20 hover:bg-white/30 text-sm"
+                  >
+                    Buy Now
+                  </Button>
+                </div>
+
+                {/* Premium Plan */}
+                <div className="bg-white/20 rounded-lg p-4 border-2 border-white relative">
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-white text-[#FE9200] text-[10px]">POPULAR</Badge>
+                  </div>
+                  <span className="text-xs font-medium uppercase">Premium</span>
+                  <p className="text-2xl font-bold mb-1">KSh 1,500</p>
+                  <p className="text-xs text-white/70 mb-3">50 Credits</p>
+                  <Button
+                    onClick={() => handleRealSubscription('premium')}
+                    disabled={loadingSubscription || !isVerified}
+                    className="w-full bg-white text-[#FE9200] hover:bg-white/90 text-sm"
+                  >
+                    Buy Now
+                  </Button>
+                </div>
+
+                {/* Pro Plan */}
+                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
+                  <span className="text-xs font-medium uppercase">Pro</span>
+                  <p className="text-2xl font-bold mb-1">KSh 3,000</p>
+                  <p className="text-xs text-white/70 mb-3">150 Credits</p>
+                  <Button
+                    onClick={() => handleRealSubscription('pro')}
+                    disabled={loadingSubscription || !isVerified}
+                    className="w-full bg-white/20 hover:bg-white/30 text-sm"
+                  >
+                    Buy Now
+                  </Button>
+                </div>
+              </div>
+
+              {!isVerified && (
+                <p className="text-xs text-white/60 mt-4 text-center">
+                  ⚠️ Please verify your account to purchase a subscription
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Connected Leads Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-5 border-b border-gray-200">
+              <h3 className="font-bold text-gray-900">My Connected Leads</h3>
+              <p className="text-sm text-gray-500">
+                Leads you've paid to connect with ({connectedLeads.length} total)
+              </p>
+            </div>
+
+            {connectedLeads.length === 0 ? (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Inbox className="w-8 h-8 text-gray-400" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">No Connected Leads Yet</h4>
+                <p className="text-sm text-gray-500 mb-4">
+                  When you unlock leads from the dashboard, they'll appear here.
+                </p>
+                <Button
+                  onClick={() => setActiveTab('leads')}
+                  className="bg-[#FE9200] hover:bg-[#E58300]"
+                >
+                  Browse Leads
+                </Button>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {connectedLeads.map((connection) => (
+                  <div key={connection.id} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium text-gray-900">
+                            {connection.lead?.tenant_name || 'Anonymous Lead'}
+                          </h4>
+                          <Badge className={getConnectionStatusBadge(connection.status)}>
+                            {connection.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {connection.lead?.location || 'Unknown'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Home className="w-3 h-3" />
+                            {connection.lead?.property_type || 'Any'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(connection.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {connection.lead?.budget && (
+                          <p className="text-sm font-medium text-[#FE9200] mt-1">
+                            Budget: KSh {connection.lead.budget.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        {connection.lead?.tenant_phone && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs"
+                            onClick={() => window.open(`tel:${connection.lead.tenant_phone}`)}
+                          >
+                            <Phone className="w-3 h-3 mr-1" /> Call
+                          </Button>
+                        )}
+                        {connection.lead?.tenant_email && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs"
+                            onClick={() => window.open(`mailto:${connection.lead.tenant_email}`)}
+                          >
+                            <MessageCircle className="w-3 h-3 mr-1" /> Email
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       );
@@ -585,14 +899,15 @@ export const AgentDashboard = ({
         )}
 
         {showVerification && (
-          <SmileIDVerification
+          <PersonaVerification
             userId={currentUser?.uid || currentUser?.id}
             onClose={() => setShowVerification(false)}
             onComplete={(result) => {
               if (result.success) {
-                onUpdateUser({ verificationStatus: "verified" });
+                // Update verification status - pending if needs review, verified if approved
+                const newStatus = result.pending ? "pending" : "verified";
+                onUpdateUser({ verificationStatus: newStatus });
                 setShowVerification(false);
-                alert("Verification submitted successfully!");
               }
             }}
           />
