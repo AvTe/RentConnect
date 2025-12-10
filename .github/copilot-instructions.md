@@ -1,53 +1,58 @@
 ﻿# RentConnect AI Coding Instructions
 
 ## Project Overview
-**RentConnect** is a Next.js 14 rental marketplace connecting tenants with verified agents in Kenya. Uses Supabase (PostgreSQL + Auth + Storage), Pesapal payments (M-Pesa), and multi-channel notifications. Currency: KES (Kenyan Shillings).
+Next.js 14 rental marketplace (Kenya). Tenants post rental requests ("leads"); verified agents pay credits to unlock tenant contacts. Uses Supabase (PostgreSQL + Auth), Pesapal (M-Pesa), Twilio WhatsApp. **Currency: KES (Kenyan Shillings)**.
 
-## Architecture
+## Critical Architecture Decisions
 
-### Core Data Flow
-All database operations go through `lib/database.js` (4500+ lines). Uses Supabase PostgreSQL with snake_case columns, but components expect camelCase - transformations handled via `transformUserData()` and `transformUpdatesToSnakeCase()`.
+### Single-Page App Pattern
+`app/page.js` is the **main application controller** - a 680-line client component managing all view routing via `useState('landing')`. Views switch based on `currentUser.role`:
+- `tenant` → `user-dashboard`
+- `agent` → `agent-dashboard`  
+- `admin|super_admin|main_admin|sub_admin` → `admin-dashboard`
 
-**Key Tables** (see `supabase_complete_schema.sql`):
-- `users` - Dual roles: `role: 'tenant'|'agent'|'admin'|'super_admin'|'main_admin'|'sub_admin'`
-- `leads` - Tenant rental requests; agents unlock with credits
-- `properties` - Agent listings linked via `agent_id`
-- `subscriptions` - Premium access tracked with `subscription_expires_at`
-- `credit_transactions` - Wallet/credit audit trail
+**Don't create new pages in `app/`** - add components to `components/` and register them in `app/page.js`.
 
-**Return Pattern**: All async database functions return `{ success: boolean, data?: any, error?: string }`.
+### Database Layer (`lib/database.js`)
+**ALL database operations go through this 4500+ line file.** Direct Supabase queries in components are prohibited.
 
-### Supabase Integration
+```javascript
+// REQUIRED return pattern for ALL functions:
+{ success: boolean, data?: any, error?: string }
+
+// snake_case in DB ↔ camelCase in components
+// Use transformUserData() for reads, transformUpdatesToSnakeCase() for writes
 ```
-utils/supabase/client.js   → Browser client (createBrowserClient)
-utils/supabase/server.js   → Server client with cookies (createServerClient)
-lib/database.js            → All CRUD + real-time subscriptions
-lib/auth-supabase.js       → signUpWithEmail, signInWithEmail, signOut, onAuthStateChange
-lib/storage-supabase.js    → uploadImage(file, userId, folder) → path: {userId}/{folder}/{timestamp}-{filename}
+
+Key exports: `createUser`, `getUser`, `updateUser`, `createLead`, `getAllLeads`, `getWalletBalance`, `deductCredits`, `unlockLead`, `createNotification`, `subscribeToLeads`
+
+### Supabase Client Usage
+```javascript
+// Browser (components, client-side):
+import { createClient } from '@/utils/supabase/client';
+const supabase = createClient();
+
+// Server (API routes, middleware):
+import { createClient } from '@/utils/supabase/server';
+const supabase = await createClient(); // Note: async!
 ```
 
 ### Hooks Pattern (`lib/hooks.js`)
 ```javascript
-// Accept filters + enabled flag to control subscription
-const { leads, loading, error } = useLeads(filters, enabled);
-// Real-time subscriptions auto-cleanup on unmount
-// Memoize filters with useMemo to prevent re-renders
+// Always pass enabled flag to prevent unauthorized API calls
+const { leads, loading } = useLeads(filters, !!currentUser);
+// Memoize filters to prevent infinite re-renders
+const memoizedFilters = useMemo(() => filters, [JSON.stringify(filters)]);
 ```
 
-### Payment (Pesapal + M-Pesa)
-- Config in `lib/pesapal.js` - amounts in KES (not cents): `SUBSCRIPTION_PLANS.PREMIUM.amount = 1500`
-- Credit packages: 5 credits = KSh 250, 15 = KSh 600, 30 = KSh 1,000
-- Flow: `initializePayment()` → Pesapal redirect → IPN webhook at `/api/pesapal/callback`
-- API routes use direct PostgreSQL (`pg` pool) for payment tracking
+## Adding Features
 
-### Notifications (`lib/notifications.js`)
-1. **Email**: POST `/api/send-email` (SendGrid)
-2. **WhatsApp**: `sendWhatsAppMessage()` opens wa.me link; automated via `/api/whatsapp/send` (Twilio)
-3. **In-App**: `createNotification()` in database, subscribed via `useNotifications()`
+### New Database Function
+1. Add to `lib/database.js` using snake_case for DB columns
+2. Return `{ success, data?, error? }` pattern
+3. Transform snake_case → camelCase before returning
 
-## Key Patterns
-
-### API Route Structure
+### New API Route
 ```javascript
 // app/api/{feature}/route.js
 import { NextResponse } from 'next/server';
@@ -57,56 +62,48 @@ export async function POST(request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  // ... logic
+  // Use lib/database.js functions, not direct queries
   return NextResponse.json({ success: true, data: result });
 }
 ```
 
-### Adding Database Features
-1. Add function to `lib/database.js` with snake_case DB columns
-2. Create hook in `lib/hooks.js` wrapping the function
-3. Transform snake_case → camelCase for component consumption
-
-### Component Organization
-- `app/page.js` - Main router: handles auth state, view switching based on role
-- `components/*.jsx` - Feature components receive data via props
-- `components/admin/*.jsx` - Admin dashboard modules (19 components)
-- `components/ui/*.jsx` - Shared UI primitives (Button, Badge, etc.)
-
-## Environment Variables
-```env
-# Required - Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
-SUPABASE_SERVICE_ROLE_KEY=xxx  # For admin operations (password reset links)
-DATABASE_URL=postgresql://...  # For Pesapal API routes
-
-# Site URL (for redirects)
-NEXT_PUBLIC_SITE_URL=https://your-domain.com
-
-# Payments
-PESAPAL_CONSUMER_KEY, PESAPAL_CONSUMER_SECRET, PESAPAL_IPN_ID
-
-# Services
-SENDGRID_API_KEY
-TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_NUMBER
-NEXT_PUBLIC_RECAPTCHA_SITE_KEY, NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+### Payment Routes Exception
+`app/api/pesapal/*` routes use direct `pg` pool (not Supabase client) for transaction safety:
+```javascript
+import pg from 'pg';
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 ```
+
+## Key Tables (see `supabase_complete_schema.sql`)
+| Table | Purpose |
+|-------|---------|
+| `users` | All users. `role`: tenant/agent/admin/super_admin/main_admin/sub_admin |
+| `leads` | Tenant rental requests with `requirements` JSONB |
+| `properties` | Agent listings via `agent_id` FK |
+| `unlocked_leads` | Junction table: which agents unlocked which leads |
+| `credit_transactions` | Wallet audit trail |
+| `subscriptions` | Premium agent subscriptions |
+
+## Payments & Credits
+- Amounts in **KES (not cents)**: `SUBSCRIPTION_PLANS.PREMIUM.amount = 1500`
+- Credit packages: 5/KSh250, 15/KSh600, 30/KSh1000
+- Flow: `initializePayment()` → Pesapal redirect → IPN webhook `/api/pesapal/ipn`
 
 ## Commands
 ```bash
-npm run dev      # Starts on port 5000 (not 3000)
-npm run build    # Production build
-npm run lint     # ESLint
+npm run dev   # Port 5000 (not 3000!)
+npm run build
+npm run lint
 ```
 
 ## File Reference
 | Purpose | Location |
 |---------|----------|
-| App entry + routing | `app/page.js` |
-| All database CRUD | `lib/database.js` |
-| Auth functions | `lib/auth-supabase.js` |
-| Custom hooks | `lib/hooks.js` |
-| Payment logic | `lib/pesapal.js` |
+| App controller + view routing | `app/page.js` |
+| ALL database operations | `lib/database.js` |
+| Auth (signUp, signIn, signOut) | `lib/auth-supabase.js` |
+| React hooks | `lib/hooks.js` |
+| Payment config | `lib/pesapal.js` |
 | DB schema | `supabase_complete_schema.sql` |
-| API routes | `app/api/*/route.js` |
+| Admin components (19) | `components/admin/*.jsx` |
+| UI primitives | `components/ui/*.jsx` |

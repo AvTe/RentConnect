@@ -85,12 +85,12 @@ export const SupportManagement = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Support & Disputes</h2>
-        <div className="flex gap-2">
-          <select 
-            className="border rounded-lg px-3 py-2 text-sm"
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 md:gap-4">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900">Support & Disputes</h2>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <select
+            className="border rounded-lg px-3 py-2 text-xs md:text-sm flex-1 sm:flex-none"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
@@ -98,31 +98,31 @@ export const SupportManagement = () => {
             <option value="open">Open</option>
             <option value="resolved">Resolved</option>
           </select>
-          <Button onClick={() => setIsCreating(true)} variant="outline" size="sm">
-            + Test Ticket
+          <Button onClick={() => setIsCreating(true)} variant="outline" size="sm" className="whitespace-nowrap">
+            + Test
           </Button>
         </div>
       </div>
 
       {/* Create Ticket Modal (For Demo) */}
       {isCreating && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl w-full max-w-md">
-            <h3 className="font-bold text-lg mb-4">Create Test Ticket</h3>
-            <form onSubmit={handleCreateTestTicket} className="space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-4 md:p-6 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 className="font-bold text-base md:text-lg mb-4">Create Test Ticket</h3>
+            <form onSubmit={handleCreateTestTicket} className="space-y-3 md:space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Subject</label>
-                <input 
-                  className="w-full border rounded p-2"
+                <label className="block text-xs md:text-sm font-medium mb-1">Subject</label>
+                <input
+                  className="w-full border rounded p-2.5 text-sm"
                   value={newTicket.subject}
                   onChange={e => setNewTicket({...newTicket, subject: e.target.value})}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Priority</label>
-                <select 
-                  className="w-full border rounded p-2"
+                <label className="block text-xs md:text-sm font-medium mb-1">Priority</label>
+                <select
+                  className="w-full border rounded p-2.5 text-sm"
                   value={newTicket.priority}
                   onChange={e => setNewTicket({...newTicket, priority: e.target.value})}
                 >
@@ -132,18 +132,18 @@ export const SupportManagement = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Message</label>
-                <textarea 
-                  className="w-full border rounded p-2"
+                <label className="block text-xs md:text-sm font-medium mb-1">Message</label>
+                <textarea
+                  className="w-full border rounded p-2.5 text-sm"
                   value={newTicket.message}
                   onChange={e => setNewTicket({...newTicket, message: e.target.value})}
                   rows="3"
                   required
                 />
               </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" onClick={() => setIsCreating(false)}>Cancel</Button>
-                <Button type="submit" className="bg-blue-600 text-white">Create</Button>
+              <div className="flex flex-col sm:flex-row justify-end gap-2">
+                <Button type="button" variant="ghost" onClick={() => setIsCreating(false)} className="w-full sm:w-auto">Cancel</Button>
+                <Button type="submit" className="bg-blue-600 text-white w-full sm:w-auto">Create</Button>
               </div>
             </form>
           </div>
@@ -152,42 +152,42 @@ export const SupportManagement = () => {
 
       {/* Ticket Detail Modal */}
       {selectedTicket && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h3 className="font-bold text-xl text-gray-900">{selectedTicket.subject}</h3>
-                <div className="flex gap-2 mt-2">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-4 md:p-6 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4 md:mb-6 gap-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-base md:text-xl text-gray-900 truncate">{selectedTicket.subject}</h3>
+                <div className="flex flex-wrap gap-2 mt-2">
                   <Badge className={getStatusColor(selectedTicket.status)}>{selectedTicket.status}</Badge>
                   <Badge className={getPriorityColor(selectedTicket.priority)}>{selectedTicket.priority}</Badge>
-                  <span className="text-sm text-gray-500 flex items-center">
+                  <span className="text-xs text-gray-500 flex items-center">
                     <Clock className="w-3 h-3 mr-1" />
                     {selectedTicket.createdAt?.toDate ? selectedTicket.createdAt.toDate().toLocaleString() : 'Just now'}
                   </span>
                 </div>
               </div>
-              <button onClick={() => setSelectedTicket(null)} className="text-gray-400 hover:text-gray-600">
-                <XCircle className="w-6 h-6" />
+              <button onClick={() => setSelectedTicket(null)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                <XCircle className="w-5 h-5 md:w-6 md:h-6" />
               </button>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <div className="bg-gray-50 p-3 md:p-4 rounded-lg mb-4 md:mb-6">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-xs">
+                <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-xs">
                   {selectedTicket.userName?.charAt(0) || 'U'}
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{selectedTicket.userName || 'Unknown User'}</p>
-                  <p className="text-xs text-gray-500">{selectedTicket.userEmail}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs md:text-sm font-medium text-gray-900 truncate">{selectedTicket.userName || 'Unknown User'}</p>
+                  <p className="text-xs text-gray-500 truncate">{selectedTicket.userEmail}</p>
                 </div>
               </div>
-              <p className="text-gray-700 whitespace-pre-wrap">{selectedTicket.message}</p>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedTicket.message}</p>
             </div>
 
             {selectedTicket.status === 'resolved' && (
-              <div className="bg-[#FFF5E6] p-4 rounded-lg mb-6 border border-[#FFE4C4]">
-                <h4 className="font-medium text-green-900 mb-1">Resolution</h4>
-                <p className="text-green-800 text-sm">{selectedTicket.resolutionNote}</p>
+              <div className="bg-[#FFF5E6] p-3 md:p-4 rounded-lg mb-4 md:mb-6 border border-[#FFE4C4]">
+                <h4 className="font-medium text-green-900 mb-1 text-sm">Resolution</h4>
+                <p className="text-green-800 text-xs md:text-sm">{selectedTicket.resolutionNote}</p>
                 <p className="text-xs text-[#16A34A] mt-2">
                   Resolved at: {selectedTicket.resolvedAt?.toDate ? selectedTicket.resolvedAt.toDate().toLocaleString() : 'N/A'}
                 </p>
@@ -196,9 +196,9 @@ export const SupportManagement = () => {
 
             {selectedTicket.status !== 'resolved' && (
               <form onSubmit={handleResolve} className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-2">Resolve Ticket</h4>
-                <textarea 
-                  className="w-full border rounded-lg p-3 mb-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                <h4 className="font-medium text-gray-900 mb-2 text-sm">Resolve Ticket</h4>
+                <textarea
+                  className="w-full border rounded-lg p-3 mb-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter resolution details..."
                   value={resolutionNote}
                   onChange={e => setResolutionNote(e.target.value)}
@@ -206,8 +206,8 @@ export const SupportManagement = () => {
                   required
                 />
                 <div className="flex justify-end">
-                  <Button type="submit" className="bg-[#16A34A] text-white hover:bg-[#15803D]">
-                    <CheckCircle className="w-4 h-4 mr-2" /> Mark as Resolved
+                  <Button type="submit" className="bg-[#16A34A] text-white hover:bg-[#15803D] w-full sm:w-auto">
+                    <CheckCircle className="w-4 h-4 mr-2" /> Mark Resolved
                   </Button>
                 </div>
               </form>
@@ -216,8 +216,43 @@ export const SupportManagement = () => {
         </div>
       )}
 
-      {/* Ticket List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          <div className="bg-white rounded-xl p-6 text-center text-gray-500">Loading...</div>
+        ) : tickets.length === 0 ? (
+          <div className="bg-white rounded-xl p-6 text-center text-gray-500">No tickets found</div>
+        ) : (
+          tickets.map((ticket) => (
+            <div key={ticket.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h4 className="font-medium text-sm text-gray-900 line-clamp-1">{ticket.subject}</h4>
+                <Badge className={`text-xs flex-shrink-0 ${getStatusColor(ticket.status)}`}>{ticket.status}</Badge>
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-gray-500">{ticket.userName || 'Unknown'}</span>
+                <Badge className={`text-xs ${getPriorityColor(ticket.priority)}`}>{ticket.priority}</Badge>
+              </div>
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-xs text-gray-400">
+                  {ticket.createdAt?.toDate ? ticket.createdAt.toDate().toLocaleDateString() : 'N/A'}
+                </span>
+                <Button
+                  onClick={() => setSelectedTicket(ticket)}
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-600"
+                >
+                  View
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
@@ -255,9 +290,9 @@ export const SupportManagement = () => {
                       {ticket.createdAt?.toDate ? ticket.createdAt.toDate().toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button 
+                      <Button
                         onClick={() => setSelectedTicket(ticket)}
-                        variant="ghost" 
+                        variant="ghost"
                         size="sm"
                         className="text-blue-600 hover:bg-blue-50"
                       >

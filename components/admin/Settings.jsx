@@ -73,51 +73,51 @@ export const Settings = ({ user }) => {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
+    <div className="space-y-4 md:space-y-6">
+      <h2 className="text-xl md:text-2xl font-bold text-gray-900">Settings</h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Profile Settings */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+          <div className="flex items-center gap-3 mb-4 md:mb-6">
             <div className="p-2 bg-blue-50 rounded-lg">
-              <User className="w-5 h-5 text-blue-600" />
+              <User className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900">Admin Profile</h3>
+            <h3 className="text-base md:text-lg font-bold text-gray-900">Admin Profile</h3>
           </div>
 
-          <form onSubmit={handleProfileUpdate} className="space-y-4">
+          <form onSubmit={handleProfileUpdate} className="space-y-3 md:space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Full Name</label>
               <input
                 type="text"
                 value={profileData.name}
                 onChange={(e) => setProfileData({...profileData, name: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400"
+                className="w-full px-3 md:px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400 text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Email Address</label>
               <input
                 type="email"
                 value={profileData.email}
                 disabled
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                className="w-full px-3 md:px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed text-sm"
               />
               <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Phone Number</label>
               <input
                 type="tel"
                 value={profileData.phone}
                 onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400"
+                className="w-full px-3 md:px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400 text-sm"
               />
             </div>
-            
-            <div className="pt-4">
-              <Button type="submit" disabled={loading} className="bg-blue-600 text-white">
+
+            <div className="pt-3 md:pt-4">
+              <Button type="submit" disabled={loading} className="bg-blue-600 text-white w-full sm:w-auto">
                 <Save className="w-4 h-4 mr-2" /> Save Changes
               </Button>
             </div>
@@ -125,52 +125,52 @@ export const Settings = ({ user }) => {
         </div>
 
         {/* System Configuration */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+          <div className="flex items-center gap-3 mb-4 md:mb-6">
             <div className="p-2 bg-purple-50 rounded-lg">
-              <SettingsIcon className="w-5 h-5 text-purple-600" />
+              <SettingsIcon className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900">System Configuration</h3>
+            <h3 className="text-base md:text-lg font-bold text-gray-900">System Configuration</h3>
           </div>
 
-          <form onSubmit={handleConfigUpdate} className="space-y-4">
+          <form onSubmit={handleConfigUpdate} className="space-y-3 md:space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Credit Price (KSh)</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Credit Price (KSh)</label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="number"
                   value={systemConfig.creditPrice}
                   onChange={(e) => setSystemConfig({...systemConfig, creditPrice: parseInt(e.target.value)})}
-                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-400 text-sm"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">Cost per credit for agents</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Free Credits (New Account)</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Free Credits (New Account)</label>
               <input
                 type="number"
                 value={systemConfig.freeCredits}
                 onChange={(e) => setSystemConfig({...systemConfig, freeCredits: parseInt(e.target.value)})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-400"
+                className="w-full px-3 md:px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-400 text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Referral Bonus (Credits)</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Referral Bonus (Credits)</label>
               <input
                 type="number"
                 value={systemConfig.referralBonus}
                 onChange={(e) => setSystemConfig({...systemConfig, referralBonus: parseInt(e.target.value)})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-400"
+                className="w-full px-3 md:px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 placeholder-gray-400 text-sm"
               />
             </div>
 
-            <div className="pt-4">
-              <Button type="submit" disabled={loading} className="bg-purple-600 text-white">
-                <Save className="w-4 h-4 mr-2" /> Update Configuration
+            <div className="pt-3 md:pt-4">
+              <Button type="submit" disabled={loading} className="bg-purple-600 text-white w-full sm:w-auto">
+                <Save className="w-4 h-4 mr-2" /> Update Config
               </Button>
             </div>
           </form>

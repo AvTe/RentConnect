@@ -30,6 +30,8 @@ import {
   MapPin,
   Calendar,
   ExternalLink,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
@@ -65,6 +67,13 @@ export const AgentDashboard = ({
   const [showVerification, setShowVerification] = useState(false);
   const [loadingSubscription, setLoadingSubscription] = useState(false);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Handle responsive sidebar close on navigation
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setIsSidebarOpen(false);
+  };
 
   const isVerified = currentUser?.verificationStatus === "verified";
   const isPending = currentUser?.verificationStatus === "pending";
@@ -171,8 +180,8 @@ export const AgentDashboard = ({
 
   const SidebarItem = ({ icon: Icon, label, id, active }) => (
     <button
-      onClick={() => setActiveTab(id)}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+      onClick={() => handleTabChange(id)}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
         active
           ? "bg-[#FFF5E6] text-[#E58300] shadow-sm"
           : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
@@ -181,84 +190,86 @@ export const AgentDashboard = ({
       <Icon
         className={`w-4 h-4 ${active ? "text-[#FE9200]" : "text-gray-500"}`}
       />
-      {label}
+      <span className="truncate">{label}</span>
     </button>
   );
 
   const renderContent = () => {
     if (activeTab === "referrals") {
       return (
-        <div className="space-y-6">
-          <div className="bg-gradient-to-r from-[#FE9200] to-teal-600 rounded-2xl p-8 text-white relative overflow-hidden">
+        <div className="space-y-4 md:space-y-6">
+          <div className="bg-gradient-to-r from-[#FE9200] to-teal-600 rounded-xl md:rounded-2xl p-4 md:p-8 text-white relative overflow-hidden">
             <div className="relative z-10 max-w-xl">
-              <h2 className="text-3xl font-bold mb-4">
+              <h2 className="text-xl md:text-3xl font-bold mb-2 md:mb-4">
                 Invite Agents, Get Free Credits
               </h2>
-              <p className="text-[#FFE4C4] text-lg mb-8">
+              <p className="text-[#FFE4C4] text-sm md:text-lg mb-4 md:mb-8">
                 Share your referral code with other agents. When they sign up,
                 you both get 5 free credits!
               </p>
 
-              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 flex flex-col sm:flex-row items-center gap-4">
+              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 md:p-6 flex flex-col sm:flex-row items-center gap-3 md:gap-4">
                 <div className="flex-1 text-center sm:text-left">
-                  <p className="text-sm text-[#FFD4A3] mb-1">
+                  <p className="text-xs md:text-sm text-[#FFD4A3] mb-1">
                     Your Referral Code
                   </p>
-                  <p className="text-3xl font-mono font-bold tracking-wider">
+                  <p className="text-2xl md:text-3xl font-mono font-bold tracking-wider">
                     {referralCode || "GEN123"}
                   </p>
                 </div>
-                <Button
-                  onClick={() => {
-                    navigator.clipboard.writeText(referralCode || "GEN123");
-                    alert("Code copied to clipboard!");
-                  }}
-                  className="bg-white text-[#FE9200] hover:bg-[#FFF5E6] border-0"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy Code
-                </Button>
-                <Button
-                  variant="outline"
-                  className="bg-transparent border-white text-white hover:bg-white/10"
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(referralCode || "GEN123");
+                      alert("Code copied to clipboard!");
+                    }}
+                    className="bg-white text-[#FE9200] hover:bg-[#FFF5E6] border-0 flex-1 sm:flex-none"
+                  >
+                    <Copy className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Copy Code</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="bg-transparent border-white text-white hover:bg-white/10 flex-1 sm:flex-none"
+                  >
+                    <Share2 className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Share</span>
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Decorative circles */}
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-48 h-48 bg-[#FE9200]/20 rounded-full blur-2xl"></div>
+            {/* Decorative circles - hidden on mobile for performance */}
+            <div className="hidden md:block absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+            <div className="hidden md:block absolute bottom-0 left-0 -mb-10 -ml-10 w-48 h-48 bg-[#FE9200]/20 rounded-full blur-2xl"></div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <h3 className="font-bold text-gray-900 mb-4">How it works</h3>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mx-auto mb-4">
-                  <Share2 className="w-6 h-6" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+              <div className="text-center flex flex-col items-center">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mb-3 md:mb-4">
+                  <Share2 className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
-                <h4 className="font-semibold mb-2">1. Share Code</h4>
+                <h4 className="font-semibold mb-1 md:mb-2">1. Share Code</h4>
                 <p className="text-sm text-gray-500">
                   Send your unique code to fellow real estate agents.
                 </p>
               </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mx-auto mb-4">
-                  <User className="w-6 h-6" />
+              <div className="text-center flex flex-col items-center">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mb-3 md:mb-4">
+                  <User className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
-                <h4 className="font-semibold mb-2">2. They Sign Up</h4>
+                <h4 className="font-semibold mb-1 md:mb-2">2. They Sign Up</h4>
                 <p className="text-sm text-gray-500">
                   They enter your code during their registration process.
                 </p>
               </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mx-auto mb-4">
-                  <Coins className="w-6 h-6" />
+              <div className="text-center flex flex-col items-center">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mb-3 md:mb-4">
+                  <Coins className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
-                <h4 className="font-semibold mb-2">3. Earn Credits</h4>
+                <h4 className="font-semibold mb-1 md:mb-2">3. Earn Credits</h4>
                 <p className="text-sm text-gray-500">
                   You get 5 credits instantly. They get a welcome bonus too!
                 </p>
@@ -377,11 +388,11 @@ export const AgentDashboard = ({
       };
 
       return (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">My Properties</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900">My Properties</h2>
               <p className="text-gray-500 text-sm">
                 Leads you&apos;ve connected with & subscription status
               </p>
@@ -389,9 +400,9 @@ export const AgentDashboard = ({
           </div>
 
           {/* Verification & Subscription Status Cards */}
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2">
             {/* Verification Status Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
               <div className="flex items-center gap-3 mb-4">
                 {isVerified ? (
                   <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
@@ -423,7 +434,7 @@ export const AgentDashboard = ({
             </div>
 
             {/* Subscription Status Card */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
               <div className="flex items-center gap-3 mb-4">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                   subscription ? 'bg-purple-100' : 'bg-gray-100'
@@ -458,13 +469,13 @@ export const AgentDashboard = ({
 
           {/* Subscription Purchase Section */}
           {!subscription && (
-            <div className="bg-gradient-to-r from-[#FE9200] to-[#E58300] rounded-xl p-6 text-white">
-              <h3 className="text-xl font-bold mb-2">Get Started with a Subscription</h3>
-              <p className="text-white/80 mb-4">
+            <div className="bg-gradient-to-r from-[#FE9200] to-[#E58300] rounded-xl p-4 md:p-6 text-white">
+              <h3 className="text-lg md:text-xl font-bold mb-2">Get Started with a Subscription</h3>
+              <p className="text-white/80 mb-4 text-sm md:text-base">
                 Unlock unlimited access to leads and grow your business
               </p>
 
-              <div className="grid gap-4 md:grid-cols-4">
+              <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-4">
                 {/* Demo Subscription */}
                 <div className="bg-white/10 rounded-lg p-4 border border-white/20">
                   <div className="flex items-center gap-2 mb-2">
@@ -539,7 +550,7 @@ export const AgentDashboard = ({
 
           {/* Connected Leads Section */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-5 border-b border-gray-200">
+            <div className="p-4 md:p-5 border-b border-gray-200">
               <h3 className="font-bold text-gray-900">My Connected Leads</h3>
               <p className="text-sm text-gray-500">
                 Leads you&apos;ve paid to connect with ({connectedLeads.length} total)
@@ -547,16 +558,16 @@ export const AgentDashboard = ({
             </div>
 
             {connectedLeads.length === 0 ? (
-              <div className="p-8 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Inbox className="w-8 h-8 text-gray-400" />
+              <div className="p-6 md:p-8 text-center">
+                <div className="w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Inbox className="w-7 h-7 md:w-8 md:h-8 text-gray-400" />
                 </div>
                 <h4 className="font-medium text-gray-900 mb-2">No Connected Leads Yet</h4>
                 <p className="text-sm text-gray-500 mb-4">
                   When you unlock leads from the dashboard, they&apos;ll appear here.
                 </p>
                 <Button
-                  onClick={() => setActiveTab('leads')}
+                  onClick={() => handleTabChange('leads')}
                   className="bg-[#FE9200] hover:bg-[#E58300]"
                 >
                   Browse Leads
@@ -565,18 +576,18 @@ export const AgentDashboard = ({
             ) : (
               <div className="divide-y divide-gray-100">
                 {connectedLeads.map((connection) => (
-                  <div key={connection.id} className="p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-gray-900">
+                  <div key={connection.id} className="p-3 md:p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h4 className="font-medium text-gray-900 truncate">
                             {connection.lead?.tenant_name || 'Anonymous Lead'}
                           </h4>
                           <Badge className={getConnectionStatusBadge(connection.status)}>
                             {connection.status}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm text-gray-500">
                           <span className="flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
                             {connection.lead?.location || 'Unknown'}
@@ -596,7 +607,7 @@ export const AgentDashboard = ({
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-shrink-0">
                         {connection.lead?.tenant_phone && (
                           <Button
                             size="sm"
@@ -604,7 +615,7 @@ export const AgentDashboard = ({
                             className="text-xs"
                             onClick={() => window.open(`tel:${connection.lead.tenant_phone}`)}
                           >
-                            <Phone className="w-3 h-3 mr-1" /> Call
+                            <Phone className="w-3 h-3 sm:mr-1" /> <span className="hidden sm:inline">Call</span>
                           </Button>
                         )}
                         {connection.lead?.tenant_email && (
@@ -614,7 +625,7 @@ export const AgentDashboard = ({
                             className="text-xs"
                             onClick={() => window.open(`mailto:${connection.lead.tenant_email}`)}
                           >
-                            <MessageCircle className="w-3 h-3 mr-1" /> Email
+                            <MessageCircle className="w-3 h-3 sm:mr-1" /> <span className="hidden sm:inline">Email</span>
                           </Button>
                         )}
                       </div>
@@ -630,10 +641,10 @@ export const AgentDashboard = ({
 
     // Leads Tab (Default)
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">
               Leads Dashboard
             </h2>
             <p className="text-gray-500 text-sm">
@@ -648,7 +659,7 @@ export const AgentDashboard = ({
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {leads.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
@@ -672,27 +683,27 @@ export const AgentDashboard = ({
                 key={lead.id}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
               >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-900">
+                <div className="p-4 md:p-6">
+                  <div className="flex justify-between items-start mb-3 md:mb-4 gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-base md:text-lg text-gray-900 truncate">
                         {lead.requirements?.property_type || lead.type}
                       </h3>
-                      <p className="text-gray-500 text-sm">
+                      <p className="text-gray-500 text-sm truncate">
                         {lead.requirements?.location || lead.location}
                       </p>
                     </div>
-                    <Badge className="bg-gray-100 text-gray-700 border-gray-200">
+                    <Badge className="bg-gray-100 text-gray-700 border-gray-200 flex-shrink-0 text-xs">
                       {lead.requirements?.budget || lead.budget}
                     </Badge>
                   </div>
 
-                  <div className="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-10 h-10 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold">
+                  <div className="flex items-center gap-3 mb-4 md:mb-6 p-2.5 md:p-3 bg-gray-50 rounded-lg">
+                    <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold flex-shrink-0">
                       {String(lead.tenant_info?.name || lead.name || "U").charAt(0)}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900 truncate">
                         {String(lead.tenant_info?.name || lead.name || "User")}
                       </p>
                       <p className="text-xs text-gray-500">Looking for rent</p>
@@ -754,9 +765,34 @@ export const AgentDashboard = ({
 
   return (
     <div className="flex h-screen bg-[#F3F4F6] font-sans overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#F9FAFB] border-r border-gray-200 flex flex-col flex-shrink-0">
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Mobile slide-in, Desktop fixed */}
+      <aside className={`
+        fixed md:relative inset-y-0 left-0 z-50
+        w-64 bg-[#F9FAFB] border-r border-gray-200
+        flex flex-col flex-shrink-0
+        transform transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0
+      `}>
         <div className="p-4">
+          {/* Mobile Close Button */}
+          <div className="md:hidden flex justify-end mb-2">
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
           {/* App Switcher / Logo */}
           <div className="flex items-center gap-3 px-2 mb-6">
             <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold">
@@ -777,7 +813,7 @@ export const AgentDashboard = ({
               </span>
             </div>
             <div className="flex items-end justify-between">
-              <span className="text-2xl font-bold">
+              <span className="text-xl md:text-2xl font-bold">
                 {walletBalance} Credits
               </span>
             </div>
@@ -787,6 +823,7 @@ export const AgentDashboard = ({
                   alert("Please wait for verification before buying credits.");
                   return;
                 }
+                setIsSidebarOpen(false);
                 onNavigate("subscription");
               }}
               className="mt-3 w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2"
@@ -829,8 +866,8 @@ export const AgentDashboard = ({
                 active={activeTab === "profile"}
               />
               <button
-                onClick={onLogout}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all"
+                onClick={() => { onLogout(); setIsSidebarOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all"
               >
                 <LogOut className="w-4 h-4" />
                 Log Out
@@ -842,7 +879,7 @@ export const AgentDashboard = ({
         {/* User Profile Snippet at Bottom */}
         <div className="p-4 border-t border-gray-200 mt-auto">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs">
+            <div className="w-8 h-8 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs flex-shrink-0">
               {String(agent.name || "A").charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
@@ -872,11 +909,11 @@ export const AgentDashboard = ({
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Verification Banner */}
+        {/* Verification Banner - Responsive */}
         {isPending && (
-          <div className="bg-yellow-50 border-b border-yellow-200 px-8 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ShieldAlert className="w-5 h-5 text-yellow-600" />
+          <div className="bg-yellow-50 border-b border-yellow-200 px-4 md:px-8 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <ShieldAlert className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5 sm:mt-0" />
               <div>
                 <p className="text-sm font-medium text-yellow-800">
                   Verification Pending
@@ -890,7 +927,7 @@ export const AgentDashboard = ({
             <Button
               size="sm"
               variant="outline"
-              className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+              className="text-yellow-700 border-yellow-300 hover:bg-yellow-100 w-full sm:w-auto flex-shrink-0"
               onClick={() => setShowVerification(true)}
             >
               Verify Identity
@@ -913,22 +950,34 @@ export const AgentDashboard = ({
           />
         )}
 
-        {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="font-medium text-gray-900">Agent Portal</span>
-            <span>/</span>
-            <span className="text-gray-900">
-              {activeTab === "leads"
-                ? "Leads"
-                : activeTab === "properties"
-                  ? "Properties"
-                  : "Profile"}
-            </span>
+        {/* Top Header - Responsive with hamburger menu */}
+        <header className="h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            {/* Mobile Hamburger Menu */}
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="md:hidden p-2 -ml-2 rounded-lg text-gray-600 hover:bg-gray-100"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span className="font-medium text-gray-900 hidden sm:inline">Agent Portal</span>
+              <span className="hidden sm:inline">/</span>
+              <span className="text-gray-900 font-medium sm:font-normal">
+                {activeTab === "leads"
+                  ? "Leads"
+                  : activeTab === "properties"
+                    ? "Properties"
+                    : activeTab === "referrals"
+                      ? "Referrals"
+                      : "Profile"}
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="relative hidden md:block">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="relative hidden lg:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
@@ -937,8 +986,8 @@ export const AgentDashboard = ({
               />
             </div>
             {currentUser?.id && (
-              <NotificationBell 
-                userId={currentUser.id} 
+              <NotificationBell
+                userId={currentUser.id}
                 onNotificationClick={(notif) => {
                   if (notif.type === 'new_lead') {
                     setActiveTab('leads');
@@ -949,8 +998,8 @@ export const AgentDashboard = ({
           </div>
         </header>
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-auto p-8">
+        {/* Scrollable Content Area - Responsive padding */}
+        <div className="flex-1 overflow-auto p-4 md:p-8">
           <div className="max-w-6xl mx-auto">{renderContent()}</div>
         </div>
       </main>

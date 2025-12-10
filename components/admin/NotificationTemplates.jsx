@@ -214,61 +214,61 @@ export const NotificationTemplates = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 md:gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Notification Templates</h2>
-          <p className="text-gray-600 mt-1">Manage email, push, and WhatsApp notification templates</p>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">Notification Templates</h2>
+          <p className="text-sm text-gray-600 mt-1">Manage email, push, and WhatsApp templates</p>
         </div>
-        <Button onClick={() => openModal()} className="bg-blue-600 text-white">
+        <Button onClick={() => openModal()} className="bg-blue-600 text-white w-full sm:w-auto" size="sm">
           <Plus className="w-4 h-4 mr-2" /> New Template
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Mail className="w-5 h-5 text-blue-600" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="bg-white p-3 md:p-4 rounded-xl border border-gray-200">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="p-1.5 md:p-2 bg-blue-50 rounded-lg">
+              <Mail className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{templates.length}</p>
-              <p className="text-sm text-gray-500">Total Templates</p>
+              <p className="text-lg md:text-2xl font-bold text-gray-900">{templates.length}</p>
+              <p className="text-xs md:text-sm text-gray-500">Total</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-50 rounded-lg">
-              <Check className="w-5 h-5 text-green-600" />
+        <div className="bg-white p-3 md:p-4 rounded-xl border border-gray-200">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="p-1.5 md:p-2 bg-green-50 rounded-lg">
+              <Check className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{templates.filter(t => t.is_active).length}</p>
-              <p className="text-sm text-gray-500">Active</p>
+              <p className="text-lg md:text-2xl font-bold text-gray-900">{templates.filter(t => t.is_active).length}</p>
+              <p className="text-xs md:text-sm text-gray-500">Active</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-50 rounded-lg">
-              <Bell className="w-5 h-5 text-purple-600" />
+        <div className="bg-white p-3 md:p-4 rounded-xl border border-gray-200">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="p-1.5 md:p-2 bg-purple-50 rounded-lg">
+              <Bell className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{templates.filter(t => t.send_push).length}</p>
-              <p className="text-sm text-gray-500">Push Enabled</p>
+              <p className="text-lg md:text-2xl font-bold text-gray-900">{templates.filter(t => t.send_push).length}</p>
+              <p className="text-xs md:text-sm text-gray-500">Push</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-50 rounded-lg">
-              <MessageSquare className="w-5 h-5 text-green-600" />
+        <div className="bg-white p-3 md:p-4 rounded-xl border border-gray-200">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="p-1.5 md:p-2 bg-green-50 rounded-lg">
+              <MessageSquare className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{templates.filter(t => t.send_whatsapp).length}</p>
-              <p className="text-sm text-gray-500">WhatsApp Enabled</p>
+              <p className="text-lg md:text-2xl font-bold text-gray-900">{templates.filter(t => t.send_whatsapp).length}</p>
+              <p className="text-xs md:text-sm text-gray-500">WhatsApp</p>
             </div>
           </div>
         </div>
@@ -276,7 +276,8 @@ export const NotificationTemplates = () => {
 
       {/* Templates List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -291,7 +292,7 @@ export const NotificationTemplates = () => {
               {templates.map(template => {
                 const typeInfo = getTypeInfo(template.type);
                 const isExpanded = expandedId === template.id;
-                
+
                 return (
                   <React.Fragment key={template.id}>
                     <tr className="hover:bg-gray-50">
@@ -401,6 +402,108 @@ export const NotificationTemplates = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden divide-y divide-gray-200">
+          {templates.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <Mail className="w-10 h-10 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">No templates found. Create your first template!</p>
+            </div>
+          ) : (
+            templates.map(template => {
+              const typeInfo = getTypeInfo(template.type);
+              const isExpanded = expandedId === template.id;
+
+              return (
+                <div key={template.id} className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <button
+                      onClick={() => setExpandedId(isExpanded ? null : template.id)}
+                      className="flex items-start gap-2 text-left flex-1 min-w-0"
+                    >
+                      {isExpanded ? <ChevronUp className="w-4 h-4 mt-1 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 mt-1 flex-shrink-0" />}
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{template.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{template.subject}</p>
+                      </div>
+                    </button>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => openModal(template)}
+                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(template.id)}
+                        className="p-2 hover:bg-red-50 rounded-lg text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded text-xs">
+                      <span>{typeInfo.icon}</span>
+                      <span>{typeInfo.label}</span>
+                    </span>
+                    <div className="flex gap-1">
+                      {template.send_email && (
+                        <span className="p-1 bg-blue-100 rounded">
+                          <Mail className="w-3 h-3 text-blue-600" />
+                        </span>
+                      )}
+                      {template.send_push && (
+                        <span className="p-1 bg-purple-100 rounded">
+                          <Bell className="w-3 h-3 text-purple-600" />
+                        </span>
+                      )}
+                      {template.send_whatsapp && (
+                        <span className="p-1 bg-green-100 rounded">
+                          <MessageSquare className="w-3 h-3 text-green-600" />
+                        </span>
+                      )}
+                    </div>
+                    <button onClick={() => toggleActive(template)}>
+                      <Badge variant={template.is_active ? 'success' : 'secondary'} className="text-xs">
+                        {template.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </button>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500">Subject:</p>
+                        <p className="text-sm text-gray-700">{template.subject}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-500">Body:</p>
+                        <pre className="text-xs text-gray-600 whitespace-pre-wrap bg-gray-50 p-2 rounded-lg mt-1 max-h-32 overflow-y-auto">
+                          {template.body}
+                        </pre>
+                      </div>
+                      {template.variables?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-gray-500">Variables:</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {template.variables.map(v => (
+                              <code key={v} className="px-1.5 py-0.5 bg-yellow-100 rounded text-xs">
+                                {`{{${v}}}`}
+                              </code>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Create/Edit Modal */}
@@ -424,37 +527,37 @@ export const NotificationTemplates = () => {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4 md:space-y-6">
               {previewMode ? (
                 /* Preview Mode */
                 <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm font-medium text-gray-500 mb-1">Subject</p>
-                    <p className="text-lg font-semibold text-gray-900">{formData.subject || '(No subject)'}</p>
+                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg">
+                    <p className="text-xs md:text-sm font-medium text-gray-500 mb-1">Subject</p>
+                    <p className="text-base md:text-lg font-semibold text-gray-900">{formData.subject || '(No subject)'}</p>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm font-medium text-gray-500 mb-2">Body Preview</p>
-                    <div 
-                      className="prose prose-sm max-w-none whitespace-pre-wrap"
+                  <div className="bg-gray-50 p-3 md:p-4 rounded-lg">
+                    <p className="text-xs md:text-sm font-medium text-gray-500 mb-2">Body Preview</p>
+                    <div
+                      className="prose prose-sm max-w-none whitespace-pre-wrap text-sm"
                       dangerouslySetInnerHTML={{ __html: getPreviewBody() || '(No content)' }}
                     />
                   </div>
                   <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    Variables shown in yellow will be replaced with actual values when sent
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>Variables shown in yellow will be replaced with actual values when sent</span>
                   </p>
                 </div>
               ) : (
                 /* Edit Mode */
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Template Name *</label>
                       <input
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400"
+                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400"
                         placeholder="e.g., Welcome Email"
                         required
                       />
@@ -464,7 +567,7 @@ export const NotificationTemplates = () => {
                       <select
                         value={formData.type}
                         onChange={(e) => setFormData({...formData, type: e.target.value})}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                         required
                       >
                         {NOTIFICATION_TYPES.map(type => (
@@ -482,7 +585,7 @@ export const NotificationTemplates = () => {
                       type="text"
                       value={formData.subject}
                       onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400"
+                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400"
                       placeholder="Email subject line"
                       required
                     />
@@ -494,7 +597,7 @@ export const NotificationTemplates = () => {
                       id="template-body"
                       value={formData.body}
                       onChange={(e) => setFormData({...formData, body: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-40 bg-white text-gray-900 placeholder-gray-400"
+                      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 md:h-40 bg-white text-gray-900 placeholder-gray-400"
                       placeholder="Enter the notification message. Use {{variable}} for dynamic content."
                       required
                     />
@@ -522,18 +625,18 @@ export const NotificationTemplates = () => {
                         type="text"
                         value={newVariable}
                         onChange={(e) => setNewVariable(e.target.value.replace(/[^a-z_]/gi, '').toLowerCase())}
-                        className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400"
+                        className="flex-1 px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-400"
                         placeholder="variable_name"
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addVariable())}
                       />
-                      <Button type="button" onClick={addVariable} className="bg-gray-100 text-gray-700">
+                      <Button type="button" onClick={addVariable} className="bg-gray-100 text-gray-700 px-3">
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
                     {formData.variables.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {formData.variables.map(v => (
-                          <span key={v} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-lg text-sm">
+                          <span key={v} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-lg text-xs md:text-sm">
                             {v}
                             <button type="button" onClick={() => removeVariable(v)} className="hover:text-red-600">
                               <X className="w-3 h-3" />
@@ -546,8 +649,8 @@ export const NotificationTemplates = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Channels</label>
-                    <div className="flex flex-wrap gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
                         <input
                           type="checkbox"
                           checked={formData.sendEmail}
@@ -557,7 +660,7 @@ export const NotificationTemplates = () => {
                         <Mail className="w-4 h-4 text-blue-600" />
                         <span className="text-sm text-gray-700">Email</span>
                       </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
                         <input
                           type="checkbox"
                           checked={formData.sendPush}
@@ -565,9 +668,9 @@ export const NotificationTemplates = () => {
                           className="w-4 h-4 text-purple-600 rounded"
                         />
                         <Bell className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm text-gray-700">Push Notification</span>
+                        <span className="text-sm text-gray-700">Push</span>
                       </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
                         <input
                           type="checkbox"
                           checked={formData.sendWhatsapp}
@@ -581,7 +684,7 @@ export const NotificationTemplates = () => {
                   </div>
 
                   <div>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
                       <input
                         type="checkbox"
                         checked={formData.isActive}
@@ -594,13 +697,13 @@ export const NotificationTemplates = () => {
                 </>
               )}
 
-              <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button type="button" onClick={closeModal} className="bg-gray-100 text-gray-700">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
+                <Button type="button" onClick={closeModal} className="bg-gray-100 text-gray-700 w-full sm:w-auto">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={loading} className="bg-blue-600 text-white">
+                <Button type="submit" disabled={loading} className="bg-blue-600 text-white w-full sm:w-auto">
                   <Save className="w-4 h-4 mr-2" />
-                  {editingTemplate ? 'Update Template' : 'Create Template'}
+                  {editingTemplate ? 'Update' : 'Create'}
                 </Button>
               </div>
             </form>

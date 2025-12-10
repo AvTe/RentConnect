@@ -93,13 +93,13 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
 
   if (isEditing) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">Edit Agent Profile</h2>
-          <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">Edit Agent Profile</h2>
+          <Button variant="ghost" onClick={() => setIsEditing(false)} size="sm">Cancel</Button>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 max-w-2xl">
           <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
@@ -107,7 +107,7 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
                 type="text"
                 value={editForm.name}
                 onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -117,7 +117,7 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
                 type="tel"
                 value={editForm.phone}
                 onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
@@ -126,7 +126,7 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
                 type="text"
                 value={editForm.agencyName}
                 onChange={(e) => setEditForm({...editForm, agencyName: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
@@ -135,12 +135,15 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
                 type="text"
                 value={editForm.location}
                 onChange={(e) => setEditForm({...editForm, location: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
-            <div className="pt-4 flex gap-3">
-              <Button type="submit" disabled={loading} className="bg-blue-600 text-white">
+
+            <div className="pt-4 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
+              <Button type="button" variant="outline" onClick={() => setIsEditing(false)} className="w-full sm:w-auto">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} className="bg-blue-600 text-white w-full sm:w-auto">
                 Save Changes
               </Button>
             </div>
@@ -151,72 +154,77 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={onBack} className="text-gray-600">
+    <div className="space-y-4 md:space-y-6">
+      {/* Header Actions */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <Button variant="ghost" onClick={onBack} className="text-gray-600" size="sm">
           ← Back to List
         </Button>
-        <div className="flex gap-2">
-          <Button 
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button
             onClick={() => setIsEditing(true)}
             variant="outline"
-            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+            className="text-blue-600 border-blue-200 hover:bg-blue-50 flex-1 sm:flex-none"
             disabled={loading}
+            size="sm"
           >
-            <Edit className="w-4 h-4 mr-2" /> Edit Profile
+            <Edit className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Edit</span>
           </Button>
-          
+
           {agent.status === 'suspended' ? (
-            <Button 
+            <Button
               onClick={() => handleAction('reactivate')}
-              className="bg-[#16A34A] hover:bg-[#15803D] text-white"
+              className="bg-[#16A34A] hover:bg-[#15803D] text-white flex-1 sm:flex-none"
               disabled={loading}
+              size="sm"
             >
-              <Unlock className="w-4 h-4 mr-2" /> Reactivate Account
+              <Unlock className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Reactivate</span>
             </Button>
           ) : (
-            <Button 
+            <Button
               onClick={() => {
                 const reason = prompt('Reason for suspension:');
                 if (reason) handleAction('suspend', reason);
               }}
               variant="outline"
-              className="text-orange-600 border-orange-200 hover:bg-orange-50"
+              className="text-orange-600 border-orange-200 hover:bg-orange-50 flex-1 sm:flex-none"
               disabled={loading}
+              size="sm"
             >
-              <Lock className="w-4 h-4 mr-2" /> Suspend Account
+              <Lock className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Suspend</span>
             </Button>
           )}
-          
-          <Button 
+
+          <Button
             onClick={() => handleAction('delete')}
             variant="outline"
-            className="text-red-600 border-red-200 hover:bg-red-50"
+            className="text-red-600 border-red-200 hover:bg-red-50 flex-1 sm:flex-none"
             disabled={loading}
+            size="sm"
           >
-            <Trash2 className="w-4 h-4 mr-2" /> Delete
+            <Trash2 className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Delete</span>
           </Button>
         </div>
       </div>
 
       {/* Header Profile Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col md:flex-row gap-6 items-start">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center text-3xl font-bold text-gray-400 flex-shrink-0">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center md:items-start">
+          <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-100 rounded-full flex items-center justify-center text-2xl md:text-3xl font-bold text-gray-400 flex-shrink-0">
             {agent.avatar ? (
               <img src={agent.avatar} alt={agent.name} className="w-full h-full rounded-full object-cover" />
             ) : (
               agent.name?.charAt(0)
             )}
           </div>
-          
-          <div className="flex-1">
-            <div className="flex justify-between items-start">
+
+          <div className="flex-1 text-center md:text-left w-full">
+            <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-2">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">{agent.name}</h2>
-                <p className="text-gray-500">{agent.agencyName || 'Independent Agent'}</p>
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900">{agent.name}</h2>
+                <p className="text-sm text-gray-500">{agent.agencyName || 'Independent Agent'}</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap justify-center md:justify-end">
                 <Badge className={
                   agent.verificationStatus === 'verified' ? 'bg-[#FFE4C4] text-green-800' :
                   agent.verificationStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -230,24 +238,24 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Mail className="w-4 h-4" /> {agent.email}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mt-4 md:mt-6 text-left">
+              <div className="space-y-2 md:space-y-3">
+                <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
+                  <Mail className="w-4 h-4 flex-shrink-0" /> <span className="truncate">{agent.email}</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Phone className="w-4 h-4" /> {agent.phone || 'N/A'}
+                <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
+                  <Phone className="w-4 h-4 flex-shrink-0" /> {agent.phone || 'N/A'}
                 </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4" /> {agent.location || 'N/A'}
+                <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
+                  <MapPin className="w-4 h-4 flex-shrink-0" /> {agent.location || 'N/A'}
                 </div>
               </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" /> Joined: {agent.createdAt?.toDate ? agent.createdAt.toDate().toLocaleDateString() : 'N/A'}
+              <div className="space-y-2 md:space-y-3">
+                <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
+                  <Calendar className="w-4 h-4 flex-shrink-0" /> Joined: {agent.createdAt?.toDate ? agent.createdAt.toDate().toLocaleDateString() : 'N/A'}
                 </div>
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Activity className="w-4 h-4" /> Role: {agent.role}
+                <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
+                  <Activity className="w-4 h-4 flex-shrink-0" /> Role: {agent.role}
                 </div>
               </div>
             </div>
@@ -255,39 +263,39 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Verification Section */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-gray-500" />
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+            <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
+              <Shield className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
               Verification Details
             </h3>
-            
+
             {agent.verificationStatus === 'pending' && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-yellow-800">Verification Pending</h4>
-                  <p className="text-sm text-yellow-700 mt-1">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 md:p-4 mb-4 md:mb-6 flex items-start gap-2 md:gap-3">
+                <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-medium text-yellow-800 text-sm md:text-base">Verification Pending</h4>
+                  <p className="text-xs md:text-sm text-yellow-700 mt-1">
                     This agent has submitted documents for review. Please check the ID document below.
                   </p>
-                  <div className="flex gap-3 mt-3">
-                    <Button 
-                      size="sm" 
+                  <div className="flex flex-wrap gap-2 md:gap-3 mt-3">
+                    <Button
+                      size="sm"
                       onClick={() => handleAction('approve')}
-                      className="bg-[#16A34A] hover:bg-[#15803D] text-white border-0"
+                      className="bg-[#16A34A] hover:bg-[#15803D] text-white border-0 flex-1 sm:flex-none"
                     >
                       Approve
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={() => {
                         const reason = prompt('Reason for rejection:');
                         if (reason) handleAction('reject', reason);
                       }}
-                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      className="text-red-600 border-red-200 hover:bg-red-50 flex-1 sm:flex-none"
                     >
                       Reject
                     </Button>
@@ -298,52 +306,52 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
 
             <div className="space-y-4">
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">ID Document</p>
+                <p className="text-xs md:text-sm font-medium text-gray-700 mb-2">ID Document</p>
                 {agent.idDocumentUrl ? (
                   <div className="border border-gray-200 rounded-lg p-2 bg-gray-50">
-                    <img 
-                      src={agent.idDocumentUrl} 
-                      alt="ID Document" 
-                      className="max-h-64 rounded object-contain mx-auto" 
+                    <img
+                      src={agent.idDocumentUrl}
+                      alt="ID Document"
+                      className="max-h-48 md:max-h-64 rounded object-contain mx-auto"
                     />
                     <div className="mt-2 text-center">
-                      <a 
-                        href={agent.idDocumentUrl} 
-                        target="_blank" 
+                      <a
+                        href={agent.idDocumentUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline"
+                        className="text-xs md:text-sm text-blue-600 hover:underline"
                       >
                         View Full Size
                       </a>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500 italic">No document uploaded</div>
+                  <div className="text-xs md:text-sm text-gray-500 italic">No document uploaded</div>
                 )}
               </div>
             </div>
           </div>
 
           {/* Transaction History */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-gray-500" />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+            <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
+              <Activity className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
               Recent Activity
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {agent.transactions?.length > 0 ? (
                 agent.transactions.map(tx => (
-                  <div key={tx.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {tx.type === 'credit_purchase' ? 'Purchased Credits' : 
+                  <div key={tx.id} className="flex justify-between items-center py-2 md:py-3 border-b border-gray-100 last:border-0">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs md:text-sm font-medium text-gray-900 truncate">
+                        {tx.type === 'credit_purchase' ? 'Purchased Credits' :
                          tx.type === 'lead_unlock' ? 'Unlocked Lead' : tx.type}
                       </p>
                       <p className="text-xs text-gray-500">
                         {tx.createdAt?.toDate ? tx.createdAt.toDate().toLocaleDateString() : 'Unknown date'}
                       </p>
                     </div>
-                    <div className={`font-mono font-medium ${
+                    <div className={`font-mono font-medium text-sm md:text-base flex-shrink-0 ml-2 ${
                       tx.type === 'credit_add' || tx.type === 'credit_purchase' ? 'text-[#16A34A]' : 'text-red-600'
                     }`}>
                       {tx.type === 'credit_add' || tx.type === 'credit_purchase' ? '+' : '-'}{tx.amount}
@@ -351,38 +359,38 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500 text-center py-4">No recent transactions</p>
+                <p className="text-xs md:text-sm text-gray-500 text-center py-4">No recent transactions</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Wallet & Stats */}
-        <div className="space-y-6">
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 text-white">
-            <div className="flex items-center gap-2 mb-4 opacity-80">
-              <CreditCard className="w-5 h-5" />
-              <span className="text-sm font-medium uppercase tracking-wider">Wallet Balance</span>
+        <div className="space-y-4 md:space-y-6">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 md:p-6 text-white">
+            <div className="flex items-center gap-2 mb-3 md:mb-4 opacity-80">
+              <CreditCard className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="text-xs md:text-sm font-medium uppercase tracking-wider">Wallet Balance</span>
             </div>
-            <div className="text-3xl font-bold mb-6">{agent.walletBalance || 0} Credits</div>
-            <Button 
+            <div className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">{agent.walletBalance || 0} Credits</div>
+            <Button
               onClick={handleAddCredits}
-              className="w-full bg-white/10 hover:bg-white/20 border-0 text-white"
+              className="w-full bg-white/10 hover:bg-white/20 border-0 text-white text-sm"
             >
               + Add Manual Credits
             </Button>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="font-bold text-gray-900 mb-4">Performance</h3>
-            <div className="space-y-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+            <h3 className="font-bold text-gray-900 mb-3 md:mb-4 text-sm md:text-base">Performance</h3>
+            <div className="space-y-3 md:space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total Unlocks</span>
-                <span className="font-semibold">{agent.stats?.unlockedCount || 0}</span>
+                <span className="text-xs md:text-sm text-gray-600">Total Unlocks</span>
+                <span className="font-semibold text-sm md:text-base">{agent.stats?.unlockedCount || 0}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Referrals</span>
-                <span className="font-semibold">0</span>
+                <span className="text-xs md:text-sm text-gray-600">Referrals</span>
+                <span className="font-semibold text-sm md:text-base">0</span>
               </div>
             </div>
           </div>
