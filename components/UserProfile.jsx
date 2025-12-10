@@ -1,15 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { User, Mail, MapPin, Camera, Save, CheckCircle, AlertCircle, Phone } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Mail, MapPin, Camera, Save, CheckCircle, AlertCircle, Phone, Loader2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { PhoneVerification } from './ui/PhoneVerification';
+import { uploadProfileImage } from '@/lib/storage-supabase';
 
 export const UserProfile = ({ user, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    city: user?.city || user?.location || ''
+    city: user?.city || user?.location || '',
+    avatar: user?.avatar || ''
   });
+
+  // File input ref for profile image
+  const fileInputRef = useRef(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageError, setImageError] = useState('');
 
   // Track if phone number was changed and needs verification
   const [originalPhone] = useState(user?.phone || '');
@@ -24,6 +31,53 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
       setIsPhoneVerified(false);
     }
   }, [formData.phone, originalPhone]);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setImageError('Please upload a JPG, PNG, or WebP image.');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError('Image size must be less than 5MB.');
+      return;
+    }
+
+    setImageError('');
+    setUploadingImage(true);
+
+    try {
+      const userId = user?.uid || user?.id;
+      if (!userId) {
+        setImageError('User not found. Please try again.');
+        setUploadingImage(false);
+        return;
+      }
+
+      const result = await uploadProfileImage(userId, file);
+      
+      if (result.success) {
+        setFormData(prev => ({ ...prev, avatar: result.url }));
+      } else {
+        setImageError(result.error || 'Failed to upload image. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setImageError('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -53,16 +107,37 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
         {/* Photo Upload */}
         <div className="flex items-center gap-6">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-2xl font-bold border-4 border-white shadow-md">
-              {String(formData.name || 'U').charAt(0)}
+            <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-2xl font-bold border-4 border-white shadow-md overflow-hidden">
+              {uploadingImage ? (
+                <Loader2 className="w-8 h-8 animate-spin text-[#FE9200]" />
+              ) : formData.avatar ? (
+                <img src={formData.avatar} alt={formData.name || 'Profile'} className="w-full h-full object-cover" />
+              ) : (
+                String(formData.name || 'U').charAt(0)
+              )}
             </div>
-            <button type="button" className="absolute bottom-0 right-0 bg-[#FE9200] text-white p-2 rounded-full hover:bg-[#E58300] transition-colors shadow-sm">
+            <button 
+              type="button" 
+              onClick={handleImageClick}
+              disabled={uploadingImage}
+              className="absolute bottom-0 right-0 bg-[#FE9200] text-white p-2 rounded-full hover:bg-[#E58300] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <Camera className="w-4 h-4" />
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              onChange={handleImageChange}
+              className="hidden"
+            />
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">Profile Photo</h3>
             <p className="text-sm text-gray-500">PNG, JPG up to 5MB</p>
+            {imageError && (
+              <p className="text-sm text-red-500 mt-1">{imageError}</p>
+            )}
           </div>
         </div>
 

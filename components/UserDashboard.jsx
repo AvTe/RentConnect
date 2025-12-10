@@ -32,6 +32,15 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
     avatar: null
   };
 
+  // Fetch requests when currentUser changes or on initial load
+  useEffect(() => {
+    const userId = currentUser?.uid || currentUser?.id;
+    if (userId) {
+      fetchMyRequests();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.uid, currentUser?.id]);
+
   useEffect(() => {
     if (activeTab === 'agents') {
       fetchAgents();
@@ -56,12 +65,12 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
   };
 
   const fetchMyRequests = async () => {
-    if (!currentUser?.uid) return;
+    const userId = currentUser?.uid || currentUser?.id;
+    if (!userId) return;
     setLoadingRequests(true);
     try {
       // Fetch all leads for this tenant, including closed ones if needed
-      // For now, let's just get active ones or pass status: 'all' if supported
-      const result = await getAllLeads({ tenantId: currentUser.uid, status: 'all' });
+      const result = await getAllLeads({ tenantId: userId, status: 'all' });
       if (result.success) {
         setMyRequests(result.data);
       }
@@ -241,13 +250,13 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                 <div key={request.id} className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all">
                   <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-4">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-base md:text-lg text-gray-900">{request.requirements?.property_type}</h3>
+                      <h3 className="font-bold text-base md:text-lg text-gray-900">{request.property_type || 'Property Request'}</h3>
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-medium text-gray-600">
-                          {request.requirements?.location}
+                          {request.location || 'Location N/A'}
                         </span>
                         <span className="text-gray-300 hidden sm:inline">•</span>
-                        <span className="text-sm text-gray-500">{request.requirements?.budget ? `KSh ${parseInt(request.requirements.budget).toLocaleString()}` : 'Budget N/A'}</span>
+                        <span className="text-sm text-gray-500">{request.budget ? `KSh ${parseInt(request.budget).toLocaleString()}` : 'Budget N/A'}</span>
                       </div>
                     </div>
                     <div className={`px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
@@ -262,7 +271,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                       <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {request.views || 0} Views</span>
                       <span className="flex items-center gap-1"><FileText className="w-4 h-4" /> {request.contacts || 0} Contacts</span>
                     </div>
-                    <span className="text-xs sm:text-sm">Posted {request.createdAt?.toDate ? request.createdAt.toDate().toLocaleDateString() : 'Recently'}</span>
+                    <span className="text-xs sm:text-sm">Posted {request.created_at ? new Date(request.created_at).toLocaleDateString() : 'Recently'}</span>
                   </div>
                 </div>
               ))}
@@ -440,8 +449,12 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
         {/* User Profile Snippet at Bottom */}
         <div className="mt-auto p-4 border-t border-gray-200">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs flex-shrink-0">
-              {String(user.name || 'U').charAt(0)}
+            <div className="w-8 h-8 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs flex-shrink-0 overflow-hidden">
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
+              ) : (
+                String(user.name || 'U').charAt(0)
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">{String(user.name || 'User')}</p>

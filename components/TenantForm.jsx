@@ -750,10 +750,10 @@ export const TenantForm = ({
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row overflow-hidden bg-white font-sans">
+    <div className={`w-full flex flex-col md:flex-row overflow-hidden bg-white font-sans ${currentUser ? 'min-h-[calc(100vh-80px)]' : 'min-h-screen'}`}>
       {/* Left Side - Form */}
-      <div className="w-full md:w-1/2 flex flex-col px-4 sm:px-6 lg:px-12 xl:px-24 py-4 sm:py-6 relative z-10 overflow-y-auto min-h-screen md:min-h-0">
-        {/* Minimal Header - Logo + I'm an Agent button */}
+      <div className={`w-full md:w-1/2 flex flex-col px-4 sm:px-6 lg:px-12 xl:px-24 py-4 sm:py-6 relative z-10 overflow-y-auto ${currentUser ? '' : 'min-h-screen'} md:min-h-0`}>
+        {/* Logo Header - Always show logo, hide "I'm an Agent" button when logged in */}
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div className="cursor-pointer" onClick={() => onNavigate("landing")}>
             <Image
@@ -765,12 +765,14 @@ export const TenantForm = ({
               priority
             />
           </div>
-          <button
-            onClick={() => onNavigate("login")}
-            className="px-3 sm:px-4 py-2 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md text-xs sm:text-sm"
-          >
-            I&apos;m an Agent
-          </button>
+          {!currentUser && (
+            <button
+              onClick={() => onNavigate("login")}
+              className="px-3 sm:px-4 py-2 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md text-xs sm:text-sm"
+            >
+              I&apos;m an Agent
+            </button>
+          )}
         </div>
 
         {/* Back button */}

@@ -652,7 +652,7 @@ export default function RentalLeadApp() {
   return (
     <main className="min-h-screen bg-white">
 
-      {view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && view !== 'admin-dashboard' && view !== 'email-confirmed' && view !== 'password-reset-success' && view !== 'reset-password' && (
+      {currentUser && view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && view !== 'admin-dashboard' && view !== 'email-confirmed' && view !== 'password-reset-success' && view !== 'reset-password' && (
         <Header 
           onNavigate={setView} 
           currentUser={currentUser} 
