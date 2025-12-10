@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  User, 
-  Mail, 
-  Shield, 
+import Image from 'next/image';
+import {
+  X,
+  User,
+  Mail,
+  Shield,
   ShieldCheck,
   ShieldAlert,
-  Calendar, 
-  Clock, 
+  Calendar,
+  Clock,
   Activity,
   CheckCircle,
   XCircle,
@@ -123,10 +124,13 @@ export const AdminDetailModal = ({ isOpen, onClose, admin, onEdit }) => {
           </button>
           <div className="absolute -bottom-12 left-6 flex items-end gap-4">
             {admin.avatar ? (
-              <img
+              <Image
                 src={admin.avatar}
                 alt={admin.name}
+                width={96}
+                height={96}
                 className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-lg"
+                unoptimized
               />
             ) : (
               <div className={`w-24 h-24 rounded-2xl ${avatarColors[colorIndex]} flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow-lg`}>

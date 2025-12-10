@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Mail, MapPin, Camera, Save, CheckCircle, AlertCircle, Phone } from 'lucide-react';
 import { Button } from './ui/Button';
+import { PhoneVerification } from './ui/PhoneVerification';
 
 export const UserProfile = ({ user, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -10,9 +11,35 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
     city: user?.city || user?.location || ''
   });
 
+  // Track if phone number was changed and needs verification
+  const [originalPhone] = useState(user?.phone || '');
+  const [phoneChanged, setPhoneChanged] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+
+  // Check if phone was changed
+  useEffect(() => {
+    const hasChanged = formData.phone !== originalPhone && formData.phone !== '';
+    setPhoneChanged(hasChanged);
+    if (hasChanged) {
+      setIsPhoneVerified(false);
+    }
+  }, [formData.phone, originalPhone]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // If phone was changed, require verification
+    if (phoneChanged && !isPhoneVerified) {
+      alert('Please verify your new phone number before saving.');
+      return;
+    }
+
     onSave(formData);
+  };
+
+  const handlePhoneVerified = (verifiedPhone) => {
+    setIsPhoneVerified(true);
+    setFormData(prev => ({ ...prev, phone: verifiedPhone }));
   };
 
   return (
@@ -67,19 +94,6 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full pl-10 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
-              />
-            </div>
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
             <div className="relative">
               <MapPin className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
@@ -93,11 +107,55 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
           </div>
         </div>
 
+        {/* Phone Number with OTP Verification */}
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Phone className="w-5 h-5 text-gray-500" />
+              <span className="font-medium text-gray-700">Phone Number</span>
+            </div>
+            {originalPhone && !phoneChanged && (
+              <div className="flex items-center gap-1 text-green-600 text-sm">
+                <CheckCircle className="w-4 h-4" />
+                <span>Verified</span>
+              </div>
+            )}
+          </div>
+
+          <PhoneVerification
+            phoneNumber={formData.phone}
+            onPhoneChange={(value) => setFormData({...formData, phone: value})}
+            onVerified={handlePhoneVerified}
+            checkExisting={false}
+            defaultCountry="KE"
+            label=""
+            required={false}
+          />
+
+          {phoneChanged && !isPhoneVerified && (
+            <div className="flex items-center gap-2 text-amber-600 text-sm mt-2">
+              <AlertCircle className="w-4 h-4" />
+              <span>Phone number changed - verification required to save</span>
+            </div>
+          )}
+
+          {phoneChanged && isPhoneVerified && (
+            <div className="flex items-center gap-2 text-green-600 text-sm mt-2">
+              <CheckCircle className="w-4 h-4" />
+              <span>New phone number verified!</span>
+            </div>
+          )}
+        </div>
+
         <div className="pt-4 flex justify-end gap-4">
           <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
-          <Button type="submit" className="flex items-center gap-2">
+          <Button
+            type="submit"
+            disabled={phoneChanged && !isPhoneVerified}
+            className={`flex items-center gap-2 ${phoneChanged && !isPhoneVerified ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
             <Save className="w-4 h-4" />
-            Save Changes
+            {phoneChanged && !isPhoneVerified ? 'Verify Phone First' : 'Save Changes'}
           </Button>
         </div>
       </form>

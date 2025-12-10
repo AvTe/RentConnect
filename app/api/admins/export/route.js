@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { getAdminUsers, getAdminUserByEmail, adminHasPermission } from '@/lib/database';
 
+// Force dynamic rendering - this route uses cookies for auth
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/admins/export - Export admin list as CSV
  */

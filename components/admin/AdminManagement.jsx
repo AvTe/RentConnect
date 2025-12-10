@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import {
   Users,
   UserPlus,
@@ -84,12 +85,21 @@ const AdminAvatar = ({ name, avatar, size = 'md' }) => {
     lg: 'w-12 h-12 text-lg'
   };
 
+  const avatarSizes = {
+    sm: 32,
+    md: 40,
+    lg: 48
+  };
+
   if (avatar) {
     return (
-      <img
+      <Image
         src={avatar}
         alt={name}
+        width={avatarSizes[size]}
+        height={avatarSizes[size]}
         className={`${sizeClasses[size]} rounded-full object-cover border-2 border-white shadow-sm`}
+        unoptimized
       />
     );
   }

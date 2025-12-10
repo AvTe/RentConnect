@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword, resendConfirmationEmail } from '@/lib/auth-supabase';
@@ -270,11 +271,11 @@ export const Login = ({ onNavigate, onLogin, authError }) => {
       <div className="w-full md:w-1/2 flex flex-col justify-start md:justify-center px-6 sm:px-8 lg:px-16 xl:px-24 py-6 md:py-8 relative z-10 overflow-y-auto min-h-screen md:min-h-0">
         {/* Minimal Header - Logo only + I'm an Agent button */}
         <div className="flex items-center justify-between mb-8 md:absolute md:top-8 md:left-6 md:right-6 lg:left-16 xl:left-24 lg:right-16 xl:right-24">
-          <div 
-            className="cursor-pointer" 
+          <div
+            className="cursor-pointer"
             onClick={() => onNavigate('landing')}
           >
-            <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-8 sm:h-10 w-auto" />
+            <Image src="/yoombaa-logo.svg" alt="Yoombaa" width={120} height={40} className="h-8 sm:h-10 w-auto" priority />
           </div>
           <button
             onClick={() => onNavigate('landing')}

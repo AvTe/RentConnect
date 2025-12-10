@@ -104,7 +104,7 @@ export const PersonaVerification = ({ onClose, onComplete, userId }) => {
 
   useEffect(() => {
     initializePersona();
-    
+
     // Cleanup on unmount
     return () => {
       if (personaClient) {
@@ -115,6 +115,7 @@ export const PersonaVerification = ({ onClose, onComplete, userId }) => {
         }
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initializePersona]);
 
   const handleStartVerification = () => {

@@ -1,8 +1,9 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
+import NextImage from 'next/image';
+import {
   MessageCircle, Send, X, Search, ChevronLeft, MoreVertical,
-  Phone, Mail, User, Clock, Check, CheckCheck, Image, Paperclip
+  Phone, Mail, User, Clock, Check, CheckCheck, Image as ImageIcon, Paperclip
 } from 'lucide-react';
 import {
   getUserConversations,
@@ -70,6 +71,7 @@ export const ChatWidget = ({ user, isOpen, onClose, initialRecipient = null }) =
     if (initialRecipient && user?.id && isOpen) {
       startNewConversation(initialRecipient);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRecipient, user?.id, isOpen]);
 
   // Start a new conversation with someone
@@ -226,10 +228,13 @@ export const ChatWidget = ({ user, isOpen, onClose, initialRecipient = null }) =
             <div className="flex-1 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                 {selectedConversation.otherParticipant?.avatar ? (
-                  <img 
-                    src={selectedConversation.otherParticipant.avatar} 
-                    alt="" 
+                  <NextImage
+                    src={selectedConversation.otherParticipant.avatar}
+                    alt=""
+                    width={40}
+                    height={40}
                     className="w-10 h-10 rounded-full object-cover"
+                    unoptimized
                   />
                 ) : (
                   <User className="w-5 h-5" />
@@ -287,7 +292,7 @@ export const ChatWidget = ({ user, isOpen, onClose, initialRecipient = null }) =
                     {!isOwn && showAvatar && (
                       <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-2 flex-shrink-0">
                         {msg.sender?.avatar ? (
-                          <img src={msg.sender.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+                          <NextImage src={msg.sender.avatar} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover" unoptimized />
                         ) : (
                           <User className="w-4 h-4 text-gray-600" />
                         )}
@@ -390,10 +395,13 @@ export const ChatWidget = ({ user, isOpen, onClose, initialRecipient = null }) =
                   <div className="relative flex-shrink-0">
                     <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
                       {conv.otherParticipant?.avatar ? (
-                        <img 
-                          src={conv.otherParticipant.avatar} 
-                          alt="" 
+                        <NextImage
+                          src={conv.otherParticipant.avatar}
+                          alt=""
+                          width={48}
+                          height={48}
                           className="w-12 h-12 rounded-full object-cover"
+                          unoptimized
                         />
                       ) : (
                         <User className="w-6 h-6 text-gray-500" />

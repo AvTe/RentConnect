@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 
-// Import the shared OTP store
-// Note: In production, use Redis or database for shared state across serverless functions
-// For development, we'll use a simple approach with module-level state
-const otpStore = new Map();
-
-// Re-export for send-otp to use
-export { otpStore };
+// ============================================================================
+// Global OTP Store - uses globalThis to persist across serverless invocations
+// This must match the store in send-otp/route.js
+// ============================================================================
+if (!globalThis.otpStore) {
+  globalThis.otpStore = new Map();
+}
+const otpStore = globalThis.otpStore;
 
 const MAX_VERIFY_ATTEMPTS = 5;
 
@@ -29,10 +30,13 @@ export async function POST(request) {
       );
     }
 
-    // Get stored OTP data
-    // In serverless, we need to use the same store - for now importing from send-otp
-    const { otpStore: sharedStore } = await import('../send-otp/route.js');
-    const storedData = sharedStore.get(phoneNumber);
+    // Get stored OTP data from the global store
+    const storedData = otpStore.get(phoneNumber);
+
+    // Debug logging
+    console.log(`[verify-otp] Verifying OTP for ${phoneNumber}`);
+    console.log(`[verify-otp] Store has ${otpStore.size} entries`);
+    console.log(`[verify-otp] Found stored data: ${!!storedData}`);
 
     if (!storedData) {
       return NextResponse.json(
@@ -43,7 +47,7 @@ export async function POST(request) {
 
     // Check if OTP has expired
     if (Date.now() > storedData.expiresAt) {
-      sharedStore.delete(phoneNumber);
+      otpStore.delete(phoneNumber);
       return NextResponse.json(
         { success: false, error: 'Verification code has expired. Please request a new code.' },
         { status: 400 }
@@ -52,7 +56,7 @@ export async function POST(request) {
 
     // Check verify attempts (prevent brute force)
     if (storedData.verifyAttempts >= MAX_VERIFY_ATTEMPTS) {
-      sharedStore.delete(phoneNumber);
+      otpStore.delete(phoneNumber);
       return NextResponse.json(
         { success: false, error: 'Too many failed attempts. Please request a new code.' },
         { status: 429 }
@@ -63,22 +67,22 @@ export async function POST(request) {
     if (storedData.otp !== otp) {
       // Increment failed attempts
       storedData.verifyAttempts = (storedData.verifyAttempts || 0) + 1;
-      sharedStore.set(phoneNumber, storedData);
+      otpStore.set(phoneNumber, storedData);
 
       const attemptsLeft = MAX_VERIFY_ATTEMPTS - storedData.verifyAttempts;
       return NextResponse.json(
-        { 
-          success: false, 
-          error: `Invalid code. ${attemptsLeft} attempt${attemptsLeft !== 1 ? 's' : ''} remaining.` 
+        {
+          success: false,
+          error: `Invalid code. ${attemptsLeft} attempt${attemptsLeft !== 1 ? 's' : ''} remaining.`
         },
         { status: 400 }
       );
     }
 
     // OTP verified successfully - clean up
-    sharedStore.delete(phoneNumber);
+    otpStore.delete(phoneNumber);
 
-    console.log(`Phone number ${phoneNumber} verified successfully`);
+    console.log(`[verify-otp] Phone number ${phoneNumber} verified successfully`);
 
     return NextResponse.json({
       success: true,

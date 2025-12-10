@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Building2, User, Phone, Mail, MapPin, Lock, Upload } from 'lucide-react';
+import { ArrowLeft, Building2, User, Mail, MapPin, Lock, Upload, CheckCircle } from 'lucide-react';
 import { Button } from './ui/Button';
+import { PhoneVerification } from './ui/PhoneVerification';
+import { checkPhoneNumberExists } from '@/lib/database';
 
 export const AgentRegistration = ({ onNavigate, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -14,9 +16,23 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
     idDocument: null
   });
 
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Require phone verification before submission
+    if (!isPhoneVerified) {
+      alert('Please verify your phone number before submitting.');
+      return;
+    }
+
     onSubmit(formData);
+  };
+
+  const handlePhoneVerified = (verifiedPhone) => {
+    setIsPhoneVerified(true);
+    setFormData(prev => ({ ...prev, phone: verifiedPhone }));
   };
 
   return (
@@ -69,36 +85,42 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="email"
-                    required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
-                    placeholder="agent@example.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="email"
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  placeholder="agent@example.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="tel"
-                    required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
-                    placeholder="+254..."
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  />
+            {/* Phone Verification with OTP */}
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <PhoneVerification
+                phoneNumber={formData.phone}
+                onPhoneChange={(value) => {
+                  setFormData({...formData, phone: value});
+                  setIsPhoneVerified(false);
+                }}
+                onVerified={handlePhoneVerified}
+                checkExisting={true}
+                checkExistingFn={checkPhoneNumberExists}
+                defaultCountry="KE"
+                label="Phone Number (WhatsApp)"
+                required={true}
+              />
+              {isPhoneVerified && (
+                <div className="flex items-center gap-2 text-green-600 text-sm mt-2">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Phone verified - You can proceed with registration</span>
                 </div>
-              </div>
+              )}
             </div>
 
             <div>
@@ -169,12 +191,19 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full py-3 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-lg font-medium shadow-lg shadow-[#FFE4C4] transition-all mt-4"
+            <Button
+              type="submit"
+              disabled={!isPhoneVerified}
+              className={`w-full py-3 ${isPhoneVerified ? 'bg-[#FE9200] hover:bg-[#E58300]' : 'bg-gray-400 cursor-not-allowed'} text-white rounded-lg font-medium shadow-lg shadow-[#FFE4C4] transition-all mt-4`}
             >
-              Create Agent Account
+              {isPhoneVerified ? 'Create Agent Account' : 'Verify Phone to Continue'}
             </Button>
+
+            {!isPhoneVerified && (
+              <p className="text-center text-xs text-amber-600 mt-2">
+                ⚠️ Please verify your phone number above to enable account creation
+              </p>
+            )}
             
             <p className="text-center text-sm text-gray-500 mt-4">
               Already have an account? 

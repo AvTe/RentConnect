@@ -6,6 +6,9 @@ import {
   adminHasPermission
 } from '@/lib/database';
 
+// Force dynamic rendering - this route uses cookies for auth
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/admins/logs - Get admin activity logs
  */

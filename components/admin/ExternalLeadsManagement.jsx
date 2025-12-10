@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   ExternalLink, RefreshCw, Filter, Search, Calendar, 
   TrendingUp, Users, Target, Zap, Facebook, Chrome,
@@ -32,11 +32,7 @@ export const ExternalLeadsManagement = () => {
     : '/api/leads/external';
   const apiKey = process.env.NEXT_PUBLIC_EXTERNAL_LEADS_API_KEY || 'rc_zapier_key_2024';
 
-  useEffect(() => {
-    fetchData();
-  }, [filters]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [leadsResult, logsResult, analyticsResult] = await Promise.all([
@@ -53,7 +49,11 @@ export const ExternalLeadsManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);

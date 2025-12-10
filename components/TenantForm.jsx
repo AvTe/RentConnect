@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import {
   ArrowLeft,
   MapPin,
@@ -144,12 +145,7 @@ export const TenantForm = ({
         throw new Error(data.error || "Failed to send verification code.");
       }
 
-      // Show dev OTP in console for development
-      if (data.devOtp) {
-        console.log('🔐 DEV MODE - Your OTP is:', data.devOtp);
-        alert(`DEV MODE - Your verification code is: ${data.devOtp}\n\nIn production, this will be sent via SMS.`);
-      }
-
+      // OTP sent successfully - code will arrive via SMS
       setVerificationStep("sent");
       setOtpExpiresIn(data.expiresIn || 300);
       setCanResend(false);
@@ -253,10 +249,30 @@ export const TenantForm = ({
         }
       },
       (error) => {
-        console.error("Error getting location:", error);
-        alert("Unable to retrieve your location");
+        // Provide detailed error messages based on error code
+        let errorMessage = "Unable to retrieve your location. ";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += "Location access was denied. Please enable location permissions in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += "Location information is unavailable. Please try again or enter your location manually.";
+            break;
+          case error.TIMEOUT:
+            errorMessage += "Location request timed out. Please check your connection and try again.";
+            break;
+          default:
+            errorMessage += "Please enter your location manually.";
+        }
+        console.error("Error getting location:", error.code, error.message);
+        alert(errorMessage);
         setIsLocating(false);
       },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000 // Cache location for 5 minutes
+      }
     );
   };
 
@@ -651,10 +667,10 @@ export const TenantForm = ({
         </div>
       </div>
 
-      {/* Skip verification notice */}
+      {/* Phone verification required notice */}
       {verificationStep !== "verified" && formData.whatsapp && (
-        <p className="text-xs text-gray-500 text-center">
-          Phone verification is optional. You can submit without verifying.
+        <p className="text-xs text-amber-600 text-center font-medium">
+          ⚠️ Phone verification is required to submit your request.
         </p>
       )}
 
@@ -663,6 +679,8 @@ export const TenantForm = ({
         disabled={
           !formData.name ||
           !isValidEmail(formData.email) ||
+          !formData.whatsapp ||
+          verificationStep !== "verified" ||
           isSubmitting
         }
         className="w-full py-3 sm:py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
@@ -738,10 +756,13 @@ export const TenantForm = ({
         {/* Minimal Header - Logo + I'm an Agent button */}
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div className="cursor-pointer" onClick={() => onNavigate("landing")}>
-            <img
+            <Image
               src="/yoombaa-logo.svg"
               alt="Yoombaa"
+              width={108}
+              height={36}
               className="h-7 sm:h-9 w-auto"
+              priority
             />
           </div>
           <button

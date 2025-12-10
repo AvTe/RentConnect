@@ -1,16 +1,20 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 
 export function LoadingScreen() {
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center z-50" style={{ backgroundColor: '#1e2530' }}>
       <div className="flex flex-col items-center">
         <div className="animate-fade-in-up">
-          <img
+          <Image
             src="/yoombaa-logo.png"
             alt="Yoombaa"
+            width={320}
+            height={80}
             className="w-64 md:w-80 h-auto"
+            priority
           />
         </div>
 
