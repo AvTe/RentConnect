@@ -6,6 +6,9 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
+import { StarRating } from './ui/StarRating';
+import { AgentReviews } from './AgentReviews';
+import { RatingModal } from './RatingModal';
 import { 
   getAgentById, 
   getAgentProperties, 
@@ -21,7 +24,11 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
   const [canViewContact, setCanViewContact] = useState(false);
   const [showInquiryForm, setShowInquiryForm] = useState(false);
   const [inquiryMessage, setInquiryMessage] = useState('');
-
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [canRate, setCanRate] = useState(false);
+  const [ratingEligibility, setRatingEligibility] = useState(null);
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('properties'); // 'properties' or 'reviews'
   const loadAgentData = useCallback(async () => {
     setLoading(true);
     const [agentResult, propertiesResult] = await Promise.all([
@@ -49,10 +56,56 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
     }
   }, [currentUser]);
 
+  const checkRatingEligibility = useCallback(async () => {
+    if (currentUser && agentId) {
+      try {
+        const response = await fetch(`/api/ratings?agentId=${agentId}&checkEligibility=true`);
+        const result = await response.json();
+        if (result.success) {
+          setRatingEligibility(result.data);
+          setCanRate(result.data.canRate);
+        }
+      } catch (err) {
+        console.error('Error checking rating eligibility:', err);
+      }
+    }
+  }, [currentUser, agentId]);
+
   useEffect(() => {
     loadAgentData();
     checkContactPermission();
-  }, [loadAgentData, checkContactPermission]);
+    checkRatingEligibility();
+  }, [loadAgentData, checkContactPermission, checkRatingEligibility]);
+
+  const handleSubmitRating = async (ratingData) => {
+    setRatingSubmitting(true);
+    try {
+      const response = await fetch('/api/ratings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: agent.id,
+          ...ratingData
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setShowRatingModal(false);
+        setCanRate(false);
+        // Refresh agent data to get updated rating
+        loadAgentData();
+        alert('Thank you for your rating!');
+      } else {
+        throw new Error(result.error || 'Failed to submit rating');
+      }
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setRatingSubmitting(false);
+    }
+  };
 
   const handleSendInquiry = async () => {
     if (!currentUser) {
@@ -219,12 +272,45 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Rating</span>
-                  <span className="font-bold text-[#FE9200] flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-current" />
-                    {agent.rating || '4.5'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <StarRating 
+                      rating={parseFloat(agent.averageRating) || 0} 
+                      readOnly 
+                      size="sm" 
+                    />
+                    <span className="font-bold text-gray-900">
+                      {agent.averageRating ? parseFloat(agent.averageRating).toFixed(1) : '0.0'}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Reviews</span>
+                  <span className="font-bold text-gray-900">{agent.totalRatings || 0}</span>
                 </div>
               </div>
+              
+              {/* Rate Agent Button */}
+              {currentUser && currentUser.role !== 'agent' && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  {canRate ? (
+                    <Button 
+                      className="w-full bg-orange-500 hover:bg-orange-600"
+                      onClick={() => setShowRatingModal(true)}
+                    >
+                      <Star className="w-4 h-4 mr-2" />
+                      Rate This Agent
+                    </Button>
+                  ) : ratingEligibility?.alreadyRated ? (
+                    <p className="text-sm text-center text-green-600">
+                      ✓ You&apos;ve already rated this agent
+                    </p>
+                  ) : ratingEligibility?.reason ? (
+                    <p className="text-sm text-center text-gray-500">
+                      {ratingEligibility.reason}
+                    </p>
+                  ) : null}
+                </div>
+              )}
             </div>
 
             {/* Contact Card */}
@@ -277,46 +363,76 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
             )}
           </div>
 
-          {/* Right Column - Properties */}
+          {/* Right Column - Properties & Reviews */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
-                Listed Properties ({properties.length})
-              </h3>
-
-              {properties.length === 0 ? (
-                <div className="text-center py-12">
-                  <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600">No properties listed yet</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {properties.map((property) => (
-                    <div key={property.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                      {property.images && property.images[0] && (
-                        <img 
-                          src={property.images[0]} 
-                          alt={property.title}
-                          className="w-full h-48 object-cover"
-                        />
-                      )}
-                      <div className="p-4">
-                        <h4 className="font-semibold text-gray-900 mb-2">{property.title}</h4>
-                        <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {property.location}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-lg font-bold text-[#FE9200]">
-                            KSh {property.price?.toLocaleString()}
-                          </span>
-                          <Button size="sm" variant="outline">View Details</Button>
-                        </div>
+            {/* Tabs */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="flex border-b border-gray-200">
+                <button
+                  onClick={() => setActiveTab('properties')}
+                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
+                    activeTab === 'properties'
+                      ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <Home className="w-4 h-4 inline mr-2" />
+                  Properties ({properties.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('reviews')}
+                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
+                    activeTab === 'reviews'
+                      ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <Star className="w-4 h-4 inline mr-2" />
+                  Reviews ({agent.totalRatings || 0})
+                </button>
+              </div>
+              
+              <div className="p-6">
+                {activeTab === 'properties' ? (
+                  <>
+                    {properties.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-600">No properties listed yet</p>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {properties.map((property) => (
+                          <div key={property.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                            {property.images && property.images[0] && (
+                              <img 
+                                src={property.images[0]} 
+                                alt={property.title}
+                                className="w-full h-48 object-cover"
+                              />
+                            )}
+                            <div className="p-4">
+                              <h4 className="font-semibold text-gray-900 mb-2">{property.title}</h4>
+                              <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                {property.location}
+                              </p>
+                              <div className="flex items-center justify-between">
+                                <span className="text-lg font-bold text-[#FE9200]">
+                                  KSh {property.price?.toLocaleString()}
+                                </span>
+                                <Button size="sm" variant="outline">View Details</Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <AgentReviews agentId={agent.id} showSummary={true} />
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -366,6 +482,15 @@ export const AgentDetailPage = ({ agentId, currentUser, onNavigate, onBack }) =>
           </div>
         </div>
       )}
+
+      {/* Rating Modal */}
+      <RatingModal
+        isOpen={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        agent={agent}
+        onSubmit={handleSubmitRating}
+        loading={ratingSubmitting}
+      />
     </div>
   );
 };

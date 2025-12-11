@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
+import { StarRating } from './ui/StarRating';
 import { getAllAgents, searchAgents, sendConnectionRequest, checkUserCanViewContact } from '../lib/database';
 
 export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile }) => {
@@ -128,8 +129,17 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
               <div className="text-xs text-gray-500">Connections</div>
             </div>
             <div className="text-center">
-              <div className="text-lg font-bold text-gray-900">{agent.rating || '4.5'}</div>
-              <div className="text-xs text-gray-500">Rating</div>
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-1">
+                  <span className="text-lg font-bold text-gray-900">
+                    {agent.averageRating ? parseFloat(agent.averageRating).toFixed(1) : '0.0'}
+                  </span>
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                </div>
+                <div className="text-xs text-gray-500">
+                  {agent.totalRatings || 0} {agent.totalRatings === 1 ? 'review' : 'reviews'}
+                </div>
+              </div>
             </div>
           </div>
 

@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   LayoutGrid, FileText, Heart, History, Users, Settings, LogOut,
-  Plus, Search, ChevronDown, MoreHorizontal, Filter, Bell, Menu, X
+  Plus, Search, ChevronDown, MoreHorizontal, Filter, Bell, Menu, X, Star
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { UserProfile } from './UserProfile';
+import { RatingPrompt } from './RatingPrompt';
 import { getAllAgents, getAllLeads } from '@/lib/database';
 
 export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUser, onUpdateUser, onLogout }) => {
@@ -324,6 +325,9 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
     // Default Dashboard View
     return (
       <div className="space-y-6 md:space-y-8">
+        {/* Rating Prompt - Show if there are agents to rate */}
+        <RatingPrompt currentUser={currentUser} />
+        
         {/* Stats - Responsive grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">

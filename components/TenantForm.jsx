@@ -753,27 +753,27 @@ export const TenantForm = ({
     <div className={`w-full flex flex-col md:flex-row overflow-hidden bg-white font-sans ${currentUser ? 'min-h-[calc(100vh-80px)]' : 'min-h-screen'}`}>
       {/* Left Side - Form */}
       <div className={`w-full md:w-1/2 flex flex-col px-4 sm:px-6 lg:px-12 xl:px-24 py-4 sm:py-6 relative z-10 overflow-y-auto ${currentUser ? '' : 'min-h-screen'} md:min-h-0`}>
-        {/* Logo Header - Always show logo, hide "I'm an Agent" button when logged in */}
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <div className="cursor-pointer" onClick={() => onNavigate("landing")}>
-            <Image
-              src="/yoombaa-logo.svg"
-              alt="Yoombaa"
-              width={108}
-              height={36}
-              className="h-7 sm:h-9 w-auto"
-              priority
-            />
-          </div>
-          {!currentUser && (
+        {/* Logo Header - Only show when user is NOT logged in (main Header handles logged-in state) */}
+        {!currentUser && (
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="cursor-pointer" onClick={() => onNavigate("landing")}>
+              <Image
+                src="/yoombaa-logo-dark.svg"
+                alt="Yoombaa"
+                width={108}
+                height={36}
+                className="h-7 sm:h-9 w-auto"
+                priority
+              />
+            </div>
             <button
               onClick={() => onNavigate("login")}
               className="px-3 sm:px-4 py-2 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md text-xs sm:text-sm"
             >
               I&apos;m an Agent
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Back button */}
         <button

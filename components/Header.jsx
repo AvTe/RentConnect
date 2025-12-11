@@ -40,7 +40,7 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
             className="flex items-center gap-1 cursor-pointer"
             onClick={() => handleNavigate('landing')}
           >
-            <img src="/yoombaa-logo.png" alt="Yoombaa" className="h-8 sm:h-10 w-auto" />
+            <img src="/yoombaa-logo-dark.svg" alt="Yoombaa" className="h-8 sm:h-10 w-auto" />
           </div>
 
           {/* Desktop Navigation */}

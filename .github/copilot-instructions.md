@@ -156,14 +156,58 @@ Login → UserDashboard → View My Requests / Browse Agents / Saved Properties
 **Tabs in `components/UserDashboard.jsx`:**
 | Tab | Description | Data Source |
 |-----|-------------|-------------|
-| Dashboard | Overview stats | `currentUser` |
+| Dashboard | Overview stats + Rating Prompt | `currentUser` |
 | My Requests | Tenant's posted leads | `getAllLeads({ tenantId })` |
 | Agents | Browse verified agents | `getAllAgents()` |
 | Profile | Edit profile | `updateUser()` |
 
 ---
 
-### 6. ADMIN FLOW: Manage Platform
+### 6. TENANT FLOW: Rate Agents
+
+```
+UserDashboard → RatingPrompt → RatingModal → Submit Rating
+OR
+AgentDetailPage → "Rate Agent" button → RatingModal → Submit Rating
+```
+
+**Rating Eligibility:**
+- Tenant can only rate agents who have **contacted them** (unlocked their lead)
+- One rating per agent per tenant (can update but not duplicate)
+- Ratings include: Overall (1-5), Responsiveness, Professionalism, Helpfulness
+- Optional written review text
+
+**Rating Components:**
+| Component | File | Purpose |
+|-----------|------|---------|
+| StarRating | `components/ui/StarRating.jsx` | Interactive star input/display |
+| RatingModal | `components/RatingModal.jsx` | Full rating submission form |
+| AgentReviews | `components/AgentReviews.jsx` | Display agent's reviews list |
+| RatingPrompt | `components/RatingPrompt.jsx` | Dashboard prompt for pending ratings |
+| RatingSummary | `components/ui/StarRating.jsx` | Rating breakdown display |
+
+**Database Functions (lib/database.js):**
+```javascript
+submitAgentRating(ratingData)      // Create new rating
+canTenantRateAgent(tenantId, agentId)  // Check eligibility
+getAgentRatings(agentId)           // Get agent's reviews
+getAgentRatingSummary(agentId)     // Get average + breakdown
+getAgentsPendingRating(tenantId)   // Agents tenant can rate
+updateAgentRating(ratingId, ...)   // Update existing
+deleteAgentRating(ratingId, ...)   // Soft delete
+```
+
+**API Routes:**
+- `GET /api/ratings?agentId=X` - Get ratings for agent
+- `GET /api/ratings?checkEligibility=true&agentId=X` - Check if can rate
+- `GET /api/ratings?pendingRatings=true` - Get agents to rate
+- `POST /api/ratings` - Submit new rating
+- `PATCH /api/ratings/[id]` - Update rating
+- `DELETE /api/ratings/[id]` - Delete rating
+
+---
+
+### 7. ADMIN FLOW: Manage Platform
 
 ```
 Login (admin role) → AdminDashboard → Multiple Management Modules
@@ -301,16 +345,17 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 
 ---
 
-## Key Tables (see `supabase_complete_schema.sql`)
+## Key Tables (see `supabase_complete_schema.sql` and `supabase_ratings_migration.sql`)
 | Table | Purpose |
 |-------|---------|
-| `users` | All users. `role`: tenant/agent/admin/super_admin/main_admin/sub_admin |
+| `users` | All users. `role`: tenant/agent/admin/super_admin/main_admin/sub_admin. Agents have `average_rating`, `total_ratings`, `rating_breakdown` |
 | `leads` | Tenant rental requests with `requirements` JSONB, `budget` in KES |
 | `properties` | Agent listings via `agent_id` FK |
 | `contact_history` | Tracks which agents unlocked which leads |
 | `credit_transactions` | Wallet audit trail (type: purchase/deduction/bonus) |
 | `subscriptions` | Premium agent subscriptions |
 | `pending_payments` | Pesapal payment records before fulfillment |
+| `agent_ratings` | Agent reviews from tenants. Rating 1-5, review text, detailed ratings (responsiveness, professionalism, helpfulness) |
 
 ---
 
