@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server';
+import { updateSession } from '@/utils/supabase/middleware';
 
 /**
- * Middleware for performance optimizations
- * - Add security headers
- * - Handle redirects
- * - Optimize caching
+ * Middleware for:
+ * - Supabase session refresh (critical for maintaining login state)
+ * - Security headers
+ * - Cache control
  */
-export function middleware(request) {
-  const response = NextResponse.next();
+export async function middleware(request) {
+  // CRITICAL: Refresh Supabase session to maintain login state
+  // This must happen on every request to keep the session alive
+  let response;
+  try {
+    response = await updateSession(request);
+  } catch (error) {
+    // If session refresh fails, continue with a normal response
+    console.error('Session refresh error:', error);
+    response = NextResponse.next({ request });
+  }
 
   // Content Security Policy - allows necessary scripts and resources
   const cspHeader = `

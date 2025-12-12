@@ -14,9 +14,11 @@ export async function GET(request) {
   const error = requestUrl.searchParams.get('error');
   const errorDescription = requestUrl.searchParams.get('error_description');
   
-  // Get pending user type from cookie (set before OAuth redirect)
+  // Get pending user type from cookie (set before OAuth redirect or email signup)
   const cookieStore = await cookies();
-  const pendingUserType = cookieStore.get('pending_user_type')?.value || 'tenant';
+  const pendingUserTypeCookie = cookieStore.get('pending_user_type')?.value;
+  // Don't default to 'tenant' here - let it be undefined if cookie not found
+  // so we can properly check metadata as fallback
   
   // Dynamically determine origin based on environment
   // Use request origin for production, fallback to localhost for dev
@@ -38,7 +40,7 @@ export async function GET(request) {
       const supabase = await createClient();
 
       console.log('Processing OAuth callback with code:', code.substring(0, 10) + '...');
-      console.log('Pending user type from cookie:', pendingUserType);
+      console.log('Pending user type from cookie:', pendingUserTypeCookie);
 
       // Exchange code for session
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -65,9 +67,9 @@ export async function GET(request) {
           
           const metadata = data.user.user_metadata || {};
           
-          // Get role from cookie (set during login), then metadata, then default to tenant
+          // Get role from cookie (set during signup/login), then metadata, then default to tenant
           // Priority: cookie > metadata > default
-          const userRole = pendingUserType || metadata.type || metadata.role || 'tenant';
+          const userRole = pendingUserTypeCookie || metadata.type || metadata.role || 'tenant';
           
           console.log('Creating user with role:', userRole);
           

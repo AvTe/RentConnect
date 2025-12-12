@@ -155,22 +155,22 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
                         <div className="bg-[#FFF5E6] rounded-xl p-4 border border-[#FFE4C4] animate-in fade-in">
                           <div className="flex items-center gap-3 mb-3">
                             <div className="w-10 h-10 rounded-full bg-[#FFD4A3] flex items-center justify-center text-[#CC7400] font-bold">
-                              {(lead.tenant_info?.name || 'U').charAt(0)}
+                              {(lead.tenant_info?.name || lead.tenant_name || 'U').charAt(0)}
                             </div>
                             <div>
-                              <p className="font-bold text-gray-900">{lead.tenant_info?.name || 'Tenant'}</p>
+                              <p className="font-bold text-gray-900">{lead.tenant_info?.name || lead.tenant_name || 'Tenant'}</p>
                               <p className="text-xs text-[#E58300]">Verified Tenant</p>
                             </div>
                           </div>
                           <div className="grid grid-cols-2 gap-2">
-                            <a 
-                              href={`tel:${lead.tenant_info?.phone}`}
+                            <a
+                              href={`tel:${lead.tenant_info?.phone || lead.tenant_phone}`}
                               className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-[#FFD4A3] text-[#E58300] rounded-lg hover:bg-[#FFE4C4] transition-colors text-sm font-medium"
                             >
                               <Phone className="w-4 h-4" /> Call
                             </a>
-                            <a 
-                              href={lead.tenant_info?.whatsapp_link}
+                            <a
+                              href={lead.tenant_info?.whatsapp_link || `https://wa.me/${lead.tenant_phone}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center justify-center gap-2 px-3 py-2 bg-[#FE9200] text-white rounded-lg hover:bg-[#E58300] transition-colors text-sm font-medium"

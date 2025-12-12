@@ -21,6 +21,7 @@ import PasswordResetForm from '@/components/PasswordResetForm';
 import { ChatWidget, ChatButton, useChat } from '@/components/ChatWidget';
 import { getCurrentSession, signOut, onAuthStateChange } from '@/lib/auth-supabase';
 import { getUser, updateUser, createUser, createUserSubscription, createSubscription } from '@/lib/database';
+import { initializePayment } from '@/lib/pesapal';
 import { uploadImage } from '@/lib/storage-supabase';
 import { useLeads, useSubscription } from '@/lib/hooks';
 
@@ -74,22 +75,78 @@ export default function RentalLeadApp() {
     // Minimum loading time for smooth animation
     const loadStartTime = Date.now();
     const MIN_LOADING_TIME = 300;
-    
+
     const finishLoading = () => {
       const elapsed = Date.now() - loadStartTime;
       const remaining = Math.max(0, MIN_LOADING_TIME - elapsed);
       setTimeout(() => setLoading(false), remaining);
     };
-    
+
+    // Helper to cache user data in localStorage
+    const cacheUserData = (userData) => {
+      try {
+        localStorage.setItem('rentconnect-user', JSON.stringify({
+          data: userData,
+          timestamp: Date.now()
+        }));
+      } catch (e) {
+        console.warn('Failed to cache user data:', e);
+      }
+    };
+
+    // Helper to get cached user data (valid for 5 minutes)
+    const getCachedUserData = () => {
+      try {
+        const cached = localStorage.getItem('rentconnect-user');
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          // Cache valid for 5 minutes
+          if (Date.now() - timestamp < 5 * 60 * 1000) {
+            return data;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to get cached user data:', e);
+      }
+      return null;
+    };
+
+    // Helper to clear user cache
+    const clearUserCache = () => {
+      try {
+        localStorage.removeItem('rentconnect-user');
+      } catch (e) {
+        console.warn('Failed to clear user cache:', e);
+      }
+    };
+
     // Setup Supabase auth listener
     const unsubscribe = onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+
       const user = session?.user;
       if (user) {
         try {
+          // Try to use cached data first for faster initial load
+          const cachedData = getCachedUserData();
+          if (cachedData && cachedData.id === user.id && event !== 'SIGNED_IN') {
+            // Use cached data immediately
+            setCurrentUser({
+              id: user.id,
+              uid: user.id,
+              email: user.email,
+              ...cachedData
+            });
+          }
+
+          // Always fetch fresh data in background
           const userResult = await getUser(user.id);
           
           if (userResult.success) {
             let userData = userResult.data;
+
+            // Cache user data for faster subsequent loads
+            cacheUserData(userData);
 
             // Check if user is an admin type (super_admin, main_admin, sub_admin, or admin)
             const isAdminRole = ['admin', 'super_admin', 'main_admin', 'sub_admin'].includes(userData.role);
@@ -100,7 +157,7 @@ export default function RentalLeadApp() {
               email: user.email,
               ...userData
             });
-            
+
             // Redirect based on role if on landing or login page
             if (view === 'landing' || view === 'login') {
               if (isAdminRole) {
@@ -155,6 +212,8 @@ export default function RentalLeadApp() {
           console.error("Error fetching user profile:", error);
         }
       } else {
+        // User logged out - clear cache
+        clearUserCache();
         setCurrentUser(null);
         if (view !== 'landing' && view !== 'login' && view !== 'tenant-form' && view !== 'agent-registration') {
           setView('landing');
@@ -405,97 +464,63 @@ export default function RentalLeadApp() {
 
   const handleSubscribe = async (paymentData) => {
     try {
-      // DEMO MODE: Pesapal disabled - credits are added directly for testing
-      // TODO: Re-enable Pesapal integration when ready for production
+      const userId = currentUser?.uid || currentUser?.id;
+
+      if (!userId) {
+        alert('Please log in to make a purchase');
+        setView('login');
+        return;
+      }
+
+      // Determine payment type and amount
+      let paymentType, description, amount, credits;
 
       if (paymentData.userId) {
-        // User subscription for viewing agent contacts
-        const startsAt = new Date();
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
-
-        const result = await createUserSubscription({
-          user_id: paymentData.userId,
-          plan_name: `${paymentData.planType} Subscription`,
-          status: 'active',
-          amount: paymentData.amount || 0,
-          currency: 'KES',
-          payment_method: 'demo',
-          payment_reference: `demo_user_${Date.now()}`,
-          starts_at: startsAt.toISOString(),
-          expires_at: expiresAt.toISOString(),
-        });
-
-        if (result.success) {
-          alert(`✅ ${paymentData.planType} subscription activated! (Demo Mode)`);
-          setView('user-dashboard');
-        } else {
-          alert('Failed to activate subscription: ' + result.error);
-        }
+        // User (tenant) subscription for viewing agent contacts
+        paymentType = 'user_subscription';
+        description = `${paymentData.planType || 'Monthly'} Tenant Subscription`;
+        amount = paymentData.amount || 500;
       } else if (paymentData.credits) {
-        // Agent buying credits - add credits directly
-        const userId = currentUser?.uid || currentUser?.id;
-        const newCredits = (currentUser?.credits || 0) + paymentData.credits;
-
-        // Update user credits
-        const updateResult = await updateUser(userId, { credits: newCredits });
-
-        if (updateResult.success) {
-          // Also create a subscription record for tracking
-          const startsAt = new Date();
-          const expiresAt = new Date();
-          expiresAt.setFullYear(expiresAt.getFullYear() + 10); // Credits don't expire
-
-          await createSubscription({
-            user_id: userId,
-            plan_name: `${paymentData.credits} Credits Bundle`,
-            status: 'active',
-            amount: typeof paymentData.price === 'string'
-              ? parseInt(paymentData.price.replace(/[^0-9]/g, ''))
-              : paymentData.price || 0,
-            currency: 'KES',
-            payment_method: 'demo',
-            payment_reference: `demo_credits_${Date.now()}`,
-            starts_at: startsAt.toISOString(),
-            expires_at: expiresAt.toISOString(),
-          });
-
-          // Update local user state
-          setCurrentUser(prev => ({ ...prev, credits: newCredits }));
-          alert(`✅ ${paymentData.credits} credits added! You now have ${newCredits} credits. (Demo Mode)`);
-          setView('agent-dashboard');
-        } else {
-          alert('Failed to add credits: ' + updateResult.error);
-        }
+        // Agent buying credits
+        paymentType = 'credit_purchase';
+        credits = paymentData.credits;
+        amount = typeof paymentData.price === 'string'
+          ? parseInt(paymentData.price.replace(/[^0-9]/g, ''))
+          : paymentData.price || 0;
+        description = `${credits} Credits Bundle`;
       } else {
         // Agent premium subscription
-        const userId = currentUser?.uid || currentUser?.id;
-        const startsAt = new Date();
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+        paymentType = 'agent_subscription';
+        description = 'Premium Agent Subscription';
+        amount = 2500;
+      }
 
-        const result = await createSubscription({
-          user_id: userId,
-          plan_name: 'Premium Agent Subscription',
-          status: 'active',
-          amount: 2500,
-          currency: 'KES',
-          payment_method: 'demo',
-          payment_reference: `demo_premium_${Date.now()}`,
-          starts_at: startsAt.toISOString(),
-          expires_at: expiresAt.toISOString(),
-        });
+      // Initialize real Pesapal payment
+      const result = await initializePayment({
+        email: currentUser?.email,
+        phone: currentUser?.phone || '',
+        amount,
+        description,
+        firstName: currentUser?.name?.split(' ')[0] || '',
+        lastName: currentUser?.name?.split(' ').slice(1).join(' ') || '',
+        metadata: {
+          type: paymentType,
+          agentId: paymentType !== 'user_subscription' ? userId : undefined,
+          userId: paymentType === 'user_subscription' ? paymentData.userId : undefined,
+          planType: paymentData.planType || 'monthly',
+          credits: credits || 0,
+        },
+      });
 
-        if (result.success) {
-          alert('✅ Premium subscription activated! (Demo Mode)');
-          setView('agent-dashboard');
-        } else {
-          alert('Failed to activate subscription: ' + result.error);
-        }
+      if (result.success && result.redirectUrl) {
+        // Redirect to Pesapal payment page
+        window.location.href = result.redirectUrl;
+      } else {
+        alert('Failed to initialize payment: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Error subscribing:', error);
-      alert('Error processing subscription: ' + error.message);
+      console.error('Error processing payment:', error);
+      alert('Error processing payment: ' + error.message);
     }
   };
 

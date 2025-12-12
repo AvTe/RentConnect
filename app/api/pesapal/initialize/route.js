@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getApiUrl, generateOrderId, signMetadata } from '@/lib/pesapal';
-import pg from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
 const PESAPAL_CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
 const PESAPAL_CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET;
 const PESAPAL_IPN_ID = process.env.PESAPAL_IPN_ID;
 const PAYMENT_SIGNING_SECRET = process.env.PESAPAL_CONSUMER_SECRET || 'yoombaa-payment-secret';
 
-// PostgreSQL connection
-const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+// Supabase client with service role for server-side operations
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // Token cache
 let tokenCache = {
@@ -106,13 +106,20 @@ export async function POST(request) {
     
     const signature = await signMetadata(metadataWithTimestamp, PAYMENT_SIGNING_SECRET);
 
-    // Store pending payment in PostgreSQL for durable persistence
+    // Store pending payment in Supabase for durable persistence
     try {
-      await pool.query(
-        `INSERT INTO pending_payments (order_id, metadata, signature, amount, email, status) 
-         VALUES ($1, $2, $3, $4, $5, 'pending')`,
-        [orderId, JSON.stringify(metadataWithTimestamp), signature, parseFloat(amount), email]
-      );
+      const { error: dbError } = await supabase
+        .from('pending_payments')
+        .insert({
+          order_id: orderId,
+          metadata: metadataWithTimestamp,
+          signature: signature,
+          amount: parseFloat(amount),
+          email: email,
+          status: 'pending'
+        });
+
+      if (dbError) throw dbError;
       console.log('Pending payment stored:', orderId);
     } catch (dbError) {
       console.error('Failed to store pending payment:', dbError);
@@ -165,10 +172,10 @@ export async function POST(request) {
 
     if (data.redirect_url && data.order_tracking_id) {
       // Update with Pesapal tracking ID
-      await pool.query(
-        `UPDATE pending_payments SET order_tracking_id = $1 WHERE order_id = $2`,
-        [data.order_tracking_id, orderId]
-      );
+      await supabase
+        .from('pending_payments')
+        .update({ order_tracking_id: data.order_tracking_id })
+        .eq('order_id', orderId);
 
       return NextResponse.json({
         success: true,
@@ -179,7 +186,10 @@ export async function POST(request) {
     }
 
     // Clean up failed payment record
-    await pool.query(`DELETE FROM pending_payments WHERE order_id = $1`, [orderId]);
+    await supabase
+      .from('pending_payments')
+      .delete()
+      .eq('order_id', orderId);
 
     console.error('Pesapal order submission failed:', data);
     return NextResponse.json(

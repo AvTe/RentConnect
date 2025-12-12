@@ -100,8 +100,14 @@ export const AgentDashboard = ({
 
     const fetchUnlockedLeads = async () => {
       const result = await getUnlockedLeads(userId);
+      console.log('Fetched unlocked leads for agent:', userId, result);
       if (result.success) {
-        setUnlockedLeads(result.data);
+        console.log('Unlocked lead IDs:', result.data);
+        setUnlockedLeads(result.data || []);
+      } else {
+        // If there's an error, ensure we start with empty array
+        console.error('Failed to fetch unlocked leads:', result.error);
+        setUnlockedLeads([]);
       }
     };
 
@@ -171,7 +177,45 @@ export const AgentDashboard = ({
     }
   };
 
-  const isLeadUnlocked = (leadId) => unlockedLeads.includes(leadId);
+  const isLeadUnlocked = (leadId) => {
+    const unlocked = unlockedLeads.includes(leadId);
+    console.log(`isLeadUnlocked(${leadId}):`, unlocked, 'unlockedLeads:', unlockedLeads);
+    return unlocked;
+  };
+
+  // Debug function to reset contact history (development only)
+  const handleResetContactHistory = async () => {
+    if (process.env.NODE_ENV === 'production') {
+      alert('This function is only available in development');
+      return;
+    }
+
+    const userId = currentUser?.uid || currentUser?.id;
+    if (!userId) return;
+
+    if (!confirm('This will reset all unlocked leads. Are you sure?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/debug/reset-contact-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: userId })
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        setUnlockedLeads([]);
+        alert(`Reset complete! Cleared ${result.deletedCount} records.`);
+      } else {
+        alert('Failed to reset: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error resetting contact history:', error);
+      alert('Error: ' + error.message);
+    }
+  };
 
   const handleSaveProfile = (updatedAgent) => {
     onUpdateUser(updatedAgent);
@@ -291,50 +335,10 @@ export const AgentDashboard = ({
     }
 
     if (activeTab === "properties") {
-      // Handler for demo subscription
-      const handleDemoSubscription = async () => {
+      // Handler for credit purchase via Pesapal
+      const handleCreditPurchase = async (planType) => {
         if (!isVerified) {
-          alert("Please verify your account before purchasing a subscription.");
-          return;
-        }
-
-        setLoadingSubscription(true);
-        try {
-          // Create a demo subscription directly (for testing)
-          const userId = currentUser?.uid || currentUser?.id;
-          const startsAt = new Date();
-          const expiresAt = new Date();
-          expiresAt.setDate(expiresAt.getDate() + 7); // 7-day demo
-
-          const result = await createSubscription({
-            user_id: userId,
-            plan_name: 'Demo Subscription',
-            status: 'active',
-            amount: 0,
-            currency: 'KES',
-            payment_method: 'demo',
-            payment_reference: `demo_${Date.now()}`,
-            starts_at: startsAt.toISOString(),
-            expires_at: expiresAt.toISOString(),
-          });
-
-          if (result.success) {
-            setSubscription(result.data);
-            alert("Demo subscription activated! You have 7 days of full access.");
-          } else {
-            alert("Failed to activate demo: " + result.error);
-          }
-        } catch (error) {
-          alert("Error: " + error.message);
-        } finally {
-          setLoadingSubscription(false);
-        }
-      };
-
-      // Handler for real subscription purchase
-      const handleRealSubscription = async (planType) => {
-        if (!isVerified) {
-          alert("Please verify your account before purchasing a subscription.");
+          alert("Please verify your account before purchasing credits.");
           return;
         }
 
@@ -353,12 +357,12 @@ export const AgentDashboard = ({
             email: currentUser?.email,
             phone: currentUser?.phone || '',
             amount: plan.amount,
-            description: `${plan.name} Subscription - ${plan.credits} Credits`,
+            description: `${plan.name} Credit Bundle - ${plan.credits} Credits`,
             firstName: currentUser?.name?.split(' ')[0] || '',
             lastName: currentUser?.name?.split(' ').slice(1).join(' ') || '',
             metadata: {
-              userId,
-              type: 'subscription',
+              agentId: userId,
+              type: 'credit_purchase',
               plan: planType,
               planName: plan.name,
               credits: plan.credits,
@@ -467,44 +471,26 @@ export const AgentDashboard = ({
             </div>
           </div>
 
-          {/* Subscription Purchase Section */}
+          {/* Credit Purchase Section */}
           {!subscription && (
             <div className="bg-gradient-to-r from-[#FE9200] to-[#E58300] rounded-xl p-4 md:p-6 text-white">
-              <h3 className="text-lg md:text-xl font-bold mb-2">Get Started with a Subscription</h3>
+              <h3 className="text-lg md:text-xl font-bold mb-2">Buy Credits to Unlock Leads</h3>
               <p className="text-white/80 mb-4 text-sm md:text-base">
-                Unlock unlimited access to leads and grow your business
+                Purchase credits to unlock tenant contact details and grow your business
               </p>
 
-              <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-4">
-                {/* Demo Subscription */}
-                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-4 h-4" />
-                    <span className="text-xs font-medium uppercase">Demo</span>
-                  </div>
-                  <p className="text-2xl font-bold mb-1">FREE</p>
-                  <p className="text-xs text-white/70 mb-3">7 days trial</p>
-                  <Button
-                    onClick={handleDemoSubscription}
-                    disabled={loadingSubscription || !isVerified}
-                    className="w-full bg-white text-[#FE9200] hover:bg-white/90 text-sm"
-                  >
-                    {loadingSubscription ? 'Processing...' : 'Start Demo'}
-                  </Button>
-                  <p className="text-[10px] text-white/60 mt-2 text-center">For testing only</p>
-                </div>
-
+              <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-3">
                 {/* Basic Plan */}
                 <div className="bg-white/10 rounded-lg p-4 border border-white/20">
-                  <span className="text-xs font-medium uppercase">Basic</span>
+                  <span className="text-xs font-medium uppercase">Starter</span>
                   <p className="text-2xl font-bold mb-1">KSh 500</p>
                   <p className="text-xs text-white/70 mb-3">10 Credits</p>
                   <Button
-                    onClick={() => handleRealSubscription('basic')}
+                    onClick={() => handleCreditPurchase('basic')}
                     disabled={loadingSubscription || !isVerified}
                     className="w-full bg-white/20 hover:bg-white/30 text-sm"
                   >
-                    Buy Now
+                    {loadingSubscription ? 'Processing...' : 'Buy Now'}
                   </Button>
                 </div>
 
@@ -517,11 +503,11 @@ export const AgentDashboard = ({
                   <p className="text-2xl font-bold mb-1">KSh 1,500</p>
                   <p className="text-xs text-white/70 mb-3">50 Credits</p>
                   <Button
-                    onClick={() => handleRealSubscription('premium')}
+                    onClick={() => handleCreditPurchase('premium')}
                     disabled={loadingSubscription || !isVerified}
                     className="w-full bg-white text-[#FE9200] hover:bg-white/90 text-sm"
                   >
-                    Buy Now
+                    {loadingSubscription ? 'Processing...' : 'Buy Now'}
                   </Button>
                 </div>
 
@@ -531,18 +517,18 @@ export const AgentDashboard = ({
                   <p className="text-2xl font-bold mb-1">KSh 3,000</p>
                   <p className="text-xs text-white/70 mb-3">150 Credits</p>
                   <Button
-                    onClick={() => handleRealSubscription('pro')}
+                    onClick={() => handleCreditPurchase('pro')}
                     disabled={loadingSubscription || !isVerified}
                     className="w-full bg-white/20 hover:bg-white/30 text-sm"
                   >
-                    Buy Now
+                    {loadingSubscription ? 'Processing...' : 'Buy Now'}
                   </Button>
                 </div>
               </div>
 
               {!isVerified && (
                 <p className="text-xs text-white/60 mt-4 text-center">
-                  ⚠️ Please verify your account to purchase a subscription
+                  ⚠️ Please verify your account to purchase credits
                 </p>
               )}
             </div>
@@ -678,7 +664,10 @@ export const AgentDashboard = ({
               </Button>
             </div>
           ) : (
-            leads.map((lead) => (
+            leads.map((lead) => {
+              // Debug logging
+              console.log('Rendering lead:', lead.id, 'Unlocked leads array:', unlockedLeads, 'Is unlocked:', unlockedLeads.includes(lead.id));
+              return (
               <div
                 key={lead.id}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
@@ -700,11 +689,11 @@ export const AgentDashboard = ({
 
                   <div className="flex items-center gap-3 mb-4 md:mb-6 p-2.5 md:p-3 bg-gray-50 rounded-lg">
                     <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold flex-shrink-0">
-                      {String(lead.tenant_info?.name || lead.name || "U").charAt(0)}
+                      {String(lead.tenant_info?.name || lead.tenant_name || lead.name || "U").charAt(0)}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {String(lead.tenant_info?.name || lead.name || "User")}
+                        {String(lead.tenant_info?.name || lead.tenant_name || lead.name || "User")}
                       </p>
                       <p className="text-xs text-gray-500">Looking for rent</p>
                     </div>
@@ -713,7 +702,7 @@ export const AgentDashboard = ({
                   {isLeadUnlocked(lead.id) ? (
                     <div className="grid grid-cols-2 gap-3">
                       <a
-                        href={`tel:${lead.tenant_info?.phone || lead.phone || lead.whatsapp}`}
+                        href={`tel:${lead.tenant_info?.phone || lead.tenant_phone || lead.phone || lead.whatsapp}`}
                         className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors text-sm"
                       >
                         <Phone className="w-4 h-4" />
@@ -722,7 +711,7 @@ export const AgentDashboard = ({
                       <a
                         href={
                           lead.tenant_info?.whatsapp_link ||
-                          `https://wa.me/${lead.tenant_info?.whatsapp || lead.whatsapp}`
+                          `https://wa.me/${lead.tenant_info?.whatsapp || lead.tenant_phone || lead.whatsapp}`
                         }
                         target="_blank"
                         rel="noopener noreferrer"
@@ -756,7 +745,8 @@ export const AgentDashboard = ({
                   )}
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -872,6 +862,15 @@ export const AgentDashboard = ({
                 <LogOut className="w-4 h-4" />
                 Log Out
               </button>
+              {/* Debug Reset Button - Development Only */}
+              {process.env.NODE_ENV !== 'production' && (
+                <button
+                  onClick={handleResetContactHistory}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-purple-600 hover:bg-purple-50 transition-all mt-2 border border-purple-200"
+                >
+                  🔄 Reset Leads (Dev)
+                </button>
+              )}
             </div>
           </div>
         </div>
