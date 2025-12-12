@@ -63,16 +63,16 @@ export default function DebugPanel() {
   const checkDatabase = useCallback(async () => {
     setStatus(prev => ({ ...prev, database: { ...prev.database, status: 'checking', message: 'Testing connection...' } }));
     addLog('info', 'Database', 'Testing database connection...');
-    
+
     try {
       const supabase = createClient();
       const startTime = Date.now();
-      
-      // Use a timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Connection timeout (5s)')), 5000)
+
+      // Use a longer timeout (15s) to handle serverless cold starts
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Connection timeout (15s)')), 15000)
       );
-      
+
       // Test basic query - use a simpler query that doesn't require auth
       const queryPromise = supabase.from('users').select('id', { count: 'exact', head: true });
       
