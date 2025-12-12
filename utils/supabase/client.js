@@ -12,27 +12,12 @@ export const createClient = () => {
     return supabaseClient;
   }
 
-  supabaseClient = createBrowserClient(
-    supabaseUrl,
-    supabaseKey,
-    {
-      auth: {
-        // Store session in localStorage for persistence across tabs/refreshes
-        persistSession: true,
-        // Automatically refresh the session before it expires
-        autoRefreshToken: true,
-        // Detect session from URL (for OAuth callbacks)
-        detectSessionInUrl: true,
-        // Storage key for the session
-        storageKey: 'rentconnect-auth',
-      },
-      // Cookie options for session storage
-      cookies: {
-        // Use secure cookies in production
-        secure: process.env.NODE_ENV === 'production',
-      }
-    }
-  );
+  // createBrowserClient automatically handles:
+  // - Session persistence via cookies
+  // - Auto token refresh
+  // - Session detection from URL
+  // No custom options needed - defaults work best
+  supabaseClient = createBrowserClient(supabaseUrl, supabaseKey);
 
   return supabaseClient;
 };

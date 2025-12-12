@@ -22,12 +22,12 @@ export async function middleware(request) {
   // Content Security Policy - allows necessary scripts and resources
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://www.google.com https://maps.googleapis.com https://www.gstatic.com https://apis.google.com https://*.withpersona.com;
-    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.withpersona.com;
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://www.google.com https://maps.googleapis.com https://www.gstatic.com https://apis.google.com https://*.withpersona.com https://vercel.live https://*.vercel.live;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.withpersona.com https://vercel.live;
     img-src 'self' blob: data: https: http:;
     font-src 'self' data: https://fonts.gstatic.com https://*.withpersona.com;
-    connect-src 'self' https://yydwhwkvrvgkqnmirbrr.supabase.co wss://yydwhwkvrvgkqnmirbrr.supabase.co https://accounts.google.com https://www.googleapis.com https://apis.google.com https://*.withpersona.com wss://*.withpersona.com;
-    frame-src 'self' https://accounts.google.com https://www.google.com https://*.withpersona.com https://inquiry.withpersona.com;
+    connect-src 'self' https://yydwhwkvrvgkqnmirbrr.supabase.co wss://yydwhwkvrvgkqnmirbrr.supabase.co https://accounts.google.com https://www.googleapis.com https://apis.google.com https://*.withpersona.com wss://*.withpersona.com https://vercel.live https://*.vercel.live wss://vercel.live wss://*.vercel.live;
+    frame-src 'self' https://accounts.google.com https://www.google.com https://*.withpersona.com https://inquiry.withpersona.com https://vercel.live;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
