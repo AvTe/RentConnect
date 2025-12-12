@@ -1,0 +1,24 @@
+<svg width="200" height="150" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Person 1 -->
+  <circle cx="60" cy="50" r="20" fill="#FFF0E0"/>
+  <circle cx="60" cy="45" r="10" fill="#FE9200"/>
+  <path d="M45 75C45 65 50 60 60 60C70 60 75 65 75 75" fill="#FE9200"/>
+  
+  <!-- Connection Lines -->
+  <path d="M80 60L100 75L120 60" stroke="#FE9200" stroke-width="2" stroke-dasharray="4 4">
+    <animate attributeName="stroke-dashoffset" values="0;8" dur="1s" repeatCount="indefinite"/>
+  </path>
+  
+  <!-- Person 2 -->
+  <circle cx="140" cy="50" r="20" fill="#E0F2FE"/>
+  <circle cx="140" cy="45" r="10" fill="#0EA5E9"/>
+  <path d="M125 75C125 65 130 60 140 60C150 60 155 65 155 75" fill="#0EA5E9"/>
+  
+  <!-- Central Match Icon -->
+  <circle cx="100" cy="90" r="18" fill="#DCFCE7"/>
+  <path d="M92 90L98 96L108 86" stroke="#22C55E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Stars/Sparkles -->
+  <path d="M50 100L52 95L54 100L52 105Z" fill="#FE9200" opacity="0.5"/>
+  <path d="M150 100L152 95L154 100L152 105Z" fill="#FE9200" opacity="0.5"/>
+</svg>

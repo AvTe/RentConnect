@@ -1,0 +1,15 @@
+<svg width="140" height="40" viewBox="0 0 140 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FE9200"/>
+      <stop offset="100%" stop-color="#FF6B00"/>
+    </linearGradient>
+  </defs>
+  <!-- House Icon -->
+  <path d="M16 8L4 18V36H12V26H20V36H28V18L16 8Z" fill="url(#logoGradient)"/>
+  <path d="M16 4L32 17V18L16 6L0 18V17L16 4Z" fill="url(#logoGradient)"/>
+  <!-- Text: Yoombaa -->
+  <text x="38" y="27" font-family="Inter, sans-serif" font-size="20" font-weight="700" fill="#1E293B">
+    <tspan>Yoomb</tspan><tspan fill="#FE9200">aa</tspan>
+  </text>
+</svg>
