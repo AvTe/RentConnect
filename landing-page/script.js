@@ -13,6 +13,169 @@ const GOOGLE_SHEETS_CONFIG = {
     newsletter: 'https://script.google.com/macros/s/AKfycbzPHaUZbJm0ixhna3ju0oQHIVleKrFYcEGeH35L_oN88nFrU33uNTDLuncE4hHzF8AJxw/exec'
 };
 
+// ===== Google Places API Configuration =====
+let tenantLocationAutocomplete = null;
+let agentLocationAutocomplete = null;
+
+// Initialize Google Places Autocomplete
+function initGooglePlaces() {
+    const tenantLocationInput = document.getElementById('tenantLocationAutocomplete');
+    const agentLocationInput = document.getElementById('agentLocationAutocomplete');
+
+    // Check if Google Maps API is loaded
+    if (!window.google || !google.maps || !google.maps.places) {
+        return;
+    }
+
+    // Initialize autocomplete for tenant location field
+    if (tenantLocationInput) {
+        tenantLocationAutocomplete = new google.maps.places.Autocomplete(tenantLocationInput, {
+            types: ['(regions)'], // Restrict to regions (cities, neighborhoods, etc.)
+            componentRestrictions: { country: 'ke' } // Restrict to Kenya
+        });
+
+        // Handle place selection
+        tenantLocationAutocomplete.addListener('place_changed', function() {
+            const place = tenantLocationAutocomplete.getPlace();
+            const placeIdInput = document.getElementById('tenantLocationPlaceId');
+
+            if (place && place.place_id) {
+                placeIdInput.value = place.place_id;
+            }
+        });
+
+        // Prevent form submission on Enter in autocomplete field
+        tenantLocationInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+    }
+
+    // Initialize autocomplete for agent location field
+    if (agentLocationInput) {
+        agentLocationAutocomplete = new google.maps.places.Autocomplete(agentLocationInput, {
+            types: ['(regions)'], // Restrict to regions (cities, neighborhoods, etc.)
+            componentRestrictions: { country: 'ke' } // Restrict to Kenya
+        });
+
+        // Handle place selection
+        agentLocationAutocomplete.addListener('place_changed', function() {
+            const place = agentLocationAutocomplete.getPlace();
+            const placeIdInput = document.getElementById('agentLocationPlaceId');
+
+            if (place && place.place_id) {
+                placeIdInput.value = place.place_id;
+            }
+        });
+
+        // Prevent form submission on Enter in autocomplete field
+        agentLocationInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+    }
+}
+
+// Make initGooglePlaces available globally for the callback
+window.initGooglePlaces = initGooglePlaces;
+
+// ===== Budget Conditional Logic =====
+function initBudgetConditionalLogic() {
+    const budgetSelect = document.getElementById('budgetSelect');
+    const budgetRangeContainer = document.getElementById('budgetRangeContainer');
+
+    if (budgetSelect && budgetRangeContainer) {
+        budgetSelect.addEventListener('change', function() {
+            if (this.value === 'Medium') {
+                budgetRangeContainer.style.display = 'block';
+            } else {
+                budgetRangeContainer.style.display = 'none';
+                // Clear the budget range inputs when not Medium
+                document.getElementById('budgetMin').value = '';
+                document.getElementById('budgetMax').value = '';
+            }
+        });
+    }
+}
+
+// ===== Agent Preferred Areas Tags Functionality =====
+let agentPreferredAreas = [];
+
+function initAreasTagsInput() {
+    const areasInput = document.getElementById('areasInput');
+    const areasTagsContainer = document.getElementById('areasTags');
+    const hiddenInput = document.getElementById('preferredAreasHidden');
+
+    if (!areasInput || !areasTagsContainer || !hiddenInput) return;
+
+    // Add area on Enter key
+    areasInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const value = this.value.trim();
+            if (value && !agentPreferredAreas.includes(value)) {
+                addAreaTag(value);
+                this.value = '';
+            }
+        }
+    });
+
+    // Add area on blur (optional - when user clicks away)
+    areasInput.addEventListener('blur', function() {
+        const value = this.value.trim();
+        if (value && !agentPreferredAreas.includes(value)) {
+            addAreaTag(value);
+            this.value = '';
+        }
+    });
+}
+
+function addAreaTag(area) {
+    const areasTagsContainer = document.getElementById('areasTags');
+    const hiddenInput = document.getElementById('preferredAreasHidden');
+
+    agentPreferredAreas.push(area);
+    updateHiddenAreasInput();
+
+    // Create tag element
+    const tag = document.createElement('span');
+    tag.className = 'area-tag';
+    tag.innerHTML = `${area} <span class="remove-tag" onclick="removeAreaTag('${area}', this)">×</span>`;
+    areasTagsContainer.appendChild(tag);
+}
+
+function removeAreaTag(area, element) {
+    const index = agentPreferredAreas.indexOf(area);
+    if (index > -1) {
+        agentPreferredAreas.splice(index, 1);
+    }
+    updateHiddenAreasInput();
+    element.parentElement.remove();
+}
+
+function updateHiddenAreasInput() {
+    const hiddenInput = document.getElementById('preferredAreasHidden');
+    if (hiddenInput) {
+        hiddenInput.value = agentPreferredAreas.join(', ');
+    }
+}
+
+// Make removeAreaTag available globally for onclick handlers
+window.removeAreaTag = removeAreaTag;
+
+// Initialize new form features on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    initBudgetConditionalLogic();
+    initAreasTagsInput();
+
+    // If Google Maps API loaded before DOMContentLoaded, initialize it
+    if (window.google && google.maps && google.maps.places) {
+        initGooglePlaces();
+    }
+});
+
 // ===== DOM Elements =====
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const navLinks = document.getElementById('navLinks');
@@ -189,41 +352,58 @@ function handleFormSubmit(event) {
 if (tenantForm) {
     tenantForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const submitBtn = tenantForm.querySelector('button[type="submit"]');
         submitBtn.classList.add('loading');
         submitBtn.disabled = true;
-        
+
         // Gather form data
         const formData = new FormData(tenantForm);
+
+        // Get budget with range if Medium was selected
+        let budgetValue = formData.get('budget');
+        const budgetMin = formData.get('budgetMin');
+        const budgetMax = formData.get('budgetMax');
+        if (budgetValue === 'Medium' && (budgetMin || budgetMax)) {
+            budgetValue = `Medium (KES ${budgetMin || '0'} - ${budgetMax || 'unlimited'})`;
+        }
+
         const data = {
             fullName: formData.get('fullName'),
             phone: formData.get('phone'),
             email: formData.get('email'),
             location: formData.get('location'),
+            locationPlaceId: formData.get('locationPlaceId') || '', // Google Place ID
             propertyType: formData.get('propertyType'),
-            budget: formData.get('budget'),
+            budget: budgetValue,
+            budgetMin: budgetMin || '',
+            budgetMax: budgetMax || '',
             timeline: formData.get('timeline'),
             requirements: formData.get('requirements')
         };
-        
+
         // Submit to Google Sheets
         await submitToGoogleSheet(data, 'tenant');
-        
+
         // Hide tenant form
         tenantFormModal.classList.remove('active');
-        
+
         // Show success message
         document.getElementById('formSuccessTitle').textContent = 'Request Submitted! 🎉';
-        document.getElementById('formSuccessMessage').textContent = 
+        document.getElementById('formSuccessMessage').textContent =
             'Your rental requirements have been received. Verified agents in ' + data.location + ' will contact you soon!';
         formSuccessModal.classList.add('active');
-        
+
         // Reset form and button
         tenantForm.reset();
+        // Also hide the budget range container
+        const budgetRangeContainer = document.getElementById('budgetRangeContainer');
+        if (budgetRangeContainer) {
+            budgetRangeContainer.style.display = 'none';
+        }
         submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
-        
+
         // Track conversion
         if (typeof gtag !== 'undefined') {
             gtag('event', 'tenant_signup', {
@@ -238,48 +418,54 @@ if (tenantForm) {
 if (agentForm) {
     agentForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const submitBtn = agentForm.querySelector('button[type="submit"]');
         submitBtn.classList.add('loading');
         submitBtn.disabled = true;
-        
+
         // Gather form data
         const formData = new FormData(agentForm);
-        
-        // Get checked property types
-        const propertyTypes = [];
-        agentForm.querySelectorAll('input[name="propertyTypes"]:checked').forEach(cb => {
-            propertyTypes.push(cb.value);
-        });
-        
+
         const data = {
             fullName: formData.get('fullName'),
             phone: formData.get('phone'),
             email: formData.get('email'),
             agency: formData.get('agency') || 'Independent',
             location: formData.get('location'),
+            locationPlaceId: formData.get('locationPlaceId') || '', // Google Place ID
             experience: formData.get('experience'),
-            propertyTypes: propertyTypes.join(', '),
+            propertyType: formData.get('propertyType'), // Now a single value (Residential/Commercial)
+            preferredAreas: formData.get('preferredAreas') || '', // New field - comma-separated areas
             about: formData.get('about')
         };
-        
+
         // Submit to Google Sheets
         await submitToGoogleSheet(data, 'agent');
-        
+
         // Hide agent form
         agentFormModal.classList.remove('active');
-        
+
         // Show success message
         document.getElementById('formSuccessTitle').textContent = 'Application Received! 🏢';
-        document.getElementById('formSuccessMessage').textContent = 
+        document.getElementById('formSuccessMessage').textContent =
             'Thank you for your interest in joining Yoombaa! We\'ll review your application and contact you within 24 hours.';
         formSuccessModal.classList.add('active');
-        
+
         // Reset form and button
         agentForm.reset();
+        // Clear the preferred areas tags
+        agentPreferredAreas = [];
+        const areasTagsContainer = document.getElementById('areasTags');
+        if (areasTagsContainer) {
+            areasTagsContainer.innerHTML = '';
+        }
+        const hiddenAreasInput = document.getElementById('preferredAreasHidden');
+        if (hiddenAreasInput) {
+            hiddenAreasInput.value = '';
+        }
         submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
-        
+
         // Track conversion
         if (typeof gtag !== 'undefined') {
             gtag('event', 'agent_signup', {

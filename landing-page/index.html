@@ -46,6 +46,90 @@
     <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
 
+    <!-- Custom styles for new form components -->
+    <style>
+        /* Areas Tags Container */
+        .areas-tags-container {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            min-height: 42px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            background: var(--bg);
+            transition: border-color 0.2s;
+        }
+        .areas-tags-container:focus-within {
+            border-color: var(--primary);
+        }
+        .areas-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .area-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: var(--primary-light, #FFF3E0);
+            color: var(--primary);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .area-tag .remove-tag {
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .area-tag .remove-tag:hover {
+            opacity: 1;
+        }
+        .areas-tags-container input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 150px;
+            padding: 4px;
+            font-size: 0.9rem;
+            background: transparent;
+        }
+        /* Budget range inputs */
+        .budget-range-inputs input {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .budget-range-inputs input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        /* Google Places Autocomplete dropdown styling */
+        .pac-container {
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border: 1px solid var(--border);
+            font-family: 'DM Sans', sans-serif;
+            z-index: 10000;
+        }
+        .pac-item {
+            padding: 10px 12px;
+            cursor: pointer;
+        }
+        .pac-item:hover {
+            background: var(--primary-light, #FFF3E0);
+        }
+        .pac-item-query {
+            font-weight: 500;
+        }
+    </style>
+
     <!-- Schema.org Structured Data -->
     <script type="application/ld+json">
     {
@@ -1108,31 +1192,8 @@
                     </div>
                     <div class="form-field">
                         <label>Preferred Location *</label>
-                        <select name="location" required>
-                            <option value="">Select area...</option>
-                            <optgroup label="Nairobi">
-                                <option value="Westlands">Westlands</option>
-                                <option value="Kilimani">Kilimani</option>
-                                <option value="Kileleshwa">Kileleshwa</option>
-                                <option value="Lavington">Lavington</option>
-                                <option value="Karen">Karen</option>
-                                <option value="South B">South B</option>
-                                <option value="South C">South C</option>
-                                <option value="Langata">Langata</option>
-                                <option value="Eastleigh">Eastleigh</option>
-                                <option value="Embakasi">Embakasi</option>
-                                <option value="Kasarani">Kasarani</option>
-                                <option value="Roysambu">Roysambu</option>
-                                <option value="Nairobi CBD">Nairobi CBD</option>
-                            </optgroup>
-                            <optgroup label="Other Cities">
-                                <option value="Mombasa">Mombasa</option>
-                                <option value="Kisumu">Kisumu</option>
-                                <option value="Nakuru">Nakuru</option>
-                                <option value="Eldoret">Eldoret</option>
-                                <option value="Thika">Thika</option>
-                            </optgroup>
-                        </select>
+                        <input type="text" name="location" id="tenantLocationAutocomplete" placeholder="Start typing to search locations..." autocomplete="off" required>
+                        <input type="hidden" name="locationPlaceId" id="tenantLocationPlaceId">
                     </div>
                 </div>
                 <div class="form-row">
@@ -1140,6 +1201,8 @@
                         <label>Property Type *</label>
                         <select name="propertyType" required>
                             <option value="">Select type...</option>
+                            <option value="Residential">Residential</option>
+                            <option value="Commercial">Commercial</option>
                             <option value="Bedsitter">Bedsitter</option>
                             <option value="Single Room">Single Room</option>
                             <option value="1 Bedroom">1 Bedroom</option>
@@ -1152,7 +1215,7 @@
                     </div>
                     <div class="form-field">
                         <label>Monthly Budget *</label>
-                        <select name="budget" required>
+                        <select name="budget" id="budgetSelect" required>
                             <option value="">Select budget...</option>
                             <option value="Low">Low Budget</option>
                             <option value="Medium">Medium Budget</option>
@@ -1160,6 +1223,15 @@
                             <option value="Premium">Premium Budget</option>
                             <option value="Flexible">Flexible / Negotiable</option>
                         </select>
+                        <!-- Conditional Budget Range - Shows when Medium Budget is selected -->
+                        <div id="budgetRangeContainer" class="budget-range-container" style="display: none; margin-top: 12px;">
+                            <label style="font-size: 0.85rem; color: var(--text-muted);">Specify your budget range (KES)</label>
+                            <div class="budget-range-inputs" style="display: flex; gap: 10px; margin-top: 6px;">
+                                <input type="number" name="budgetMin" id="budgetMin" placeholder="Min (e.g. 15000)" min="0" step="1000" style="flex: 1;">
+                                <span style="align-self: center; color: var(--text-muted);">to</span>
+                                <input type="number" name="budgetMax" id="budgetMax" placeholder="Max (e.g. 30000)" min="0" step="1000" style="flex: 1;">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="form-row">
@@ -1237,27 +1309,8 @@
                 <div class="form-row">
                     <div class="form-field">
                         <label>Primary Location *</label>
-                        <select name="location" required>
-                            <option value="">Select area...</option>
-                            <optgroup label="Nairobi">
-                                <option value="Westlands">Westlands</option>
-                                <option value="Kilimani">Kilimani</option>
-                                <option value="Kileleshwa">Kileleshwa</option>
-                                <option value="Lavington">Lavington</option>
-                                <option value="Karen">Karen</option>
-                                <option value="South B/C">South B/C</option>
-                                <option value="Langata">Langata</option>
-                                <option value="Eastlands">Eastlands</option>
-                                <option value="Nairobi CBD">Nairobi CBD</option>
-                            </optgroup>
-                            <optgroup label="Other Cities">
-                                <option value="Mombasa">Mombasa</option>
-                                <option value="Kisumu">Kisumu</option>
-                                <option value="Nakuru">Nakuru</option>
-                                <option value="Eldoret">Eldoret</option>
-                                <option value="Thika">Thika</option>
-                            </optgroup>
-                        </select>
+                        <input type="text" name="location" id="agentLocationAutocomplete" placeholder="Start typing to search locations..." autocomplete="off" required>
+                        <input type="hidden" name="locationPlaceId" id="agentLocationPlaceId">
                     </div>
                     <div class="form-field">
                         <label>Experience *</label>
@@ -1273,27 +1326,25 @@
                 </div>
                 <div class="form-row">
                     <div class="form-field">
-                        <label>Property Types You Handle</label>
-                        <div class="checkbox-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="propertyTypes" value="Bedsitters">
-                                <span>Bedsitters</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="propertyTypes" value="1-2 Bedroom">
-                                <span>1-2 BR</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="propertyTypes" value="3+ Bedroom">
-                                <span>3+ BR</span>
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="propertyTypes" value="Commercial">
-                                <span>Commercial</span>
-                            </label>
-                        </div>
+                        <label>Property Type *</label>
+                        <select name="propertyType" required>
+                            <option value="">Select type...</option>
+                            <option value="Residential">Residential</option>
+                            <option value="Commercial">Commercial</option>
+                        </select>
                     </div>
                     <div class="form-field">
+                        <label>Preferred Areas of Operation</label>
+                        <div class="areas-tags-container" id="areasTagsContainer">
+                            <div class="areas-tags" id="areasTags"></div>
+                            <input type="text" id="areasInput" placeholder="Type area and press Enter..." autocomplete="off">
+                            <input type="hidden" name="preferredAreas" id="preferredAreasHidden">
+                        </div>
+                        <small style="color: var(--text-muted); font-size: 0.75rem;">Add multiple areas where you operate (optional)</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field full-width">
                         <label>About You</label>
                         <textarea name="about" rows="2" placeholder="Brief description of your experience..."></textarea>
                     </div>
@@ -1342,6 +1393,10 @@
         </div>
     </div>
 
+    <!-- Google Maps Places API - Replace YOUR_API_KEY with your actual API key -->
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initGooglePlaces">
+    </script>
     <script src="script.js"></script>
 </body>
 </html>
