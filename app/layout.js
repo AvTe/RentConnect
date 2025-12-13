@@ -61,6 +61,32 @@ export default function RootLayout({ children }) {
         {/* Debug Panel - TEMPORARY for troubleshooting */}
         <DebugPanel />
 
+        {/* Suppress harmless ResizeObserver loop errors */}
+        <Script id="resize-observer-fix" strategy="beforeInteractive">
+          {`
+            // Suppress ResizeObserver loop limit exceeded error
+            // This is a benign error that occurs with dynamic layouts
+            const resizeObserverErr = window.onerror;
+            window.onerror = function(message, source, lineno, colno, error) {
+              if (message && message.includes && message.includes('ResizeObserver loop')) {
+                return true; // Suppress the error
+              }
+              if (resizeObserverErr) {
+                return resizeObserverErr.apply(this, arguments);
+              }
+              return false;
+            };
+
+            // Also handle unhandledrejection for ResizeObserver
+            window.addEventListener('error', function(e) {
+              if (e.message && e.message.includes && e.message.includes('ResizeObserver loop')) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+              }
+            });
+          `}
+        </Script>
+
         {/* reCAPTCHA Script - Optimized with afterInteractive strategy */}
         <Script
           src="https://www.google.com/recaptcha/enterprise.js?render=6LfThBosAAAAALZ06Y7e9jaFROeO_hSgiGdzQok1"

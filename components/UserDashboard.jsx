@@ -1,21 +1,18 @@
 /* eslint-disable @next/next/no-img-element */
 import React, { useState, useEffect } from 'react';
 import {
-  LayoutGrid, FileText, Heart, History, Users, Settings, LogOut,
-  Plus, Search, ChevronDown, MoreHorizontal, Filter, Bell, Menu, X, Star
+  LayoutGrid, FileText, Heart, History, Settings, LogOut,
+  Plus, Search, Bell, Menu, X
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { UserProfile } from './UserProfile';
 import { RatingPrompt } from './RatingPrompt';
-import { getAllAgents, getAllLeads } from '@/lib/database';
+import { getAllLeads } from '@/lib/database';
 
 export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUser, onUpdateUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [agents, setAgents] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
-  const [loadingAgents, setLoadingAgents] = useState(false);
   const [loadingRequests, setLoadingRequests] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Handle responsive sidebar close
@@ -43,27 +40,11 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
   }, [currentUser?.uid, currentUser?.id]);
 
   useEffect(() => {
-    if (activeTab === 'agents') {
-      fetchAgents();
-    } else if (activeTab === 'requests') {
+    if (activeTab === 'requests') {
       fetchMyRequests();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
-
-  const fetchAgents = async () => {
-    setLoadingAgents(true);
-    try {
-      const result = await getAllAgents();
-      if (result.success) {
-        setAgents(result.data);
-      }
-    } catch (error) {
-      console.error("Error fetching agents:", error);
-    } finally {
-      setLoadingAgents(false);
-    }
-  };
 
   const fetchMyRequests = async () => {
     const userId = currentUser?.uid || currentUser?.id;
@@ -99,127 +80,6 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
       <Icon className={`w-4 h-4 ${active ? 'text-gray-900' : 'text-gray-500'}`} />
       <span className="truncate">{label}</span>
     </button>
-  );
-
-  // Mobile Card view for agents
-  const renderAgentCard = (agent) => (
-    <div key={agent.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-sm flex-shrink-0">
-          {agent.photoURL ? (
-            <img src={agent.photoURL} alt={agent.name} className="w-full h-full rounded-full object-cover" />
-          ) : (
-            agent.name?.charAt(0) || 'A'
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-gray-900 truncate">{agent.name}</h3>
-          <p className="text-sm text-gray-500 truncate">{agent.agencyName || 'Independent'}</p>
-          <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-            <span>{agent.location || 'Nairobi, Kenya'}</span>
-            <span>•</span>
-            <span>{agent.experience || 'N/A'}</span>
-          </div>
-        </div>
-      </div>
-      <button
-        onClick={() => onNavigate('agents-listing')}
-        className="w-full mt-3 text-[#FE9200] font-medium text-sm border border-[#FE9200] px-3 py-2 rounded-lg hover:bg-[#FFF5E6] transition-all"
-      >
-        View Profile
-      </button>
-    </div>
-  );
-
-  const renderAgentsTable = () => (
-    <>
-      {/* Mobile Card View */}
-      <div className="md:hidden space-y-3">
-        {loadingAgents ? (
-          [...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 animate-pulse">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-200"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-32"></div>
-                  <div className="h-3 bg-gray-100 rounded w-24"></div>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : agents.length > 0 ? (
-          agents.filter(a => a.name?.toLowerCase().includes(searchQuery.toLowerCase())).map(renderAgentCard)
-        ) : (
-          <div className="bg-white p-8 rounded-xl border border-gray-200 text-center text-gray-500">
-            No agents found matching your search.
-          </div>
-        )}
-      </div>
-
-      {/* Desktop Table View */}
-      <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 font-medium text-gray-500">Agent Name</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Agency</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Location</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Experience</th>
-                <th className="px-6 py-3 font-medium text-gray-500 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loadingAgents ? (
-                [...Array(5)].map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="px-6 py-4"><div className="h-4 bg-gray-100 rounded w-32"></div></td>
-                    <td className="px-6 py-4"><div className="h-4 bg-gray-100 rounded w-24"></div></td>
-                    <td className="px-6 py-4"><div className="h-4 bg-gray-100 rounded w-20"></div></td>
-                    <td className="px-6 py-4"><div className="h-4 bg-gray-100 rounded w-16"></div></td>
-                    <td className="px-6 py-4"></td>
-                  </tr>
-                ))
-              ) : agents.length > 0 ? (
-                agents.filter(a => a.name?.toLowerCase().includes(searchQuery.toLowerCase())).map((agent) => (
-                  <tr key={agent.id} className="hover:bg-gray-50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs">
-                          {agent.photoURL ? (
-                            <img src={agent.photoURL} alt={agent.name} className="w-full h-full rounded-full object-cover" />
-                          ) : (
-                            agent.name?.charAt(0) || 'A'
-                          )}
-                        </div>
-                        <span className="font-medium text-gray-900">{agent.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{agent.agencyName || 'Independent'}</td>
-                    <td className="px-6 py-4 text-gray-600">{agent.location || 'Nairobi, Kenya'}</td>
-                    <td className="px-6 py-4 text-gray-600">{agent.experience || 'N/A'}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => onNavigate('agents-listing')}
-                        className="text-gray-400 hover:text-[#FE9200] font-medium text-xs border border-gray-200 hover:border-[#FE9200] px-3 py-1.5 rounded-md transition-all"
-                      >
-                        View Profile
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                    No agents found matching your search.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
   );
 
   const renderContent = () => {
@@ -291,37 +151,6 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
       );
     }
 
-    if (activeTab === 'agents') {
-      return (
-        <div className="space-y-4 md:space-y-6">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-xl md:text-2xl font-bold text-gray-900">All Agents</h2>
-                <p className="text-gray-500 text-sm">A list of all verified agents on Yoombaa.</p>
-              </div>
-              <button className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 self-start sm:self-auto">
-                <Filter className="w-4 h-4" />
-                Filter
-              </button>
-            </div>
-            {/* Search - Full width on mobile */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search agents..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-100 w-full md:w-64 text-gray-900 placeholder-gray-400"
-              />
-            </div>
-          </div>
-          {renderAgentsTable()}
-        </div>
-      );
-    }
-
     // Default Dashboard View
     return (
       <div className="space-y-6 md:space-y-8">
@@ -349,16 +178,6 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             <div className="text-xl md:text-2xl font-bold text-gray-900">0</div>
             <div className="mt-1 text-xs text-gray-500">
               No properties saved yet
-            </div>
-          </div>
-          <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center justify-between mb-3 md:mb-4">
-              <h3 className="text-sm font-medium text-gray-500">Contacted Agents</h3>
-              <Users className="w-4 h-4 text-gray-400" />
-            </div>
-            <div className="text-xl md:text-2xl font-bold text-gray-900">0</div>
-            <div className="mt-1 text-xs text-gray-500">
-              Start connecting today
             </div>
           </div>
         </div>
@@ -430,7 +249,6 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             <SidebarItem icon={LayoutGrid} label="Home" id="dashboard" active={activeTab === 'dashboard'} />
             <SidebarItem icon={FileText} label="My Requests" id="requests" active={activeTab === 'requests'} />
             <SidebarItem icon={Heart} label="Saved Properties" id="saved" active={activeTab === 'saved'} />
-            <SidebarItem icon={Users} label="All Agents" id="agents" active={activeTab === 'agents'} />
           </div>
 
           <div className="mt-8">
@@ -486,7 +304,8 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
               <span className="hidden sm:inline">/</span>
               <span className="hidden sm:inline text-gray-900">
                 {activeTab === 'dashboard' ? 'Overview' :
-                 activeTab === 'agents' ? 'Agents' :
+                 activeTab === 'requests' ? 'My Requests' :
+                 activeTab === 'saved' ? 'Saved Properties' :
                  activeTab === 'profile' ? 'Profile' : activeTab}
               </span>
             </div>

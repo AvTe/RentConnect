@@ -47,8 +47,11 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
           <div className="hidden md:flex items-center gap-8">
             <button onClick={() => handleNavigate('landing')} className="text-sm font-medium text-gray-600 hover:text-black transition-colors">Home</button>
             <button onClick={() => handleNavigate('properties')} className="text-sm font-medium text-gray-600 hover:text-black transition-colors">Properties</button>
-            <button onClick={() => handleNavigate('agents-listing')} className="text-sm font-medium text-gray-600 hover:text-black transition-colors">Agents</button>
-            
+            {/* Only show Agents link for agent users */}
+            {currentUser?.type === 'agent' && (
+              <button onClick={() => handleNavigate('agents-listing')} className="text-sm font-medium text-gray-600 hover:text-black transition-colors">Agents</button>
+            )}
+
             {currentUser ? (
               <div className="relative ml-4" ref={dropdownRef}>
                 <button
@@ -143,7 +146,10 @@ export const Header = ({ onNavigate, currentUser, onLogout }) => {
           <div className="flex flex-col space-y-2 mb-4">
              <button onClick={() => handleNavigate('landing')} className="text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#FE9200] hover:bg-orange-50 rounded-lg transition-colors">Home</button>
              <button onClick={() => handleNavigate('properties')} className="text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#FE9200] hover:bg-orange-50 rounded-lg transition-colors">Properties</button>
-             <button onClick={() => handleNavigate('agents-listing')} className="text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#FE9200] hover:bg-orange-50 rounded-lg transition-colors">Agents</button>
+             {/* Only show Agents link for agent users */}
+             {currentUser?.type === 'agent' && (
+               <button onClick={() => handleNavigate('agents-listing')} className="text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-[#FE9200] hover:bg-orange-50 rounded-lg transition-colors">Agents</button>
+             )}
           </div>
 
           {currentUser ? (

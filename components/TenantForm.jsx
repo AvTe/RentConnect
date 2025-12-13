@@ -209,9 +209,56 @@ export const TenantForm = ({
     else onNavigate("landing");
   };
 
-  const handleUseCurrentLocation = () => {
+  // Fallback: Get approximate location from IP address
+  const getLocationFromIP = async () => {
+    try {
+      // Use ip-api.com for IP-based geolocation (free, no API key required)
+      const response = await fetch('http://ip-api.com/json/?fields=status,city,regionName,country,countryCode,lat,lon');
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        const locationString = data.city && data.regionName
+          ? `${data.city}, ${data.regionName}`
+          : data.city || data.country;
+
+        setFormData((prev) => ({ ...prev, location: locationString }));
+        if (data.countryCode) setDefaultCountry(data.countryCode);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("IP geolocation error:", error);
+      return false;
+    }
+  };
+
+  const handleUseCurrentLocation = async () => {
+    // Check if geolocation is supported
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      alert("Geolocation is not supported by your browser. We'll try to detect your location automatically.");
+      setIsLocating(true);
+      const success = await getLocationFromIP();
+      setIsLocating(false);
+      if (!success) {
+        alert("Could not detect your location. Please enter it manually.");
+      }
+      return;
+    }
+
+    // Check if we're on a secure context (HTTPS or localhost)
+    const isSecureContext = window.isSecureContext ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+
+    // For non-secure contexts, use IP-based geolocation as fallback
+    if (!isSecureContext) {
+      console.log("Non-secure context detected, using IP-based geolocation");
+      setIsLocating(true);
+      const success = await getLocationFromIP();
+      setIsLocating(false);
+      if (!success) {
+        alert("Could not detect your location. Please enter it manually.");
+      }
       return;
     }
 
@@ -248,25 +295,32 @@ export const TenantForm = ({
           setIsLocating(false);
         }
       },
-      (error) => {
-        // Provide detailed error messages based on error code
-        let errorMessage = "Unable to retrieve your location. ";
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage += "Location access was denied. Please enable location permissions in your browser settings.";
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage += "Location information is unavailable. Please try again or enter your location manually.";
-            break;
-          case error.TIMEOUT:
-            errorMessage += "Location request timed out. Please check your connection and try again.";
-            break;
-          default:
-            errorMessage += "Please enter your location manually.";
-        }
-        console.error("Error getting location:", error.code, error.message);
-        alert(errorMessage);
+      async (error) => {
+        console.error("Geolocation error:", error.code, error.message);
+
+        // Try IP-based fallback for any geolocation error
+        console.log("Falling back to IP-based geolocation...");
+        const success = await getLocationFromIP();
         setIsLocating(false);
+
+        if (!success) {
+          // Only show error if IP fallback also failed
+          let errorMessage = "Unable to retrieve your location. ";
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += "Location access was denied. Please enter your location manually.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += "Location information is unavailable. Please enter your location manually.";
+              break;
+            case error.TIMEOUT:
+              errorMessage += "Location request timed out. Please enter your location manually.";
+              break;
+            default:
+              errorMessage += "Please enter your location manually.";
+          }
+          alert(errorMessage);
+        }
       },
       {
         enableHighAccuracy: false,

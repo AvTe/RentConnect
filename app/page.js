@@ -18,7 +18,6 @@ import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import EmailConfirmationSuccess from '@/components/EmailConfirmationSuccess';
 import PasswordResetSuccess from '@/components/PasswordResetSuccess';
 import PasswordResetForm from '@/components/PasswordResetForm';
-import { ChatWidget, ChatButton, useChat } from '@/components/ChatWidget';
 import { getCurrentSession, signOut, onAuthStateChange } from '@/lib/auth-supabase';
 import { getUser, updateUser, createUser, createUserSubscription, createSubscription } from '@/lib/database';
 import { initializePayment } from '@/lib/pesapal';
@@ -37,9 +36,6 @@ export default function RentalLeadApp() {
   // Only fetch leads if user is logged in (to avoid permission errors)
   const { leads } = useLeads({}, !!currentUser);
   const { isPremium } = useSubscription(currentUser?.id);
-  
-  // Chat functionality - must be called unconditionally at top level
-  const chat = useChat(currentUser);
 
   // Check for OAuth callback errors
   useEffect(() => {
@@ -601,6 +597,18 @@ export default function RentalLeadApp() {
           />
         );
       case 'agents-listing':
+        // Only allow agents to access the agents listing - redirect tenants to dashboard
+        if (currentUser && currentUser.type !== 'agent') {
+          return (
+            <UserDashboard
+              onNavigate={setView}
+              initialTab="dashboard"
+              currentUser={currentUser}
+              onUpdateUser={handleUpdateUser}
+              onLogout={handleLogout}
+            />
+          );
+        }
         return (
           <AgentsListingPage
             currentUser={currentUser}
@@ -609,6 +617,18 @@ export default function RentalLeadApp() {
           />
         );
       case 'agent-detail':
+        // Only allow agents to access agent details - redirect tenants to dashboard
+        if (currentUser && currentUser.type !== 'agent') {
+          return (
+            <UserDashboard
+              onNavigate={setView}
+              initialTab="dashboard"
+              currentUser={currentUser}
+              onUpdateUser={handleUpdateUser}
+              onLogout={handleLogout}
+            />
+          );
+        }
         return (
           <AgentDetailPage
             agentId={selectedAgentId}
@@ -685,23 +705,6 @@ export default function RentalLeadApp() {
         />
       )}
       {renderView()}
-      
-      {/* Chat Widget - Show for logged in users except on admin dashboard and success screens */}
-      {currentUser && view !== 'admin-dashboard' && view !== 'landing' && view !== 'login' && view !== 'email-confirmed' && view !== 'password-reset-success' && view !== 'reset-password' && (
-        <>
-          <ChatButton 
-            user={currentUser} 
-            onClick={() => chat.openChat()} 
-            unreadCount={chat.unreadCount} 
-          />
-          <ChatWidget 
-            user={currentUser} 
-            isOpen={chat.isOpen} 
-            onClose={chat.closeChat}
-            initialRecipient={chat.initialRecipient}
-          />
-        </>
-      )}
     </main>
   );
 }
