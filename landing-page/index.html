@@ -48,6 +48,137 @@
 
     <!-- Custom styles for new form components -->
     <style>
+        /* Location Autocomplete Container */
+        .location-autocomplete-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .location-autocomplete-wrapper input {
+            width: 100%;
+            padding-right: 40px !important;
+            box-sizing: border-box;
+        }
+        .location-loading-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            pointer-events: none;
+        }
+        .location-loading-icon.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .location-loading-icon svg {
+            animation: spin 1s linear infinite;
+            width: 16px;
+            height: 16px;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .location-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            width: 100%;
+            min-width: 280px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+            max-height: 280px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 9999;
+            display: none;
+        }
+        .location-dropdown.active {
+            display: block;
+        }
+        .location-dropdown-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.15s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .location-dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .location-dropdown-item:hover,
+        .location-dropdown-item.selected {
+            background: #FFF7ED;
+        }
+        .location-dropdown-item .location-icon {
+            color: #F97316;
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .location-dropdown-item .location-icon svg {
+            width: 16px;
+            height: 16px;
+        }
+        .location-dropdown-item .location-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .location-dropdown-item .location-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .location-dropdown-item .location-region {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 1px;
+        }
+        .location-dropdown-header {
+            padding: 8px 14px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+        }
+        .location-no-results {
+            padding: 20px 16px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+        /* Custom scrollbar for dropdown */
+        .location-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+        .location-dropdown::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .location-dropdown::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        .location-dropdown::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
         /* Areas Tags Container */
         .areas-tags-container {
             border: 1px solid var(--border);
@@ -109,24 +240,6 @@
         .budget-range-inputs input:focus {
             outline: none;
             border-color: var(--primary);
-        }
-        /* Google Places Autocomplete dropdown styling */
-        .pac-container {
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            border: 1px solid var(--border);
-            font-family: 'DM Sans', sans-serif;
-            z-index: 10000;
-        }
-        .pac-item {
-            padding: 10px 12px;
-            cursor: pointer;
-        }
-        .pac-item:hover {
-            background: var(--primary-light, #FFF3E0);
-        }
-        .pac-item-query {
-            font-weight: 500;
         }
     </style>
 
@@ -653,7 +766,7 @@
     <!-- Social Proof Banner -->
     <section class="social-proof-banner">
         <div class="container">
-            <div class="proof-stats">
+            <div class="proof-stats fade-up">
                 <div class="proof-stat">
                     <span class="proof-number">2,000+</span>
                     <span class="proof-label">Happy Tenants</span>
@@ -686,7 +799,7 @@
                 <p>We're starting in Nairobi and expanding rapidly to cover all major Kenyan cities and towns.</p>
             </div>
             <div class="locations-grid">
-                <div class="location-card location-featured">
+                <div class="location-card location-featured fade-up">
                     <div class="location-icon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
@@ -697,30 +810,47 @@
                     <p>Westlands, Kilimani, Kileleshwa, Lavington, Karen, South B, South C, Langata, Eastleigh, Embakasi, Kasarani, Roysambu</p>
                     <span class="location-badge coming">Coming Soon</span>
                 </div>
-                <div class="location-card">
+                <div class="location-card fade-up">
                     <h3>Mombasa</h3>
                     <p>Nyali, Bamburi, Kizingo, Tudor, Likoni, Kisauni</p>
                     <span class="location-badge coming">Coming Soon</span>
                 </div>
-                <div class="location-card">
+                <div class="location-card fade-up">
                     <h3>Kisumu</h3>
                     <p>Milimani, Tom Mboya, Kondele, Mamboleo</p>
                     <span class="location-badge coming">Coming Soon</span>
                 </div>
-                <div class="location-card">
+                <div class="location-card fade-up">
                     <h3>Nakuru</h3>
                     <p>Milimani, Section 58, Lanet, Nakuru Town</p>
                     <span class="location-badge coming">Coming Soon</span>
                 </div>
-                <div class="location-card">
+                <div class="location-card fade-up">
                     <h3>Eldoret</h3>
                     <p>West Indies, Elgon View, Langas, Kimumu</p>
                     <span class="location-badge coming">Coming Soon</span>
                 </div>
-                <div class="location-card">
+                <div class="location-card fade-up">
                     <h3>Thika</h3>
                     <p>Thika Town, Makongeni, Landless, Ngoingwa</p>
                     <span class="location-badge coming">Coming Soon</span>
+                </div>
+                <div class="location-card fade-up">
+                    <h3>Machakos</h3>
+                    <p>Machakos Town, Athi River, Mlolongo, Kitengela</p>
+                    <span class="location-badge coming">Coming Soon</span>
+                </div>
+                <div class="location-card location-expansion fade-up">
+                    <div class="expansion-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M2 12h20"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                    </div>
+                    <h3>Expanding Across Africa</h3>
+                    <p>Lagos, Accra, Dar es Salaam, Kampala, Kigali, Addis Ababa & more cities coming soon!</p>
+                    <span class="location-badge expansion">2025 & Beyond</span>
                 </div>
             </div>
         </div>
@@ -905,7 +1035,7 @@
     <!-- Final CTA Section -->
     <section class="final-cta-section" id="notify">
         <div class="container">
-            <div class="final-cta-content">
+            <div class="final-cta-content fade-up">
                 <div class="cta-urgency-badge">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"/>
@@ -969,27 +1099,27 @@
                 <h2>Frequently Asked <span class="gradient-text">Questions</span></h2>
             </div>
             <div class="faq-grid">
-                <div class="faq-item">
+                <div class="faq-item fade-up">
                     <h3>How does Yoombaa work?</h3>
                     <p>Yoombaa connects you directly with verified agents. Post your requirements, and agents with matching properties will reach out to you. Simple and efficient!</p>
                 </div>
-                <div class="faq-item">
+                <div class="faq-item fade-up">
                     <h3>Why should I use Yoombaa?</h3>
                     <p>All agents on Yoombaa are verified and vetted. This means you only deal with trusted professionals who have real properties to show you.</p>
                 </div>
-                <div class="faq-item">
+                <div class="faq-item fade-up">
                     <h3>How are agents verified?</h3>
                     <p>All agents must submit their ID and undergo verification before they can contact tenants. We also use a rating system so you can see what other tenants say about each agent.</p>
                 </div>
-                <div class="faq-item">
+                <div class="faq-item fade-up">
                     <h3>Which cities do you cover?</h3>
                     <p>We're launching in Nairobi first, then expanding to Mombasa, Kisumu, Nakuru, Eldoret, and other major Kenyan cities throughout 2025.</p>
                 </div>
-                <div class="faq-item">
+                <div class="faq-item fade-up">
                     <h3>What types of properties are available?</h3>
                     <p>All types! From bedsitters and single rooms to 1BR, 2BR, 3BR apartments, townhouses, and maisonettes. Whatever you're looking for, we've got agents who can help.</p>
                 </div>
-                <div class="faq-item">
+                <div class="faq-item fade-up">
                     <h3>How quickly will agents respond?</h3>
                     <p>Most tenants receive responses within a few hours. Agents are notified immediately when a new lead matches their area, so you'll hear back quickly.</p>
                 </div>
@@ -1175,28 +1305,41 @@
                 <p>Share your requirements and let verified agents find you the perfect home</p>
             </div>
             <form id="tenantRequirementsForm" class="requirements-form">
-                <div class="form-row">
+                <!-- Row 1: Name, Phone, Email (triple on desktop) -->
+                <div class="form-row triple">
                     <div class="form-field">
                         <label>Full Name *</label>
                         <input type="text" name="fullName" placeholder="Your full name" required>
                     </div>
                     <div class="form-field">
                         <label>Phone Number *</label>
-                        <input type="tel" name="phone" placeholder="0712 345 678" required>
+                        <div class="phone-input-wrapper">
+                            <span class="country-code">+254</span>
+                            <input type="tel" name="phone" id="tenantPhone" placeholder="712 345 678" pattern="[0-9 ]{9,14}" maxlength="14" required>
+                        </div>
+                        <small class="field-hint">Enter 9-10 digits after +254</small>
                     </div>
-                </div>
-                <div class="form-row">
                     <div class="form-field">
                         <label>Email Address *</label>
-                        <input type="email" name="email" placeholder="your@email.com" required>
-                    </div>
-                    <div class="form-field">
-                        <label>Preferred Location *</label>
-                        <input type="text" name="location" id="tenantLocationAutocomplete" placeholder="Start typing to search locations..." autocomplete="off" required>
-                        <input type="hidden" name="locationPlaceId" id="tenantLocationPlaceId">
+                        <input type="email" name="email" id="tenantEmail" placeholder="example@email.com" required>
                     </div>
                 </div>
+                <!-- Row 2: Location, Property Type -->
                 <div class="form-row">
+                    <div class="form-field">
+                        <label>Preferred Location *</label>
+                        <div class="location-autocomplete-wrapper">
+                            <input type="text" name="location" id="tenantLocationAutocomplete" placeholder="Type area e.g. Westlands, Kilimani..." autocomplete="off" required>
+                            <div class="location-loading-icon" id="tenantLocationLoading">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div class="location-dropdown" id="tenantLocationDropdown"></div>
+                        </div>
+                        <input type="hidden" name="locationPlaceId" id="tenantLocationPlaceId">
+                    </div>
                     <div class="form-field">
                         <label>Property Type *</label>
                         <select name="propertyType" required>
@@ -1213,6 +1356,9 @@
                             <option value="Townhouse">Townhouse</option>
                         </select>
                     </div>
+                </div>
+                <!-- Row 3: Budget, Timeline -->
+                <div class="form-row">
                     <div class="form-field">
                         <label>Monthly Budget *</label>
                         <select name="budget" id="budgetSelect" required>
@@ -1222,19 +1368,9 @@
                             <option value="High">High Budget</option>
                             <option value="Premium">Premium Budget</option>
                             <option value="Flexible">Flexible / Negotiable</option>
+                            <option value="Not Decided">Not decided yet</option>
                         </select>
-                        <!-- Conditional Budget Range - Shows when Medium Budget is selected -->
-                        <div id="budgetRangeContainer" class="budget-range-container" style="display: none; margin-top: 12px;">
-                            <label style="font-size: 0.85rem; color: var(--text-muted);">Specify your budget range (KES)</label>
-                            <div class="budget-range-inputs" style="display: flex; gap: 10px; margin-top: 6px;">
-                                <input type="number" name="budgetMin" id="budgetMin" placeholder="Min (e.g. 15000)" min="0" step="1000" style="flex: 1;">
-                                <span style="align-self: center; color: var(--text-muted);">to</span>
-                                <input type="number" name="budgetMax" id="budgetMax" placeholder="Max (e.g. 30000)" min="0" step="1000" style="flex: 1;">
-                            </div>
-                        </div>
                     </div>
-                </div>
-                <div class="form-row">
                     <div class="form-field">
                         <label>Move-in Timeline</label>
                         <select name="timeline">
@@ -1246,7 +1382,19 @@
                             <option value="Just browsing">Just browsing</option>
                         </select>
                     </div>
-                    <div class="form-field">
+                </div>
+                <!-- Budget Range Container (Full Width - Hidden until budget selected) -->
+                <div id="budgetRangeContainer" class="budget-range-container full-width" style="display: none;">
+                    <label>Specify your budget range (KES) - Optional</label>
+                    <div class="budget-range-inputs">
+                        <input type="text" name="budgetMin" id="budgetMin" placeholder="Min e.g. 15,000" inputmode="numeric">
+                        <span class="budget-separator">to</span>
+                        <input type="text" name="budgetMax" id="budgetMax" placeholder="Max e.g. 50,000" inputmode="numeric">
+                    </div>
+                </div>
+                <!-- Row 4: Additional Requirements (full width) -->
+                <div class="form-row">
+                    <div class="form-field full-width">
                         <label>Additional Requirements</label>
                         <textarea name="requirements" rows="2" placeholder="E.g., Parking, pet-friendly, near school..."></textarea>
                     </div>
@@ -1293,13 +1441,17 @@
                     </div>
                     <div class="form-field">
                         <label>Phone Number *</label>
-                        <input type="tel" name="phone" placeholder="0712 345 678" required>
+                        <div class="phone-input-wrapper">
+                            <span class="country-code">+254</span>
+                            <input type="tel" name="phone" id="agentPhone" placeholder="712 345 678" pattern="[0-9 ]{9,14}" maxlength="14" required>
+                        </div>
+                        <small class="field-hint">Enter 9-10 digits after +254</small>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-field">
                         <label>Email Address *</label>
-                        <input type="email" name="email" placeholder="your@email.com" required>
+                        <input type="email" name="email" id="agentEmail" placeholder="example@email.com" required>
                     </div>
                     <div class="form-field">
                         <label>Agency/Company</label>
@@ -1309,7 +1461,16 @@
                 <div class="form-row">
                     <div class="form-field">
                         <label>Primary Location *</label>
-                        <input type="text" name="location" id="agentLocationAutocomplete" placeholder="Start typing to search locations..." autocomplete="off" required>
+                        <div class="location-autocomplete-wrapper">
+                            <input type="text" name="location" id="agentLocationAutocomplete" placeholder="Type area e.g. Westlands, Kilimani..." autocomplete="off" required>
+                            <div class="location-loading-icon" id="agentLocationLoading">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                                    <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div class="location-dropdown" id="agentLocationDropdown"></div>
+                        </div>
                         <input type="hidden" name="locationPlaceId" id="agentLocationPlaceId">
                     </div>
                     <div class="form-field">
@@ -1393,10 +1554,6 @@
         </div>
     </div>
 
-    <!-- Google Maps Places API - Replace YOUR_API_KEY with your actual API key -->
-    <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initGooglePlaces">
-    </script>
     <script src="script.js"></script>
 </body>
 </html>

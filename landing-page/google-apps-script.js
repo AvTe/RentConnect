@@ -1,36 +1,36 @@
 /**
  * Yoombaa Landing Page - Google Sheets Integration
- * 
+ *
  * SETUP INSTRUCTIONS:
- * 
+ *
  * 1. Create a new Google Sheet with the following sheets (tabs):
  *    - "Tenants" - For tenant rental requirements
- *    - "Agents" - For agent registrations  
+ *    - "Agents" - For agent registrations
  *    - "Newsletter" - For email signups
- * 
+ *
  * 2. In each sheet, add these column headers in Row 1:
- * 
+ *
  *    TENANTS SHEET:
- *    | Timestamp | Full Name | Phone | Email | Location | Property Type | Budget | Timeline | Requirements | Source |
- * 
+ *    | Timestamp | Full Name | Phone | Email | Location | Location Code | Property Type | Budget | Budget Min | Budget Max | Timeline | Requirements | Source |
+ *
  *    AGENTS SHEET:
- *    | Timestamp | Full Name | Phone | Email | Agency | Location | Experience | Property Types | About | Source |
- * 
+ *    | Timestamp | Full Name | Phone | Email | Agency | Location | Location Code | Experience | Property Type | Preferred Areas | About | Source |
+ *
  *    NEWSLETTER SHEET:
  *    | Timestamp | Email | User Type | Source |
- * 
+ *
  * 3. Go to Extensions > Apps Script
- * 
+ *
  * 4. Replace the default code with this entire file content
- * 
+ *
  * 5. Click Deploy > New Deployment
  *    - Type: Web app
  *    - Execute as: Me
  *    - Who has access: Anyone
- * 
+ *
  * 6. Copy the Web App URL and paste it in your landing page's script.js:
  *    const GOOGLE_SHEET_URL = 'YOUR_URL_HERE';
- * 
+ *
  * 7. Test by submitting a form on your landing page!
  */
 
@@ -97,18 +97,18 @@ function doGet(e) {
  */
 function saveTenantData(ss, data) {
   const sheet = ss.getSheetByName(TENANT_SHEET_NAME);
-  
+
   if (!sheet) {
     throw new Error('Tenants sheet not found. Please create a sheet named "' + TENANT_SHEET_NAME + '"');
   }
-  
+
   // Format timestamp for Kenya timezone
   const timestamp = Utilities.formatDate(
-    new Date(), 
-    'Africa/Nairobi', 
+    new Date(),
+    'Africa/Nairobi',
     'yyyy-MM-dd HH:mm:ss'
   );
-  
+
   // Append row with tenant data
   sheet.appendRow([
     timestamp,
@@ -116,13 +116,16 @@ function saveTenantData(ss, data) {
     data.phone || '',
     data.email || '',
     data.location || '',
+    data.locationPlaceId || '', // Location code from API
     data.propertyType || '',
     data.budget || '',
+    data.budgetMin || '',
+    data.budgetMax || '',
     data.timeline || '',
     data.requirements || '',
     data.source || 'landing_page'
   ]);
-  
+
   // Optional: Send email notification for new tenant lead
   sendNewLeadNotification(data, 'tenant');
 }
@@ -132,18 +135,18 @@ function saveTenantData(ss, data) {
  */
 function saveAgentData(ss, data) {
   const sheet = ss.getSheetByName(AGENT_SHEET_NAME);
-  
+
   if (!sheet) {
     throw new Error('Agents sheet not found. Please create a sheet named "' + AGENT_SHEET_NAME + '"');
   }
-  
+
   // Format timestamp for Kenya timezone
   const timestamp = Utilities.formatDate(
-    new Date(), 
-    'Africa/Nairobi', 
+    new Date(),
+    'Africa/Nairobi',
     'yyyy-MM-dd HH:mm:ss'
   );
-  
+
   // Append row with agent data
   sheet.appendRow([
     timestamp,
@@ -152,12 +155,14 @@ function saveAgentData(ss, data) {
     data.email || '',
     data.agency || 'Independent',
     data.location || '',
+    data.locationPlaceId || '', // Location code from API
     data.experience || '',
-    data.propertyTypes || '',
+    data.propertyType || '', // Single value: Residential or Commercial
+    data.preferredAreas || '', // Comma-separated areas
     data.about || '',
     data.source || 'landing_page'
   ]);
-  
+
   // Optional: Send email notification for new agent registration
   sendNewLeadNotification(data, 'agent');
 }
@@ -212,9 +217,9 @@ New tenant lead from Yoombaa Landing Page!
 Name: ${data.fullName}
 Phone: ${data.phone}
 Email: ${data.email}
-Location: ${data.location}
+Location: ${data.location} (${data.locationPlaceId || 'N/A'})
 Property Type: ${data.propertyType}
-Budget: ${data.budget}
+Budget: ${data.budget}${data.budgetMin || data.budgetMax ? ' (KES ' + (data.budgetMin || '0') + ' - ' + (data.budgetMax || 'unlimited') + ')' : ''}
 Timeline: ${data.timeline}
 Requirements: ${data.requirements || 'None specified'}
 
@@ -229,9 +234,10 @@ Name: ${data.fullName}
 Phone: ${data.phone}
 Email: ${data.email}
 Agency: ${data.agency || 'Independent'}
-Location: ${data.location}
+Location: ${data.location} (${data.locationPlaceId || 'N/A'})
 Experience: ${data.experience}
-Property Types: ${data.propertyTypes}
+Property Type: ${data.propertyType}
+Preferred Areas: ${data.preferredAreas || 'Not specified'}
 About: ${data.about || 'Not provided'}
 
 ---

@@ -13,91 +13,260 @@ const GOOGLE_SHEETS_CONFIG = {
     newsletter: 'https://script.google.com/macros/s/AKfycbzPHaUZbJm0ixhna3ju0oQHIVleKrFYcEGeH35L_oN88nFrU33uNTDLuncE4hHzF8AJxw/exec'
 };
 
-// ===== Google Places API Configuration =====
-let tenantLocationAutocomplete = null;
-let agentLocationAutocomplete = null;
+// ===== Kenya Locations API =====
+// Using the free Kenya API from https://kenya-api.onrender.com/
+const KENYA_API_URL = 'https://kenya-api.onrender.com/api/v1/wards';
 
-// Initialize Google Places Autocomplete
-function initGooglePlaces() {
-    const tenantLocationInput = document.getElementById('tenantLocationAutocomplete');
-    const agentLocationInput = document.getElementById('agentLocationAutocomplete');
+// Cache for API data
+let kenyaLocationsCache = null;
+let isLoadingLocations = false;
 
-    // Check if Google Maps API is loaded
-    if (!window.google || !google.maps || !google.maps.places) {
-        return;
+// Load Kenya locations from API
+async function loadKenyaLocations() {
+    if (kenyaLocationsCache) return kenyaLocationsCache;
+    if (isLoadingLocations) return [];
+
+    isLoadingLocations = true;
+
+    try {
+        const response = await fetch(KENYA_API_URL);
+        if (!response.ok) throw new Error('Failed to fetch locations');
+
+        const data = await response.json();
+        if (data.wards && Array.isArray(data.wards)) {
+            // Transform API data to our format
+            kenyaLocationsCache = data.wards.map(ward => ({
+                name: ward.office,
+                code: ward.code,
+                country: 'Kenya'
+            }));
+            console.log(`Loaded ${kenyaLocationsCache.length} Kenya locations from API`);
+        } else {
+            kenyaLocationsCache = [];
+        }
+    } catch (error) {
+        console.error('Failed to load locations from API:', error);
+        kenyaLocationsCache = [];
     }
 
-    // Initialize autocomplete for tenant location field
-    if (tenantLocationInput) {
-        tenantLocationAutocomplete = new google.maps.places.Autocomplete(tenantLocationInput, {
-            types: ['(regions)'], // Restrict to regions (cities, neighborhoods, etc.)
-            componentRestrictions: { country: 'ke' } // Restrict to Kenya
-        });
-
-        // Handle place selection
-        tenantLocationAutocomplete.addListener('place_changed', function() {
-            const place = tenantLocationAutocomplete.getPlace();
-            const placeIdInput = document.getElementById('tenantLocationPlaceId');
-
-            if (place && place.place_id) {
-                placeIdInput.value = place.place_id;
-            }
-        });
-
-        // Prevent form submission on Enter in autocomplete field
-        tenantLocationInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-            }
-        });
-    }
-
-    // Initialize autocomplete for agent location field
-    if (agentLocationInput) {
-        agentLocationAutocomplete = new google.maps.places.Autocomplete(agentLocationInput, {
-            types: ['(regions)'], // Restrict to regions (cities, neighborhoods, etc.)
-            componentRestrictions: { country: 'ke' } // Restrict to Kenya
-        });
-
-        // Handle place selection
-        agentLocationAutocomplete.addListener('place_changed', function() {
-            const place = agentLocationAutocomplete.getPlace();
-            const placeIdInput = document.getElementById('agentLocationPlaceId');
-
-            if (place && place.place_id) {
-                placeIdInput.value = place.place_id;
-            }
-        });
-
-        // Prevent form submission on Enter in autocomplete field
-        agentLocationInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-            }
-        });
-    }
+    isLoadingLocations = false;
+    return kenyaLocationsCache;
 }
 
-// Make initGooglePlaces available globally for the callback
-window.initGooglePlaces = initGooglePlaces;
+// Initialize locations on page load
+loadKenyaLocations();
 
-// ===== Budget Conditional Logic =====
+// ===== Custom Location Autocomplete =====
+function initLocationAutocomplete(inputId, dropdownId, loadingId, placeIdInputId) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    const loadingIcon = document.getElementById(loadingId);
+    const placeIdInput = document.getElementById(placeIdInputId);
+
+    if (!input || !dropdown) return;
+
+    let selectedIndex = -1;
+    let filteredLocations = [];
+    let debounceTimer = null;
+
+    // Filter locations based on input (async to support API data)
+    async function filterLocations(query) {
+        if (!query || query.length < 1) return [];
+
+        const locations = await loadKenyaLocations();
+        const lowerQuery = query.toLowerCase();
+
+        return locations.filter(loc =>
+            loc.name.toLowerCase().includes(lowerQuery) ||
+            loc.code.toLowerCase().includes(lowerQuery)
+        ).slice(0, 10); // Limit to 10 results
+    }
+
+    // Render dropdown
+    function renderDropdown(locations) {
+        if (locations.length === 0) {
+            dropdown.innerHTML = '<div class="location-no-results">No locations found. Try another search.</div>';
+            dropdown.classList.add('active');
+            return;
+        }
+
+        let html = '';
+        locations.forEach((loc, idx) => {
+            html += `
+                <div class="location-dropdown-item" data-index="${idx}" data-name="${loc.name}" data-code="${loc.code}">
+                    <div class="location-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2.5">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                    </div>
+                    <div class="location-text">
+                        <div class="location-name">${loc.name}</div>
+                        <div class="location-region">Code: ${loc.code}, Kenya</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        dropdown.innerHTML = html;
+        dropdown.classList.add('active');
+
+        // Add click handlers
+        dropdown.querySelectorAll('.location-dropdown-item').forEach(item => {
+            item.addEventListener('click', () => {
+                selectLocation(item.dataset.name, item.dataset.code);
+            });
+        });
+    }
+
+    // Select a location
+    function selectLocation(name, code) {
+        input.value = name;
+        if (placeIdInput) {
+            placeIdInput.value = `${name}, ${code}, Kenya`;
+        }
+        dropdown.classList.remove('active');
+        selectedIndex = -1;
+    }
+
+    // Show loading
+    function showLoading() {
+        if (loadingIcon) loadingIcon.classList.add('active');
+    }
+
+    // Hide loading
+    function hideLoading() {
+        if (loadingIcon) loadingIcon.classList.remove('active');
+    }
+
+    // Input event
+    input.addEventListener('input', function() {
+        const query = this.value.trim();
+
+        // Clear previous timer
+        if (debounceTimer) clearTimeout(debounceTimer);
+
+        if (query.length < 1) {
+            dropdown.classList.remove('active');
+            hideLoading();
+            return;
+        }
+
+        showLoading();
+
+        // Debounce for smooth typing (async to support API data)
+        debounceTimer = setTimeout(async () => {
+            filteredLocations = await filterLocations(query);
+            renderDropdown(filteredLocations);
+            hideLoading();
+        }, 150);
+    });
+
+    // Focus event - show dropdown if there's a query
+    input.addEventListener('focus', async function() {
+        const query = this.value.trim();
+        if (query.length >= 1) {
+            filteredLocations = await filterLocations(query);
+            if (filteredLocations.length > 0) {
+                renderDropdown(filteredLocations);
+            }
+        }
+    });
+
+    // Keyboard navigation
+    input.addEventListener('keydown', function(e) {
+        const items = dropdown.querySelectorAll('.location-dropdown-item');
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+            updateSelection(items);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = Math.max(selectedIndex - 1, 0);
+            updateSelection(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedIndex >= 0 && items[selectedIndex]) {
+                const item = items[selectedIndex];
+                selectLocation(item.dataset.name, item.dataset.code);
+            }
+        } else if (e.key === 'Escape') {
+            dropdown.classList.remove('active');
+            selectedIndex = -1;
+        }
+    });
+
+    // Update visual selection
+    function updateSelection(items) {
+        items.forEach((item, idx) => {
+            if (idx === selectedIndex) {
+                item.classList.add('selected');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('active');
+            selectedIndex = -1;
+        }
+    });
+}
+
+// Initialize all location autocompletes
+function initAllLocationAutocompletes() {
+    // Tenant form location
+    initLocationAutocomplete(
+        'tenantLocationAutocomplete',
+        'tenantLocationDropdown',
+        'tenantLocationLoading',
+        'tenantLocationPlaceId'
+    );
+
+    // Agent form location
+    initLocationAutocomplete(
+        'agentLocationAutocomplete',
+        'agentLocationDropdown',
+        'agentLocationLoading',
+        'agentLocationPlaceId'
+    );
+}
+
+// ===== Budget Range - Conditional Display =====
+// Show for all budget options EXCEPT "Not Decided" and empty selection
 function initBudgetConditionalLogic() {
     const budgetSelect = document.getElementById('budgetSelect');
     const budgetRangeContainer = document.getElementById('budgetRangeContainer');
+    const budgetMinInput = document.getElementById('budgetMin');
+    const budgetMaxInput = document.getElementById('budgetMax');
 
-    if (budgetSelect && budgetRangeContainer) {
-        budgetSelect.addEventListener('change', function() {
-            if (this.value === 'Medium') {
-                budgetRangeContainer.style.display = 'block';
-            } else {
-                budgetRangeContainer.style.display = 'none';
-                // Clear the budget range inputs when not Medium
-                document.getElementById('budgetMin').value = '';
-                document.getElementById('budgetMax').value = '';
-            }
-        });
+    if (!budgetSelect || !budgetRangeContainer) return;
+
+    function updateBudgetRangeVisibility() {
+        const selectedValue = budgetSelect.value;
+        // Hide for empty selection and "Not Decided", show for all other options
+        const hideRange = !selectedValue || selectedValue === 'Not Decided';
+
+        if (hideRange) {
+            budgetRangeContainer.style.display = 'none';
+            // Clear values when hidden
+            if (budgetMinInput) budgetMinInput.value = '';
+            if (budgetMaxInput) budgetMaxInput.value = '';
+        } else {
+            budgetRangeContainer.style.display = 'block';
+        }
     }
+
+    // Initial check
+    updateBudgetRangeVisibility();
+
+    // Listen for changes
+    budgetSelect.addEventListener('change', updateBudgetRangeVisibility);
 }
 
 // ===== Agent Preferred Areas Tags Functionality =====
@@ -169,11 +338,7 @@ window.removeAreaTag = removeAreaTag;
 document.addEventListener('DOMContentLoaded', function() {
     initBudgetConditionalLogic();
     initAreasTagsInput();
-
-    // If Google Maps API loaded before DOMContentLoaded, initialize it
-    if (window.google && google.maps && google.maps.places) {
-        initGooglePlaces();
-    }
+    initAllLocationAutocompletes();
 });
 
 // ===== DOM Elements =====
@@ -348,6 +513,18 @@ function handleFormSubmit(event) {
     }
 }
 
+// Helper function to format Kenya phone number with +254
+function formatKenyaPhone(phone) {
+    const digits = phone.replace(/\D/g, '');
+    return '+254' + digits;
+}
+
+// Helper function to parse budget amount (remove commas)
+function parseBudgetAmount(value) {
+    if (!value) return '';
+    return value.replace(/,/g, '');
+}
+
 // Tenant Requirements Form
 if (tenantForm) {
     tenantForm.addEventListener('submit', async (e) => {
@@ -360,24 +537,28 @@ if (tenantForm) {
         // Gather form data
         const formData = new FormData(tenantForm);
 
-        // Get budget with range if Medium was selected
+        // Get budget with optional range
         let budgetValue = formData.get('budget');
-        const budgetMin = formData.get('budgetMin');
-        const budgetMax = formData.get('budgetMax');
-        if (budgetValue === 'Medium' && (budgetMin || budgetMax)) {
-            budgetValue = `Medium (KES ${budgetMin || '0'} - ${budgetMax || 'unlimited'})`;
+        const budgetMinRaw = parseBudgetAmount(formData.get('budgetMin'));
+        const budgetMaxRaw = parseBudgetAmount(formData.get('budgetMax'));
+
+        // Format budget with range for display (if range values are provided)
+        if (budgetValue && (budgetMinRaw || budgetMaxRaw)) {
+            const minFormatted = budgetMinRaw ? Number(budgetMinRaw).toLocaleString() : '0';
+            const maxFormatted = budgetMaxRaw ? Number(budgetMaxRaw).toLocaleString() : 'unlimited';
+            budgetValue = `${budgetValue} (KES ${minFormatted} - ${maxFormatted})`;
         }
 
         const data = {
             fullName: formData.get('fullName'),
-            phone: formData.get('phone'),
+            phone: formatKenyaPhone(formData.get('phone')),
             email: formData.get('email'),
             location: formData.get('location'),
-            locationPlaceId: formData.get('locationPlaceId') || '', // Google Place ID
+            locationPlaceId: formData.get('locationPlaceId') || '',
             propertyType: formData.get('propertyType'),
             budget: budgetValue,
-            budgetMin: budgetMin || '',
-            budgetMax: budgetMax || '',
+            budgetMin: budgetMinRaw,
+            budgetMax: budgetMaxRaw,
             timeline: formData.get('timeline'),
             requirements: formData.get('requirements')
         };
@@ -428,14 +609,14 @@ if (agentForm) {
 
         const data = {
             fullName: formData.get('fullName'),
-            phone: formData.get('phone'),
+            phone: formatKenyaPhone(formData.get('phone')),
             email: formData.get('email'),
             agency: formData.get('agency') || 'Independent',
             location: formData.get('location'),
-            locationPlaceId: formData.get('locationPlaceId') || '', // Google Place ID
+            locationPlaceId: formData.get('locationPlaceId') || '',
             experience: formData.get('experience'),
-            propertyType: formData.get('propertyType'), // Now a single value (Residential/Commercial)
-            preferredAreas: formData.get('preferredAreas') || '', // New field - comma-separated areas
+            propertyType: formData.get('propertyType'),
+            preferredAreas: formData.get('preferredAreas') || '',
             about: formData.get('about')
         };
 
@@ -652,14 +833,144 @@ if (heroImage && heroImage.src) {
 
 // ===== Form Validation Feedback =====
 document.querySelectorAll('input[type="email"]').forEach(input => {
-    input.addEventListener('invalid', function(e) {
+    input.addEventListener('invalid', function() {
         this.setCustomValidity('Please enter a valid email address');
     });
-    
-    input.addEventListener('input', function(e) {
+
+    input.addEventListener('input', function() {
         this.setCustomValidity('');
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (this.value && !emailRegex.test(this.value)) {
+            this.style.borderColor = '#ef4444';
+            this.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+        } else if (this.value) {
+            this.style.borderColor = '#22c55e';
+            this.style.boxShadow = '0 0 0 3px rgba(34, 197, 94, 0.1)';
+        } else {
+            this.style.borderColor = '';
+            this.style.boxShadow = '';
+        }
+    });
+
+    input.addEventListener('blur', function() {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (this.value && !emailRegex.test(this.value)) {
+            this.setCustomValidity('Please enter a valid email address');
+        }
     });
 });
+
+// ===== Kenya Phone Number Validation =====
+function initKenyaPhoneValidation() {
+    const phoneInputs = document.querySelectorAll('#tenantPhone, #agentPhone');
+
+    phoneInputs.forEach(input => {
+        const wrapper = input.closest('.phone-input-wrapper');
+
+        input.addEventListener('input', function() {
+            // Remove non-digits
+            let value = this.value.replace(/\D/g, '');
+
+            // Remove leading 0 if present (since +254 is already shown)
+            if (value.startsWith('0')) {
+                value = value.substring(1);
+            }
+
+            // Limit to 10 digits (Kenya numbers can be 9 or 10 digits)
+            value = value.substring(0, 10);
+
+            // Format with spaces based on length
+            // 9 digits: 712 345 678 (3-3-3 pattern)
+            // 10 digits: 7318 408 040 (4-3-3 pattern)
+            if (value.length <= 9) {
+                // 9-digit format: 712 345 678
+                if (value.length > 6) {
+                    value = value.substring(0, 3) + ' ' + value.substring(3, 6) + ' ' + value.substring(6);
+                } else if (value.length > 3) {
+                    value = value.substring(0, 3) + ' ' + value.substring(3);
+                }
+            } else {
+                // 10-digit format: 7318 408 040
+                value = value.substring(0, 4) + ' ' + value.substring(4, 7) + ' ' + value.substring(7);
+            }
+
+            this.value = value;
+
+            // Validation feedback - set border on wrapper, not input
+            const digitsOnly = value.replace(/\s/g, '');
+            const isValidLength = digitsOnly.length >= 9 && digitsOnly.length <= 10;
+            const startsWithValidPrefix = /^[17]/.test(digitsOnly);
+
+            if (wrapper) {
+                if (isValidLength && startsWithValidPrefix) {
+                    wrapper.style.borderColor = '#22c55e';
+                    wrapper.style.boxShadow = '0 0 0 3px rgba(34, 197, 94, 0.1)';
+                    this.setCustomValidity('');
+                } else if (digitsOnly.length > 0 && isValidLength && !startsWithValidPrefix) {
+                    wrapper.style.borderColor = '#ef4444';
+                    wrapper.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                } else {
+                    wrapper.style.borderColor = '';
+                    wrapper.style.boxShadow = '';
+                }
+            }
+        });
+
+        input.addEventListener('invalid', function() {
+            this.setCustomValidity('Please enter a valid Kenya phone number (9-10 digits)');
+        });
+
+        input.addEventListener('blur', function() {
+            const digitsOnly = this.value.replace(/\D/g, '');
+            if (digitsOnly.length > 0 && (digitsOnly.length < 9 || digitsOnly.length > 10)) {
+                this.setCustomValidity('Please enter a valid Kenya phone number (9-10 digits)');
+            } else if (digitsOnly.length >= 9 && !/^[17]/.test(digitsOnly)) {
+                this.setCustomValidity('Kenya phone numbers start with 7 or 1');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    });
+}
+
+// Initialize phone validation
+initKenyaPhoneValidation();
+
+// ===== Budget Amount Formatting (with commas) =====
+function formatKESAmount(value) {
+    // Remove non-digits
+    const digits = value.replace(/\D/g, '');
+    // Format with commas
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function initBudgetFormatting() {
+    const budgetInputs = document.querySelectorAll('#budgetMin, #budgetMax');
+
+    budgetInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const cursorPos = this.selectionStart;
+            const oldLength = this.value.length;
+
+            this.value = formatKESAmount(this.value);
+
+            // Adjust cursor position
+            const newLength = this.value.length;
+            const diff = newLength - oldLength;
+            this.setSelectionRange(cursorPos + diff, cursorPos + diff);
+        });
+
+        input.addEventListener('blur', function() {
+            if (this.value) {
+                this.value = formatKESAmount(this.value);
+            }
+        });
+    });
+}
+
+// Initialize budget formatting
+initBudgetFormatting();
 
 // ===== Lazy Loading Images =====
 if ('loading' in HTMLImageElement.prototype) {
@@ -693,24 +1004,7 @@ console.log('%c🏠 Yoombaa', 'font-size: 24px; font-weight: bold; color: #FE920
 console.log('%cKenya\'s smartest way to find rental homes', 'font-size: 14px; color: #64748B;');
 console.log('%cWant to join our team? Email us at hello@yoombaa.com', 'font-size: 12px; color: #64748B;');
 
-// ===== Phone Number Formatting =====
-document.querySelectorAll('input[type="tel"]').forEach(input => {
-    input.addEventListener('input', function(e) {
-        // Remove non-digits
-        let value = this.value.replace(/\D/g, '');
-        
-        // Format Kenya phone number
-        if (value.startsWith('254')) {
-            value = '+' + value;
-        } else if (value.startsWith('0')) {
-            // Keep as is for local format
-        } else if (value.startsWith('7') || value.startsWith('1')) {
-            value = '0' + value;
-        }
-        
-        this.value = value;
-    });
-});
+// Phone formatting moved to initKenyaPhoneValidation() above
 
 // ===== Performance: Reduce animations on low-end devices =====
 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -719,8 +1013,9 @@ if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 
 // ===== Scroll Reveal Animations =====
 function initScrollAnimations() {
-    const fadeElements = document.querySelectorAll('.fade-up');
-    
+    // All animatable elements
+    const fadeElements = document.querySelectorAll('.fade-up, .fade-in, .fade-left, .fade-right, .scale-up');
+
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -732,12 +1027,31 @@ function initScrollAnimations() {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
     });
-    
+
     fadeElements.forEach(el => observer.observe(el));
 }
 
+// Hero fade-in animation on page load
+function initHeroAnimations() {
+    const heroElements = document.querySelectorAll('.hero-badge, .hero h1, .hero-subtitle, .hero-cta-group, .hero-value-props, .hero-social-proof');
+
+    heroElements.forEach((el, index) => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+
+        setTimeout(() => {
+            el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0)';
+        }, 100 + (index * 100));
+    });
+}
+
 // Initialize scroll animations on DOM ready
-document.addEventListener('DOMContentLoaded', initScrollAnimations);
+document.addEventListener('DOMContentLoaded', () => {
+    initScrollAnimations();
+    initHeroAnimations();
+});
 
 // ===== Testimonials Slider =====
 function initTestimonialsSlider() {
