@@ -1,0 +1,107 @@
+# RentConnect (Yoombaa) - AI Coding Rules
+
+## Architecture Overview
+- **Next.js 14 SPA** with Supabase backend (PostgreSQL + Auth)
+- **Single-page app** using `useState('landing')` in `app/page.js` for view routing
+- **Static landing page** in `landing-page/` (pure HTML/CSS/JS, no React)
+- **Currency**: KES (Kenyan Shillings) - never use cents or USD
+
+## Critical Rules
+
+### 1. View Routing - NO NEW ROUTES
+All views are controlled by `app/page.js` switch statement. To add features:
+1. Create component in `components/`
+2. Import and register in `app/page.js` renderView() switch
+3. NEVER create new pages in `app/` directory (except API routes)
+
+### 2. Database Layer - SINGLE ENTRY POINT
+ALL database operations go through `lib/database.js`. NEVER query Supabase directly from components.
+
+```javascript
+// ALWAYS use database.js functions:
+import { createLead, getUser, updateUser } from '@/lib/database';
+
+// NEVER do this in components:
+const supabase = createClient();
+await supabase.from('users').select();  // BAD!
+```
+
+### 3. Return Pattern
+All database functions return: `{ success: boolean, data?: any, error?: string }`
+
+### 4. Case Transformation
+- Database: `snake_case` (wallet_balance, verification_status)
+- Components: `camelCase` (walletBalance, verificationStatus)
+- Use `transformUserData()` and `transformUpdatesToSnakeCase()` from lib/database.js
+
+### 5. Supabase Client Usage
+```javascript
+// Browser (components) - sync:
+import { createClient } from '@/utils/supabase/client';
+const supabase = createClient();
+
+// Server (API routes) - ASYNC:
+import { createClient } from '@/utils/supabase/server';
+const supabase = await createClient();  // Note the await!
+```
+
+### 6. Hooks - Prevent Infinite Loops
+```javascript
+// ALWAYS pass enabled flag:
+const { leads } = useLeads(filters, !!currentUser);
+
+// ALWAYS memoize filter objects:
+const memoizedFilters = useMemo(() => filters, [JSON.stringify(filters)]);
+```
+
+## Landing Page (`landing-page/`)
+
+### Separate Codebase - No React!
+- Pure HTML/CSS/JS
+- Forms submit to Google Sheets via Apps Script
+- Functions exposed to window for onclick: `window.showTenantForm = showTenantForm;`
+
+### Key Patterns
+- Modal toggle: `.classList.add('active')` / `.classList.remove('active')`
+- Form loading: `submitBtn.classList.add('loading'); submitBtn.disabled = true;`
+- Kenya phone validation: Must be 9-10 digits starting with 7 or 1
+
+## File Reference
+| Purpose | Location |
+|---------|----------|
+| App controller | `app/page.js` |
+| ALL DB operations | `lib/database.js` |
+| Auth functions | `lib/auth-supabase.js` |
+| SMS & WhatsApp (Twilio) | `lib/twilio.js` |
+| React hooks | `lib/hooks.js` |
+| Supabase clients | `utils/supabase/client.js`, `server.js` |
+| UI components | `components/ui/*.jsx` |
+| Admin modules | `components/admin/*.jsx` |
+| Landing page JS | `landing-page/script.js` |
+| Landing page CSS | `landing-page/styles.css` |
+
+## Dev Server
+Port **5000** (not 3000): `npm run dev`
+
+## Brand Colors (Tailwind)
+- Orange: `brand-orange` (#FE9200)
+- Purple: `brand-purple` (#7A00AA)
+- Cream: `brand-cream` (#FFF5E6)
+
+## User Roles
+`tenant` | `agent` | `admin` | `sub_admin` | `main_admin` | `super_admin`
+
+## Payment Flow (Pesapal)
+1. `initializePayment()` from lib/pesapal.js
+2. Redirect to Pesapal hosted page
+3. IPN callback to `/api/pesapal/ipn`
+4. Credits added via `addAgentCredits()`
+
+## Common Mistakes to Avoid
+- ❌ Creating new pages in `app/` (use SPA views)
+- ❌ Direct Supabase queries in components
+- ❌ Forgetting `await` for server-side Supabase client
+- ❌ Using USD or cents (always KES)
+- ❌ Missing `enabled` flag in hooks (causes infinite loops)
+- ❌ Using React in landing-page (it's pure JS)
+

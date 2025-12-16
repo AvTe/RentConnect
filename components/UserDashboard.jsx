@@ -1,8 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import React, { useState, useEffect } from 'react';
 import {
-  LayoutGrid, FileText, Heart, History, Settings, LogOut,
-  Plus, Search, Bell, Menu, X
+  LayoutGrid, FileText, History, Settings, LogOut,
+  Plus, Search, Bell, Menu, X, Users
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { UserProfile } from './UserProfile';
@@ -158,26 +158,27 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
         <RatingPrompt currentUser={currentUser} />
         
         {/* Stats - Responsive grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
           <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <h3 className="text-sm font-medium text-gray-500">Total Requests</h3>
               <FileText className="w-4 h-4 text-gray-400" />
             </div>
-            <div className="text-xl md:text-2xl font-bold text-gray-900">0</div>
-            <div className="mt-1 text-xs text-[#16A34A] flex items-center">
-              <span className="font-medium">+0%</span>
-              <span className="text-gray-400 ml-1">from last month</span>
+            <div className="text-xl md:text-2xl font-bold text-gray-900">{myRequests.length}</div>
+            <div className="mt-1 text-xs text-gray-500">
+              {myRequests.length === 0 ? 'No requests posted yet' : 'Active property requests'}
             </div>
           </div>
           <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-3 md:mb-4">
-              <h3 className="text-sm font-medium text-gray-500">Saved Properties</h3>
-              <Heart className="w-4 h-4 text-gray-400" />
+              <h3 className="text-sm font-medium text-gray-500">Agent Contacts</h3>
+              <Users className="w-4 h-4 text-gray-400" />
             </div>
-            <div className="text-xl md:text-2xl font-bold text-gray-900">0</div>
+            <div className="text-xl md:text-2xl font-bold text-gray-900">
+              {myRequests.reduce((sum, req) => sum + (req.contacts || 0), 0)}
+            </div>
             <div className="mt-1 text-xs text-gray-500">
-              No properties saved yet
+              Agents who contacted you
             </div>
           </div>
         </div>
@@ -248,7 +249,6 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
           <div className="space-y-1">
             <SidebarItem icon={LayoutGrid} label="Home" id="dashboard" active={activeTab === 'dashboard'} />
             <SidebarItem icon={FileText} label="My Requests" id="requests" active={activeTab === 'requests'} />
-            <SidebarItem icon={Heart} label="Saved Properties" id="saved" active={activeTab === 'saved'} />
           </div>
 
           <div className="mt-8">
@@ -305,8 +305,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
               <span className="hidden sm:inline text-gray-900">
                 {activeTab === 'dashboard' ? 'Overview' :
                  activeTab === 'requests' ? 'My Requests' :
-                 activeTab === 'saved' ? 'Saved Properties' :
-                 activeTab === 'profile' ? 'Profile' : activeTab}
+                 activeTab === 'profile' ? 'Profile' : 'Overview'}
               </span>
             </div>
           </div>

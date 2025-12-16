@@ -268,9 +268,9 @@ export const Login = ({ onNavigate, onLogin, authError }) => {
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row overflow-hidden bg-white font-sans">
       {/* Left Side - Form */}
-      <div className="w-full md:w-1/2 flex flex-col justify-start md:justify-center px-6 sm:px-8 lg:px-16 xl:px-24 py-6 md:py-8 relative z-10 overflow-y-auto min-h-screen md:min-h-0">
-        {/* Minimal Header - Logo only + I'm an Agent button */}
-        <div className="flex items-center justify-between mb-8 md:absolute md:top-8 md:left-6 md:right-6 lg:left-16 xl:left-24 lg:right-16 xl:right-24">
+      <div className="w-full md:w-1/2 flex flex-col px-5 sm:px-8 lg:px-12 xl:px-16 py-6 relative z-10 overflow-y-auto min-h-screen md:min-h-0">
+        {/* Header - Logo + I'm an Agent button */}
+        <div className="flex items-center justify-between mb-6 sm:mb-8 flex-shrink-0">
           <div
             className="cursor-pointer"
             onClick={() => onNavigate('landing')}
@@ -279,173 +279,188 @@ export const Login = ({ onNavigate, onLogin, authError }) => {
           </div>
           <button
             onClick={() => onNavigate('landing')}
-            className="px-4 py-2 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md text-sm"
+            className="px-3 sm:px-4 py-2 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md text-xs sm:text-sm"
           >
             I&apos;m an Agent
           </button>
         </div>
 
-        <div className="max-w-md w-full mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            {isRegistering ? 'Create an account' : 'Welcome Back!'}
-          </h2>
-          <p className="text-gray-500 mb-6 sm:mb-8 text-sm sm:text-base">
-            {isRegistering ? 'Join Yoombaa to find your home' : 'Sign in to access your dashboard'}
-          </p>
+        {/* Form Container - Centered vertically on desktop */}
+        <div className="flex-1 flex items-start md:items-center justify-center">
+          <div className="w-full max-w-md">
+            {/* Heading */}
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              {isRegistering ? 'Create an account' : 'Welcome Back!'}
+            </h2>
+            <p className="text-gray-500 mb-6 text-sm sm:text-base">
+              {isRegistering ? 'Join Yoombaa to find your home' : 'Sign in to access your dashboard'}
+            </p>
 
-          {/* User Type Toggle */}
-          <div className="flex p-1 bg-gray-100 rounded-lg mb-6 w-fit">
-            <button
-              className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                userType === 'tenant' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setUserType('tenant')}
-              type="button"
-            >
-              <User className="w-4 h-4" />
-              <span className="hidden sm:inline">Tenant</span>
-            </button>
-            <button
-              className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                userType === 'agent' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setUserType('agent')}
-              type="button"
-            >
-              <Building2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Agent</span>
-            </button>
-          </div>
+            {/* User Type Toggle */}
+            <div className="flex p-1 bg-gray-100 rounded-xl mb-6 w-fit">
+              <button
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                  userType === 'tenant'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setUserType('tenant')}
+                type="button"
+              >
+                <User className="w-4 h-4" />
+                <span>Tenant</span>
+              </button>
+              <button
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                  userType === 'agent'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                onClick={() => setUserType('agent')}
+                type="button"
+              >
+                <Building2 className="w-4 h-4" />
+                <span>Agent</span>
+              </button>
+            </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
-              {error}
-              {showResendConfirmation && (
-                <button
-                  type="button"
-                  onClick={handleResendConfirmation}
-                  disabled={loading}
-                  className="block mt-2 text-[#FE9200] hover:text-[#E58300] font-medium underline"
-                >
-                  {loading ? 'Sending...' : 'Resend confirmation email'}
-                </button>
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">
+                {error}
+                {showResendConfirmation && (
+                  <button
+                    type="button"
+                    onClick={handleResendConfirmation}
+                    disabled={loading}
+                    className="block mt-2 text-[#FE9200] hover:text-[#E58300] font-medium underline"
+                  >
+                    {loading ? 'Sending...' : 'Resend confirmation email'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Success Message */}
+            {successMessage && (
+              <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-xl border border-green-200">
+                {successMessage}
+              </div>
+            )}
+
+            {/* Form */}
+            <form className="space-y-4" onSubmit={handleEmailAuth}>
+              {/* Full Name - Only for Registration */}
+              {isRegistering && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      required={isRegistering}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
+                      placeholder="Enter your name"
+                    />
+                  </div>
+                </div>
               )}
-            </div>
-          )}
-          
-          {successMessage && (
-            <div className="mb-4 p-3 bg-[#FFF5E6] text-[#16A34A] text-sm rounded-lg border border-[#FFE4C4]">
-              {successMessage}
-            </div>
-          )}
 
-          {/* Form */}
-          <form className="space-y-4 sm:space-y-5" onSubmit={handleEmailAuth}>
-            {isRegistering && (
+              {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    type="text"
-                    required={isRegistering}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm sm:text-base"
-                    placeholder="Enter your name"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
+                    placeholder="Enter your email"
                   />
                 </div>
               </div>
-            )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm sm:text-base"
-                  placeholder="Enter your email"
-                />
+              {/* Password */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-11 pr-11 py-3 border-2 border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Forgot Password */}
+              {!isRegistering && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handlePasswordReset}
+                    className="text-sm font-medium text-[#FE9200] hover:text-[#E58300] transition-colors"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4]/50 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Processing...' : (isRegistering ? 'Sign Up' : 'Sign In')}
+              </Button>
+            </form>
+
+            {/* Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">OR</span>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8B5CF6] focus:border-[#8B5CF6] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm sm:text-base"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            {!isRegistering && (
-              <div className="flex justify-end">
-                <button 
-                  type="button"
-                  onClick={handlePasswordReset}
-                  className="text-sm font-medium text-[#8B5CF6] hover:text-[#7C3AED]"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-            )}
-
-            <Button 
-              type="submit" 
+            {/* Google Button */}
+            <button
+              onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full py-3 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-lg font-medium shadow-lg shadow-[#FFE4C4] transition-all text-sm sm:text-base"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3.5 border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Processing...' : (isRegistering ? 'Sign Up' : 'Sign In')}
-            </Button>
-          </form>
-
-          {/* Divider */}
-          <div className="relative my-6 sm:my-8">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
-            <div className="relative flex justify-center text-sm"><span className="px-4 bg-white text-gray-500">OR</span></div>
-          </div>
-
-          {/* Google Button */}
-          <button 
-            onClick={handleGoogleLogin} 
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all group"
-          >
-            <GoogleLogo />
-            <span className="font-medium text-gray-700 group-hover:text-gray-900 text-sm sm:text-base">Continue with Google</span>
-          </button>
-
-          {/* Footer Link */}
-          <p className="mt-6 sm:mt-8 text-center text-sm text-gray-600">
-            {isRegistering ? 'Already have an account?' : "Don't have an Account?"} 
-            <button 
-              onClick={() => setIsRegistering(!isRegistering)} 
-              className="ml-1 font-semibold text-[#8B5CF6] hover:underline"
-            >
-              {isRegistering ? 'Sign In' : 'Sign Up'}
+              <GoogleLogo />
+              <span className="font-medium text-gray-700 group-hover:text-gray-900 text-sm">Continue with Google</span>
             </button>
-          </p>
+
+            {/* Footer Link */}
+            <p className="mt-6 text-center text-sm text-gray-600">
+              {isRegistering ? 'Already have an account?' : "Don't have an account?"}{' '}
+              <button
+                onClick={() => setIsRegistering(!isRegistering)}
+                className="font-semibold text-[#FE9200] hover:text-[#E58300] transition-colors"
+              >
+                {isRegistering ? 'Sign In' : 'Sign Up'}
+              </button>
+            </p>
+          </div>
         </div>
       </div>
 

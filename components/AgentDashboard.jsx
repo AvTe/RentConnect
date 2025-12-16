@@ -32,6 +32,8 @@ import {
   ExternalLink,
   Menu,
   X,
+  Wallet,
+  Users,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
@@ -220,6 +222,47 @@ export const AgentDashboard = ({
   const handleSaveProfile = (updatedAgent) => {
     onUpdateUser(updatedAgent);
     setActiveTab("leads");
+  };
+
+  // Format budget with KSh and K/M suffixes
+  const formatBudget = (amount) => {
+    if (!amount) return 'Budget TBD';
+    const str = amount?.toString() || '';
+
+    // Handle budget ranges like "50000 - 80000" or "50,000 - 80,000"
+    if (str.includes('-')) {
+      const parts = str.split('-').map(p => p.trim());
+      const min = parseInt(parts[0].replace(/[^0-9]/g, '') || '0');
+      const max = parseInt(parts[1]?.replace(/[^0-9]/g, '') || '0');
+
+      const formatNum = (num) => {
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+        if (num >= 1000) return `${Math.round(num / 1000)}K`;
+        return num.toLocaleString();
+      };
+
+      if (max > 0) {
+        return `KSh ${formatNum(min)} - ${formatNum(max)}`;
+      }
+      return `KSh ${formatNum(min)}`;
+    }
+
+    // Handle single value
+    const num = parseInt(str.replace(/[^0-9]/g, '') || '0');
+    if (num >= 1000000) return `KSh ${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `KSh ${Math.round(num / 1000)}K`;
+    return `KSh ${num.toLocaleString()}`;
+  };
+
+  // Format location to show most specific first
+  const formatLocation = (location) => {
+    if (!location) return 'Location TBD';
+    const parts = location.split(',').map(p => p.trim());
+    // Return "Neighborhood, City" format
+    if (parts.length >= 2) {
+      return `${parts[0]}, ${parts[parts.length - 1]}`;
+    }
+    return location;
   };
 
   const SidebarItem = ({ icon: Icon, label, id, active }) => (
@@ -645,7 +688,8 @@ export const AgentDashboard = ({
           </div>
         </div>
 
-        <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Leads Grid - 4 columns on desktop, 2-3 on tablet, 1 on mobile */}
+        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {leads.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
@@ -665,86 +709,102 @@ export const AgentDashboard = ({
             </div>
           ) : (
             leads.map((lead) => {
-              // Debug logging
-              console.log('Rendering lead:', lead.id, 'Unlocked leads array:', unlockedLeads, 'Is unlocked:', unlockedLeads.includes(lead.id));
+              // property_type is the main field where the type is stored (e.g., "1 Bedroom", "2 Bedroom", etc.)
+              const propertyType = lead.property_type || lead.requirements?.property_type || lead.type || 'Property';
+              const location = lead.location || lead.requirements?.location || 'Location';
+              const budget = lead.budget || lead.requirements?.budget || '0';
+              const contactCount = lead.contacts || 0;
+              const tenantName = String(lead.tenant_info?.name || lead.tenant_name || lead.name || "User");
+
               return (
-              <div
-                key={lead.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="p-4 md:p-6">
-                  <div className="flex justify-between items-start mb-3 md:mb-4 gap-2">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-base md:text-lg text-gray-900 truncate">
-                        {lead.requirements?.property_type || lead.type}
-                      </h3>
-                      <p className="text-gray-500 text-sm truncate">
-                        {lead.requirements?.location || lead.location}
-                      </p>
-                    </div>
-                    <Badge className="bg-gray-100 text-gray-700 border-gray-200 flex-shrink-0 text-xs">
-                      {lead.requirements?.budget || lead.budget}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center gap-3 mb-4 md:mb-6 p-2.5 md:p-3 bg-gray-50 rounded-lg">
-                    <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold flex-shrink-0">
-                      {String(lead.tenant_info?.name || lead.tenant_name || lead.name || "U").charAt(0)}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {String(lead.tenant_info?.name || lead.tenant_name || lead.name || "User")}
-                      </p>
-                      <p className="text-xs text-gray-500">Looking for rent</p>
-                    </div>
-                  </div>
-
-                  {isLeadUnlocked(lead.id) ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      <a
-                        href={`tel:${lead.tenant_info?.phone || lead.tenant_phone || lead.phone || lead.whatsapp}`}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors text-sm"
-                      >
-                        <Phone className="w-4 h-4" />
-                        Call
-                      </a>
-                      <a
-                        href={
-                          lead.tenant_info?.whatsapp_link ||
-                          `https://wa.me/${lead.tenant_info?.whatsapp || lead.tenant_phone || lead.whatsapp}`
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-[#FE9200] text-white rounded-lg hover:bg-[#E58300] font-medium transition-colors text-sm"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        Chat
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50 p-4">
-                      {/* Blurred Content */}
-                      <div className="filter blur-sm select-none opacity-50 mb-2">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="h-9 bg-gray-300 rounded-lg"></div>
-                          <div className="h-9 bg-gray-300 rounded-lg"></div>
-                        </div>
+                <div
+                  key={lead.id}
+                  className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200"
+                >
+                  <div className="p-3 flex flex-col h-full">
+                    {/* Top Row: Contact Count Badge + Budget */}
+                    <div className="flex items-center justify-between mb-2 gap-1">
+                      <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1 rounded-full">
+                        <Users size={10} className="text-[#2E7D32]" />
+                        <span className="text-[10px] font-semibold text-[#2E7D32]">
+                          {contactCount}
+                        </span>
                       </div>
+                      <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
+                        {formatBudget(budget)}
+                      </span>
+                    </div>
 
-                      {/* Overlay Button */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/50">
-                        <Button
-                          onClick={() => handleUnlockLead(lead)}
-                          className="bg-gray-900 text-white hover:bg-black shadow-lg transform transition-transform hover:scale-105"
+                    {/* Title - Looking for [Property Type] */}
+                    <h3 className="text-sm font-bold text-gray-900 mb-1 line-clamp-2">
+                      Looking for {propertyType}
+                    </h3>
+
+                    {/* Location with icon */}
+                    <div className="flex items-center gap-1 mb-2">
+                      <MapPin size={11} className="text-[#FE9200] flex-shrink-0" />
+                      <p className="text-xs text-gray-600 truncate">
+                        {formatLocation(location)}
+                      </p>
+                    </div>
+
+                    {/* Requirement Badge - Shows exact property type */}
+                    <div className="mb-2">
+                      <div className="inline-flex items-center gap-1.5 bg-[#FFF5E6] border border-[#FE9200]/30 rounded-md px-2 py-1">
+                        <Home size={11} className="text-[#FE9200] flex-shrink-0" />
+                        <span className="text-[11px] text-[#E58300] font-semibold truncate">
+                          {propertyType}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Tenant Info */}
+                    <div className="flex items-center gap-2 mb-2 p-2 bg-gray-50 rounded-lg">
+                      <div className="w-7 h-7 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs flex-shrink-0">
+                        {tenantName.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-gray-900 truncate">
+                          {tenantName}
+                        </p>
+                        <p className="text-[10px] text-gray-500">Looking for rent</p>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    {isLeadUnlocked(lead.id) ? (
+                      <div className="grid grid-cols-2 gap-2 mt-auto">
+                        <a
+                          href={`tel:${lead.tenant_info?.phone || lead.tenant_phone || lead.phone || lead.whatsapp}`}
+                          className="flex items-center justify-center gap-1.5 px-2 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors text-xs"
                         >
-                          <Lock className="w-4 h-4 mr-2" />
-                          Unlock (1 Credit)
-                        </Button>
+                          <Phone className="w-3.5 h-3.5" />
+                          Call
+                        </a>
+                        <a
+                          href={
+                            lead.tenant_info?.whatsapp_link ||
+                            `https://wa.me/${lead.tenant_info?.whatsapp || lead.tenant_phone || lead.whatsapp}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-1.5 px-2 py-2 bg-[#FE9200] text-white rounded-lg hover:bg-[#E58300] font-medium transition-colors text-xs"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          Chat
+                        </a>
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <Button
+                        onClick={() => handleUnlockLead(lead)}
+                        className="w-full mt-auto bg-gray-900 text-white hover:bg-black text-xs py-2"
+                      >
+                        <Lock className="w-3.5 h-3.5 mr-1.5" />
+                        Unlock (1 Credit)
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
               );
             })
           )}

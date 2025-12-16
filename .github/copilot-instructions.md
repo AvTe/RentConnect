@@ -1,7 +1,21 @@
-﻿# RentConnect AI Coding Instructions
+﻿# RentConnect (Yoombaa) AI Coding Instructions
+
+> **Last Updated:** December 2024
+
+## Quick Start
+```bash
+npm install          # Install dependencies
+npm run dev          # Start dev server on port 5000 (NOT 3000)
+npm run build        # Production build
+npm run lint         # ESLint check
+```
 
 ## Project Overview
-Next.js 14 rental marketplace (Kenya). Tenants post rental requests ("leads"); verified agents pay credits to unlock tenant contacts. Uses Supabase (PostgreSQL + Auth), Pesapal (M-Pesa), Africa's Talking SMS. **Currency: KES (Kenyan Shillings)**.
+Next.js 14 rental marketplace (Kenya/Yoombaa brand). Tenants post rental requests ("leads"); verified agents pay credits to unlock tenant contacts. Uses Supabase (PostgreSQL + Auth), Pesapal (M-Pesa), Africa's Talking SMS. **Currency: KES (Kenyan Shillings)**.
+
+There are **TWO distinct frontend codebases**:
+1. **Main App** (`app/`, `components/`, `lib/`) - Next.js SPA with React
+2. **Landing Page** (`landing-page/`) - Standalone static HTML/CSS/JS (no framework)
 
 ---
 
@@ -381,11 +395,10 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 ---
 
 ## Messaging Services
-- **SMS OTP**: Africa's Talking (`lib/africastalking.js`) - used for tenant phone verification
-- **WhatsApp**: Twilio integration via `/api/whatsapp/send`
+- **SMS OTP**: Twilio (`lib/twilio.js`) - used for tenant phone verification via `/api/send-otp`
+- **WhatsApp**: Twilio (`lib/twilio.js`) - via `/api/whatsapp/send`
 - **Email**: Supabase Auth handles auth emails; custom via `/api/send-email`
 - **In-app**: Real-time via `subscribeToNotifications()` + `NotificationBell` component
-- **AuthKey** (`lib/authkey.js`): DEPRECATED - stub exports only
 
 ---
 
@@ -406,7 +419,7 @@ npm run lint
 | Auth (signUp, signIn, signOut, OAuth) | `lib/auth-supabase.js` |
 | React hooks (useLeads, useSubscription) | `lib/hooks.js` |
 | Payment integration | `lib/pesapal.js` |
-| SMS service (active) | `lib/africastalking.js` |
+| SMS & WhatsApp (Twilio) | `lib/twilio.js` |
 | DB schema | `supabase_complete_schema.sql` |
 | Admin components (19) | `components/admin/*.jsx` |
 | UI primitives | `components/ui/*.jsx` |
@@ -422,4 +435,232 @@ npm run lint
 4. **Real-time subscriptions**: Use `subscribeToLeads()` from database.js, not raw Supabase
 5. **Image uploads**: Use `lib/storage-supabase.js`, not direct Supabase storage calls
 6. **Agent verification required**: Agents can't unlock leads until `verificationStatus === 'verified'`
-7. **OTP via SMS**: Uses Africa's Talking, requires `AT_API_KEY` and `AT_USERNAME` env vars
+7. **OTP via SMS**: Uses Twilio, requires `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` env vars
+8. **Landing page welcome popup**: Resets by deleting `yoombaa_welcome_seen` from localStorage
+9. **Case transformation**: DB uses `snake_case`, components use `camelCase` - use `transformUserData()`
+
+---
+
+## Landing Page (`landing-page/`) - STANDALONE STATIC SITE
+
+### Overview
+Pure HTML/CSS/JS landing page for pre-launch lead capture. **No React, no framework.** Submits to Google Sheets via Apps Script.
+
+### File Structure
+| File | Purpose |
+|------|---------|
+| `index.html` | Main landing page with forms, modals, SEO meta tags |
+| `styles.css` | All styling (CSS variables, responsive design) |
+| `script.js` | All JavaScript (form handling, modals, validation, animations) |
+| `google-apps-script.js` | Server-side Google Sheets integration (deploy separately) |
+
+### JavaScript Patterns
+
+**Configuration at Top of script.js:**
+```javascript
+const GOOGLE_SHEETS_CONFIG = {
+    tenant: 'https://script.google.com/macros/s/.../exec',
+    agent: 'https://script.google.com/macros/s/.../exec',
+    newsletter: 'https://script.google.com/macros/s/.../exec'
+};
+```
+
+**Form Initialization Pattern:**
+```javascript
+// Forms are initialized on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    initBudgetConditionalLogic();   // Show/hide budget range
+    initAreasTagsInput();            // Tag input for agent areas
+    initAllLocationAutocompletes();  // Location dropdowns
+});
+```
+
+**Modal Pattern:**
+```javascript
+// Modal open/close functions exposed to window for onclick handlers
+window.showTenantForm = showTenantForm;
+window.closeWelcomeModal = closeWelcomeModal;
+// ...etc
+
+// Close on Escape or background click
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal.active').forEach(modal => {
+            modal.classList.remove('active');
+        });
+    }
+});
+```
+
+**Form Submission Pattern:**
+```javascript
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+
+    const formData = new FormData(form);
+    const data = { /* extract fields */ };
+
+    await submitToGoogleSheet(data, 'tenant');
+    // Show success modal, reset form
+});
+```
+
+**Location Autocomplete (Kenya Locations API):**
+```javascript
+// Uses https://kenya-api.onrender.com/api/v1/wards
+// Cached in kenyaLocationsCache variable
+async function loadKenyaLocations() { /* ... */ }
+
+// Initialize with element IDs
+initLocationAutocomplete(
+    'tenantLocationAutocomplete',  // input
+    'tenantLocationDropdown',       // dropdown
+    'tenantLocationLoading',        // spinner
+    'tenantLocationPlaceId'         // hidden field
+);
+```
+
+**Tag Input Pattern (Agent Areas):**
+```javascript
+let agentPreferredAreas = [];
+
+function addAreaTag(area) {
+    agentPreferredAreas.push(area);
+    updateHiddenAreasInput();
+    // Create tag DOM element with remove button
+}
+
+function removeAreaTag(area, element) {
+    agentPreferredAreas.splice(agentPreferredAreas.indexOf(area), 1);
+    updateHiddenAreasInput();
+    element.parentElement.remove();
+}
+window.removeAreaTag = removeAreaTag;  // Expose for onclick
+```
+
+**Phone Validation (Kenya +254):**
+```javascript
+function formatKenyaPhone(phone) {
+    const digits = phone.replace(/\D/g, '');
+    return '+254' + digits;
+}
+// Validates 9-10 digits, must start with 7 or 1
+```
+
+**Scroll Animations:**
+```javascript
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, { threshold: 0.1 });
+```
+
+### CSS Conventions
+- **Variables**: `var(--primary)`, `var(--border)`, `var(--bg)`, etc.
+- **Brand colors**: Orange (#FE9200), Purple (#7A00AA)
+- **Spacing**: Consistent padding/margins using rem units
+- **Responsive**: Mobile-first with media queries
+- **Animations**: `fade-up`, `fade-in`, `scale-up` classes with `visible` trigger
+
+### HTML Patterns
+- **IDs for JS**: `id="tenantFormModal"`, `id="budgetRangeContainer"`
+- **onclick handlers**: `onclick="showTenantForm()"` (functions exposed to window)
+- **Data attributes**: `data-index`, `data-name`, `data-code` for location items
+- **Hidden inputs**: Store computed values like `id="preferredAreasHidden"`
+
+### Adding New Landing Page Features
+1. Add HTML structure to `index.html`
+2. Add styles to `styles.css` (or inline in `<style>` block for component-specific)
+3. Add JavaScript to `script.js`:
+   - Initialize in `DOMContentLoaded` handler
+   - Expose functions to `window` if used in onclick
+4. If form collects new data, update Google Sheet column headers
+
+---
+
+## Environment Variables
+
+### Required for Next.js App
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+NEXT_PUBLIC_SITE_URL=http://localhost:5000
+
+# Payments
+PESAPAL_CONSUMER_KEY=...
+PESAPAL_CONSUMER_SECRET=...
+PESAPAL_ENV=sandbox  # or production
+
+# SMS & WhatsApp (Twilio)
+TWILIO_ACCOUNT_SID=your_account_sid
+TWILIO_AUTH_TOKEN=your_auth_token
+TWILIO_PHONE_NUMBER=+1234567890
+TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+
+# Optional
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=...
+NEXT_PUBLIC_PERSONA_TEMPLATE_ID=...
+```
+
+### Landing Page (No env vars needed - config in script.js)
+Google Sheets URLs configured directly in `GOOGLE_SHEETS_CONFIG` object.
+
+---
+
+## Code Style & Naming
+
+### JavaScript/React
+- **Functions**: camelCase (`handleTenantSubmit`, `initBudgetConditionalLogic`)
+- **Components**: PascalCase (`AgentDashboard.jsx`, `TenantForm.jsx`)
+- **Constants**: SCREAMING_SNAKE_CASE (`GOOGLE_SHEETS_CONFIG`, `SUBSCRIPTION_PLANS`)
+- **Database fields**: snake_case in DB, camelCase in components
+
+### CSS
+- **Classes**: kebab-case (`hero-cta-group`, `location-dropdown-item`)
+- **IDs**: camelCase (`tenantFormModal`, `budgetRangeContainer`)
+- **CSS Variables**: kebab-case (`--brand-orange`, `--primary-light`)
+
+### DOM IDs in Landing Page
+| Element Type | Naming Pattern | Example |
+|--------------|----------------|---------|
+| Form inputs | camelCase | `tenantPhone`, `budgetMin` |
+| Containers | camelCase | `budgetRangeContainer`, `areasTags` |
+| Modals | camelCase | `welcomeModal`, `formSuccessModal` |
+| Buttons | camelCase | `mobileMenuBtn`, `sliderPrev` |
+
+---
+
+## Tailwind (Main App Only)
+```javascript
+// tailwind.config.js
+theme: {
+  extend: {
+    colors: {
+      brand: {
+        orange: '#FE9200',
+        'orange-light': '#FFB84D',
+        purple: '#7A00AA',
+        cream: '#FFF5E6',
+      }
+    },
+    fontFamily: {
+      sans: ['DM Sans', 'sans-serif']
+    }
+  }
+}
+```
+
+---
+
+## Testing Notes
+- **OTP testing**: Use Africa's Talking sandbox with test numbers
+- **Payment testing**: Pesapal sandbox mode (`PESAPAL_ENV=sandbox`)
+- **Welcome popup reset**: `localStorage.removeItem('yoombaa_welcome_seen')`
+- **User cache reset**: `localStorage.removeItem('rentconnect-user')`

@@ -3,7 +3,6 @@ import Image from "next/image";
 import {
   ArrowLeft,
   MapPin,
-  Banknote,
   User,
   Check,
   ChevronRight,
@@ -12,21 +11,66 @@ import {
   Loader2,
   ShieldCheck,
   RefreshCw,
+  Home,
+  Building,
+  Hotel,
+  Castle,
+  Warehouse,
+  Store,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { OTPInput } from "./ui/OTPInput";
+import { LocationAutocomplete } from "./ui/LocationAutocomplete";
+import { BudgetInput } from "./ui/BudgetInput";
 import confetti from "canvas-confetti";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { checkPhoneNumberExists } from "@/lib/database";
 
+// Enhanced property types with better icons and descriptions
 const PROPERTY_TYPES = [
-  { id: "1 Bedroom", label: "1 Bedroom", icon: "🛏️" },
-  { id: "2 Bedroom", label: "2 Bedroom", icon: "🏡" },
-  { id: "3 Bedroom", label: "3 Bedroom", icon: "🏰" },
-  { id: "Self Contain", label: "Self Contain", icon: "🏠" },
-  { id: "Mini Flat", label: "Mini Flat", icon: "🏢" },
-  { id: "Duplex", label: "Duplex", icon: "🏘️" },
+  {
+    id: "1 Bedroom",
+    label: "1 Bedroom",
+    icon: Home,
+    description: "Perfect for singles or couples",
+    color: "from-blue-500 to-blue-600"
+  },
+  {
+    id: "2 Bedroom",
+    label: "2 Bedroom",
+    icon: Building,
+    description: "Ideal for small families",
+    color: "from-green-500 to-green-600"
+  },
+  {
+    id: "3 Bedroom",
+    label: "3+ Bedroom",
+    icon: Castle,
+    description: "Spacious family living",
+    color: "from-purple-500 to-purple-600"
+  },
+  {
+    id: "Studio",
+    label: "Studio",
+    icon: Hotel,
+    description: "Compact & efficient",
+    color: "from-amber-500 to-amber-600"
+  },
+  {
+    id: "Self Contain",
+    label: "Self Contain",
+    icon: Store,
+    description: "All-in-one living space",
+    color: "from-rose-500 to-rose-600"
+  },
+  {
+    id: "Duplex",
+    label: "Duplex",
+    icon: Warehouse,
+    description: "Two-story living",
+    color: "from-indigo-500 to-indigo-600"
+  },
 ];
 
 export const TenantForm = ({
@@ -38,10 +82,22 @@ export const TenantForm = ({
 }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
+    // Location fields (structured)
     location: "",
+    locationData: null, // Structured location object
+    city: "",
+    area: "",
+    state: "",
+    country: "",
+    countryCode: "",
     pincode: "",
+    // Property fields
     type: "",
+    // Budget fields
     budget: "",
+    budgetFormatted: "",
+    currency: "KES",
+    // Contact fields
     name: "",
     email: "",
     whatsapp: "",
@@ -57,7 +113,6 @@ export const TenantForm = ({
 
   const [defaultCountry, setDefaultCountry] = useState("KE");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
   const [verificationStep, setVerificationStep] = useState("idle");
@@ -209,127 +264,6 @@ export const TenantForm = ({
     else onNavigate("landing");
   };
 
-  // Fallback: Get approximate location from IP address
-  const getLocationFromIP = async () => {
-    try {
-      // Use ip-api.com for IP-based geolocation (free, no API key required)
-      const response = await fetch('http://ip-api.com/json/?fields=status,city,regionName,country,countryCode,lat,lon');
-      const data = await response.json();
-
-      if (data.status === 'success') {
-        const locationString = data.city && data.regionName
-          ? `${data.city}, ${data.regionName}`
-          : data.city || data.country;
-
-        setFormData((prev) => ({ ...prev, location: locationString }));
-        if (data.countryCode) setDefaultCountry(data.countryCode);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("IP geolocation error:", error);
-      return false;
-    }
-  };
-
-  const handleUseCurrentLocation = async () => {
-    // Check if geolocation is supported
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser. We'll try to detect your location automatically.");
-      setIsLocating(true);
-      const success = await getLocationFromIP();
-      setIsLocating(false);
-      if (!success) {
-        alert("Could not detect your location. Please enter it manually.");
-      }
-      return;
-    }
-
-    // Check if we're on a secure context (HTTPS or localhost)
-    const isSecureContext = window.isSecureContext ||
-      window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1';
-
-    // For non-secure contexts, use IP-based geolocation as fallback
-    if (!isSecureContext) {
-      console.log("Non-secure context detected, using IP-based geolocation");
-      setIsLocating(true);
-      const success = await getLocationFromIP();
-      setIsLocating(false);
-      if (!success) {
-        alert("Could not detect your location. Please enter it manually.");
-      }
-      return;
-    }
-
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          const response = await fetch(
-            `/api/geocode?lat=${latitude}&lon=${longitude}`,
-          );
-          if (!response.ok) throw new Error("Geocoding failed");
-
-          const data = await response.json();
-          const city =
-            data.address.city ||
-            data.address.town ||
-            data.address.village ||
-            data.address.suburb;
-          const state = data.address.state;
-          const countryCode = data.address.country_code?.toUpperCase();
-          const locationString =
-            city && state ? `${city}, ${state}` : data.display_name;
-
-          setFormData((prev) => ({ ...prev, location: locationString }));
-          if (countryCode) setDefaultCountry(countryCode);
-        } catch (error) {
-          console.error("Error fetching location:", error);
-          setFormData((prev) => ({
-            ...prev,
-            location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
-          }));
-        } finally {
-          setIsLocating(false);
-        }
-      },
-      async (error) => {
-        console.error("Geolocation error:", error.code, error.message);
-
-        // Try IP-based fallback for any geolocation error
-        console.log("Falling back to IP-based geolocation...");
-        const success = await getLocationFromIP();
-        setIsLocating(false);
-
-        if (!success) {
-          // Only show error if IP fallback also failed
-          let errorMessage = "Unable to retrieve your location. ";
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage += "Location access was denied. Please enter your location manually.";
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage += "Location information is unavailable. Please enter your location manually.";
-              break;
-            case error.TIMEOUT:
-              errorMessage += "Location request timed out. Please enter your location manually.";
-              break;
-            default:
-              errorMessage += "Please enter your location manually.";
-          }
-          alert(errorMessage);
-        }
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 300000 // Cache location for 5 minutes
-      }
-    );
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -379,6 +313,29 @@ export const TenantForm = ({
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
+  // Handle location selection from autocomplete
+  const handleLocationSelect = (locationData) => {
+    if (locationData) {
+      setFormData(prev => ({
+        ...prev,
+        location: locationData.area
+          ? `${locationData.area}, ${locationData.city || locationData.state}`
+          : locationData.city || locationData.name,
+        locationData: locationData,
+        city: locationData.city || '',
+        area: locationData.area || '',
+        state: locationData.state || '',
+        country: locationData.country || '',
+        countryCode: locationData.countryCode || 'KE',
+        pincode: locationData.postcode || '',
+      }));
+      // Update default country for phone input
+      if (locationData.countryCode) {
+        setDefaultCountry(locationData.countryCode);
+      }
+    }
+  };
+
   const renderStep1 = () => (
     <div className="space-y-5 sm:space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
       <div>
@@ -386,40 +343,25 @@ export const TenantForm = ({
           Where do you want to live?
         </h3>
         <p className="text-gray-500 mb-4 sm:mb-6 text-sm">
-          Enter the location where you are looking to rent.
+          Search for a city, neighborhood, or area where you&apos;re looking to rent.
         </p>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={handleUseCurrentLocation}
-            className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#FE9200] transition-colors z-10"
-            title="Use current location"
-          >
-            {isLocating ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <MapPin className="w-5 h-5" />
-            )}
-          </button>
-          <input
-            type="text"
-            autoFocus
-            value={formData.location}
-            onChange={(e) =>
-              setFormData({ ...formData, location: e.target.value })
-            }
-            onKeyDown={(e) =>
-              e.key === "Enter" && formData.location && handleNext()
-            }
-            placeholder="e.g., Nairobi, Westlands"
-            className="w-full pl-12 sm:pl-14 pr-4 py-3 sm:py-4 border-2 border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-4 focus:ring-[#FFE4C4] outline-none transition-all text-sm sm:text-base bg-white text-gray-900 placeholder-gray-400"
-          />
-        </div>
+
+        <LocationAutocomplete
+          value={formData.location}
+          onChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
+          onLocationSelect={handleLocationSelect}
+          placeholder="e.g., Westlands, Nairobi or Koramangala, Bangalore"
+          defaultCountry={defaultCountry}
+          autoFocus
+        />
+
+
       </div>
+
       <Button
         onClick={handleNext}
         disabled={!formData.location}
-        className="w-full py-3 sm:py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+        className="w-full py-3 sm:py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Next Step <ChevronRight className="w-5 h-5" />
       </Button>
@@ -433,72 +375,102 @@ export const TenantForm = ({
           What type of property?
         </h3>
         <p className="text-gray-500 mb-4 sm:mb-6 text-sm">
-          Select the type of apartment you are interested in.
+          Select the type of property you&apos;re looking for.
         </p>
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {PROPERTY_TYPES.map((type) => (
-            <button
-              key={type.id}
-              type="button"
-              onClick={() => {
-                setFormData({ ...formData, type: type.id });
-              }}
-              className={`p-3 sm:p-4 rounded-xl border-2 text-left transition-all flex flex-col gap-1.5 sm:gap-2 ${
-                formData.type === type.id
-                  ? "border-[#FE9200] bg-[#FFF5E6] ring-1 ring-[#FE9200]"
-                  : "border-gray-100 hover:border-[#FFD4A3] hover:bg-gray-50"
-              }`}
-            >
-              <span className="text-xl sm:text-2xl">{type.icon}</span>
-              <span
-                className={`font-medium text-sm sm:text-base ${formData.type === type.id ? "text-[#7A00AA]" : "text-gray-700"}`}
+          {PROPERTY_TYPES.map((type) => {
+            const IconComponent = type.icon;
+            const isSelected = formData.type === type.id;
+
+            return (
+              <button
+                key={type.id}
+                type="button"
+                onClick={() => setFormData({ ...formData, type: type.id })}
+                className={`group relative p-4 sm:p-5 rounded-2xl border-2 text-left transition-all duration-200 ${
+                  isSelected
+                    ? "border-[#FE9200] bg-gradient-to-br from-[#FFF5E6] to-[#FFE4C4] shadow-lg shadow-[#FFE4C4]/50 scale-[1.02]"
+                    : "border-gray-100 hover:border-[#FFD4A3] hover:bg-gray-50 hover:shadow-md"
+                }`}
               >
-                {type.label}
-              </span>
-            </button>
-          ))}
+                {/* Selection indicator */}
+                {isSelected && (
+                  <div className="absolute top-2 right-2">
+                    <div className="w-5 h-5 bg-[#FE9200] rounded-full flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Icon with gradient background */}
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3 transition-all ${
+                  isSelected
+                    ? `bg-gradient-to-br ${type.color} shadow-md`
+                    : 'bg-gray-100 group-hover:bg-gray-200'
+                }`}>
+                  <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 ${isSelected ? 'text-white' : 'text-gray-600'}`} />
+                </div>
+
+                {/* Label */}
+                <p className={`font-semibold text-sm sm:text-base mb-1 ${
+                  isSelected ? "text-[#7A00AA]" : "text-gray-800"
+                }`}>
+                  {type.label}
+                </p>
+
+                {/* Description */}
+                <p className={`text-xs ${isSelected ? 'text-[#7A00AA]/70' : 'text-gray-500'}`}>
+                  {type.description}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
+
       <Button
         onClick={handleNext}
         disabled={!formData.type}
-        className="w-full py-3 sm:py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+        className="w-full py-3 sm:py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Next Step <ChevronRight className="w-5 h-5" />
       </Button>
     </div>
   );
 
+  // Handle budget selection
+  const handleBudgetSelect = (budgetData) => {
+    setFormData(prev => ({
+      ...prev,
+      budget: budgetData.value,
+      budgetFormatted: budgetData.formatted,
+      currency: budgetData.currency || 'KES',
+    }));
+  };
+
   const renderStep3 = () => (
     <div className="space-y-5 sm:space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
       <div>
         <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
-          What is your budget?
+          What&apos;s your budget?
         </h3>
         <p className="text-gray-500 mb-4 sm:mb-6 text-sm">
-          Enter your annual budget for rent.
+          Set your monthly rental budget. You can enter a custom amount or use quick presets.
         </p>
-        <div className="relative">
-          <Banknote className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            autoFocus
-            className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm bg-white placeholder-gray-400"
-            placeholder="e.g. 1,500,000"
-            value={formData.budget}
-            onChange={(e) =>
-              setFormData({ ...formData, budget: e.target.value })
-            }
-            onKeyDown={(e) =>
-              e.key === "Enter" && formData.budget && handleNext()
-            }
-          />
-        </div>
+
+        <BudgetInput
+          value={formData.budget}
+          onChange={(value) => setFormData(prev => ({ ...prev, budget: value }))}
+          onBudgetSelect={handleBudgetSelect}
+          countryCode={formData.countryCode || defaultCountry}
+          label="Monthly Budget"
+        />
       </div>
+
       <Button
         onClick={handleNext}
         disabled={!formData.budget}
-        className="w-full py-3 sm:py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+        className="w-full py-3 sm:py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Next Step <ChevronRight className="w-5 h-5" />
       </Button>
@@ -774,9 +746,17 @@ export const TenantForm = ({
             setStep(1);
             setFormData({
               location: "",
+              locationData: null,
+              city: "",
+              area: "",
+              state: "",
+              country: "",
+              countryCode: "",
               pincode: "",
               type: "",
               budget: "",
+              budgetFormatted: "",
+              currency: "KES",
               name: "",
               email: "",
               whatsapp: "",

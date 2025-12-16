@@ -165,8 +165,14 @@ CREATE POLICY "Admins can manage all ratings" ON agent_ratings
 
 -- 8. CREATE VIEW FOR AGENT RATING SUMMARY
 -- =====================================================
-CREATE OR REPLACE VIEW agent_rating_summary AS
-SELECT 
+-- Using SECURITY INVOKER to ensure RLS policies are respected
+-- (uses querying user's permissions, not view creator's)
+DROP VIEW IF EXISTS agent_rating_summary;
+
+CREATE VIEW agent_rating_summary
+WITH (security_invoker = true)
+AS
+SELECT
     u.id as agent_id,
     u.name as agent_name,
     u.avatar,
@@ -186,7 +192,7 @@ SELECT
                 'tenant_avatar', t.avatar,
                 'created_at', ar.created_at
             ) ORDER BY ar.created_at DESC
-        ) FILTER (WHERE ar.id IS NOT NULL), 
+        ) FILTER (WHERE ar.id IS NOT NULL),
         '[]'::json
     ) as recent_reviews
 FROM users u
@@ -194,6 +200,10 @@ LEFT JOIN agent_ratings ar ON u.id = ar.agent_id AND ar.status = 'published'
 LEFT JOIN users t ON ar.tenant_id = t.id
 WHERE u.role = 'agent'
 GROUP BY u.id, u.name, u.avatar, u.average_rating, u.total_ratings, u.rating_breakdown;
+
+-- Grant permissions
+GRANT SELECT ON agent_rating_summary TO authenticated;
+GRANT SELECT ON agent_rating_summary TO anon;
 
 -- 9. HELPER FUNCTION: Check if tenant can rate an agent
 -- =====================================================

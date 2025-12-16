@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server';
 // ============================================================================
-// DEPRECATED: AuthKey imports (replaced by Africa's Talking)
+// Twilio SMS Service - Unified messaging provider
 // ============================================================================
-// import { sendOTP as sendAuthKeySmsOTP, sendWhatsAppOTP } from '@/lib/authkey';
-
-// ============================================================================
-// Africa's Talking SMS Service
-// ============================================================================
-import { sendOTP as sendAfricasTalkingOTP } from '@/lib/africastalking';
+import { sendOTP as sendTwilioOTP } from '@/lib/twilio';
 
 // ============================================================================
 // Global OTP Store - uses globalThis to persist across serverless invocations
@@ -56,8 +51,8 @@ export async function POST(request) {
       );
     }
 
-    // Check if Africa's Talking is configured
-    const africasTalkingConfigured = !!process.env.AT_API_KEY && !!process.env.AT_USERNAME;
+    // Check if Twilio is configured
+    const twilioConfigured = !!process.env.TWILIO_ACCOUNT_SID && !!process.env.TWILIO_AUTH_TOKEN && !!process.env.TWILIO_PHONE_NUMBER;
     const isDevelopment = process.env.NODE_ENV === 'development';
 
     // Clean expired OTPs periodically
@@ -103,7 +98,7 @@ export async function POST(request) {
     });
 
     // In development mode or if SMS not configured, just log the OTP
-    if (isDevelopment && !africasTalkingConfigured) {
+    if (isDevelopment && !twilioConfigured) {
       console.log('='.repeat(60));
       console.log('🔐 DEVELOPMENT MODE - OTP VERIFICATION CODE');
       console.log('='.repeat(60));
@@ -121,15 +116,15 @@ export async function POST(request) {
       });
     }
 
-    // Send OTP via Africa's Talking SMS
-    if (africasTalkingConfigured) {
+    // Send OTP via Twilio SMS
+    if (twilioConfigured) {
       try {
-        console.log(`[Africa's Talking] Sending SMS OTP to ${phoneNumber}...`);
-        const smsResult = await sendAfricasTalkingOTP(phoneNumber, otp);
+        console.log(`[Twilio] Sending SMS OTP to ${phoneNumber}...`);
+        const smsResult = await sendTwilioOTP(phoneNumber, otp);
 
         if (smsResult.success) {
-          console.log(`[Africa's Talking] OTP sent to ${phoneNumber} successfully`);
-          console.log(`[Africa's Talking] Message ID: ${smsResult.messageId}, Cost: ${smsResult.cost || 'N/A'}`);
+          console.log(`[Twilio] OTP sent to ${phoneNumber} successfully`);
+          console.log(`[Twilio] Message SID: ${smsResult.messageId}`);
 
           return NextResponse.json({
             success: true,
@@ -140,11 +135,11 @@ export async function POST(request) {
             ...(isDevelopment && { devOtp: otp })
           });
         } else {
-          console.error('[Africa\'s Talking] Failed to send OTP:', smsResult.error);
+          console.error('[Twilio] Failed to send OTP:', smsResult.error);
           // Fall through to fallback
         }
       } catch (smsError) {
-        console.error('[Africa\'s Talking] Error sending OTP:', smsError);
+        console.error('[Twilio] Error sending OTP:', smsError);
         // Fall through to fallback
       }
     }
