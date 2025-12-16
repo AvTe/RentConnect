@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Star, ChevronDown, ChevronUp, User } from 'lucide-react';
 import { StarRating, RatingSummary } from './ui/StarRating';
 
@@ -32,7 +33,7 @@ const ReviewCard = ({ review }) => {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center overflow-hidden">
             {review.tenantAvatar ? (
-              <img src={review.tenantAvatar} alt={review.tenantName} className="w-full h-full object-cover" />
+              <Image src={review.tenantAvatar} alt={review.tenantName || 'Reviewer'} width={40} height={40} className="w-full h-full object-cover" />
             ) : (
               <User className="w-5 h-5 text-gray-500" />
             )}
@@ -109,6 +110,7 @@ export const AgentReviews = ({ agentId, showSummary = true }) => {
     if (agentId) {
       fetchReviews();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId]);
   
   const fetchReviews = async () => {

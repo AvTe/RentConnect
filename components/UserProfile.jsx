@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { User, Mail, MapPin, Camera, Save, CheckCircle, AlertCircle, Phone, Loader2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { PhoneVerification } from './ui/PhoneVerification';
@@ -111,7 +112,7 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
               {uploadingImage ? (
                 <Loader2 className="w-8 h-8 animate-spin text-[#FE9200]" />
               ) : formData.avatar ? (
-                <img src={formData.avatar} alt={formData.name || 'Profile'} className="w-full h-full object-cover" />
+                <Image src={formData.avatar} alt={formData.name || 'Profile'} width={96} height={96} className="w-full h-full object-cover" />
               ) : (
                 String(formData.name || 'U').charAt(0)
               )}

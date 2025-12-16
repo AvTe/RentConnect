@@ -70,6 +70,7 @@ export const BudgetInput = ({
       const numValue = parseInt(value.toString().replace(/[^0-9]/g, '') || '0');
       setInputValue(formatNumberInput(numValue));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Format number with thousand separators

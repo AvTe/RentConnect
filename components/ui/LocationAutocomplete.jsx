@@ -78,6 +78,7 @@ export const LocationAutocomplete = ({
     if (value !== inputValue && !selectedLocation) {
       setInputValue(value);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   // Close dropdown on outside click
@@ -305,7 +306,7 @@ export const LocationAutocomplete = ({
       {/* No results message */}
       {isOpen && !isLoading && inputValue.length >= 2 && suggestions.length === 0 && (
         <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg p-4 text-center text-gray-500">
-          <p className="text-sm">No locations found for "{inputValue}"</p>
+          <p className="text-sm">No locations found for &quot;{inputValue}&quot;</p>
           <p className="text-xs mt-1">Try a different search term</p>
         </div>
       )}

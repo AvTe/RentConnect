@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Star, X, ChevronRight } from 'lucide-react';
 import { Button } from './ui/Button';
 import { RatingModal } from './RatingModal';
@@ -114,7 +115,7 @@ export const RatingPrompt = ({ currentUser }) => {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold overflow-hidden">
                   {agent.avatar ? (
-                    <img src={agent.avatar} alt={agent.name} className="w-full h-full object-cover" />
+                    <Image src={agent.avatar} alt={agent.name || 'Agent'} width={40} height={40} className="w-full h-full object-cover" />
                   ) : (
                     agent.name?.charAt(0)?.toUpperCase() || 'A'
                   )}
