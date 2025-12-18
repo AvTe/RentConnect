@@ -20,6 +20,9 @@ import {
   Users,
   Lock,
   CheckCircle,
+  Shield,
+  TrendingUp,
+  ArrowRight,
 } from "lucide-react";
 
 const LeadCard = ({
@@ -37,9 +40,28 @@ const LeadCard = ({
     return `KSh ${num.toLocaleString()}`;
   };
 
-  const propertyType =
-    lead?.requirements?.property_type || lead?.type || "Property";
-  const location = lead?.requirements?.location || lead?.location || "Location";
+  // Get property type with smart fallback
+  const rawPropertyType = lead?.requirements?.property_type || lead?.type || "";
+
+  // Map generic/missing values to more descriptive text based on budget
+  const getPropertyTypeDisplay = (type, budget) => {
+    // If we have a valid property type, use it
+    const validTypes = ["1 Bedroom", "2 Bedroom", "3 Bedroom", "3+ Bedroom", "Studio", "Self Contain", "Duplex", "Mini Flat", "Apartment", "House", "Bungalow"];
+    if (type && validTypes.some(t => type.toLowerCase().includes(t.toLowerCase()))) {
+      return type;
+    }
+
+    // Smart fallback based on budget
+    const budgetNum = parseInt(budget?.toString().replace(/[^0-9]/g, "") || "0");
+    if (budgetNum >= 100000) return "Premium Rental";
+    if (budgetNum >= 50000) return "Family Home";
+    if (budgetNum >= 25000) return "Apartment";
+    if (budgetNum > 0) return "Studio/Bedsitter";
+    return "Rental Property";
+  };
+
+  const propertyType = getPropertyTypeDisplay(rawPropertyType, lead?.requirements?.budget || lead?.budget);
+  const location = lead?.requirements?.location || lead?.location || "Nairobi";
   const budget = lead?.requirements?.budget || lead?.budget || "0";
   const contactCount = lead?.contacts || 0;
   const tenantPhone = lead?.tenant_info?.phone || "";
@@ -103,37 +125,15 @@ const LeadCard = ({
             </h3>
             <p className="text-[9px] text-gray-500 mb-2 truncate">{location}</p>
 
-            {/* Icon-based info grid - 2x2 compact */}
-            <div className="grid grid-cols-2 gap-1 mb-2">
-              <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
-                <Home size={10} className="text-[#FE9200] flex-shrink-0" />
-                <span className="text-[8px] text-gray-700 truncate font-medium">
-                  {propertyType.split(" ")[0]}
-                </span>
+            {/* Compact status badges - no redundancy */}
+            <div className="flex items-center gap-1 mb-2">
+              <div className="flex items-center gap-0.5 bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">
+                <CheckCircle size={8} className="text-[#2E7D32]" />
+                <span className="text-[7px] text-[#2E7D32] font-medium capitalize">{status}</span>
               </div>
-
-              <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
-                <MapPin size={10} className="text-[#FE9200] flex-shrink-0" />
-                <span className="text-[8px] text-gray-700 truncate font-medium">
-                  {area.split(" ")[0]}
-                </span>
-              </div>
-
-              <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
-                <CheckCircle
-                  size={10}
-                  className="text-[#2E7D32] flex-shrink-0"
-                />
-                <span className="text-[8px] text-[#2E7D32] capitalize font-medium">
-                  {status}
-                </span>
-              </div>
-
-              <div className="bg-[#F5F5F5] rounded p-1.5 flex items-center gap-1">
-                <Zap size={10} className="text-[#FE9200] flex-shrink-0" />
-                <span className="text-[8px] text-gray-700 font-medium">
-                  Ready
-                </span>
+              <div className="flex items-center gap-0.5 bg-[#FFF5E6] px-1.5 py-0.5 rounded-full">
+                <Zap size={8} className="text-[#FE9200]" />
+                <span className="text-[7px] text-gray-600 font-medium">Ready</span>
               </div>
             </div>
 
@@ -197,45 +197,15 @@ const LeadCard = ({
           </h3>
           <p className="text-xs text-gray-500 mb-3 truncate">{location}</p>
 
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <div className="bg-[#F5F5F5] rounded-lg p-2">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <Home size={11} className="text-gray-400" />
-                <span className="text-[9px] text-gray-400">Type</span>
-              </div>
-              <p className="text-[11px] text-[#2E7D32] font-semibold truncate">
-                {propertyType}
-              </p>
+          {/* Compact info row - no redundancy */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-1 bg-[#F5F5F5] px-2 py-1.5 rounded-full">
+              <CheckCircle size={10} className="text-[#2E7D32]" />
+              <span className="text-[9px] text-[#2E7D32] font-medium capitalize">{status}</span>
             </div>
-
-            <div className="bg-[#F5F5F5] rounded-lg p-2">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <MapPin size={11} className="text-gray-400" />
-                <span className="text-[9px] text-gray-400">Area</span>
-              </div>
-              <p className="text-[11px] text-[#2E7D32] font-semibold truncate">
-                {area}
-              </p>
-            </div>
-
-            <div className="bg-[#F5F5F5] rounded-lg p-2">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <Clock size={11} className="text-gray-400" />
-                <span className="text-[9px] text-gray-400">Status</span>
-              </div>
-              <p className="text-[11px] text-[#2E7D32] font-semibold capitalize">
-                {status}
-              </p>
-            </div>
-
-            <div className="bg-[#F5F5F5] rounded-lg p-2">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <Zap size={11} className="text-gray-400" />
-                <span className="text-[9px] text-gray-400">Ready</span>
-              </div>
-              <p className="text-[11px] text-[#2E7D32] font-semibold">
-                Available
-              </p>
+            <div className="flex items-center gap-1 bg-[#F5F5F5] px-2 py-1.5 rounded-full">
+              <Zap size={10} className="text-[#FE9200]" />
+              <span className="text-[9px] text-gray-600 font-medium">Ready to Move</span>
             </div>
           </div>
 
@@ -613,38 +583,76 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
       </div>
 
       {/* Hero Section */}
-      <div className="flex-1 px-3 sm:px-6 lg:px-8 pb-3 sm:pb-5 flex flex-col min-h-0">
-        <div className="flex-1 max-w-[1380px] w-full mx-auto relative rounded-2xl sm:rounded-[28px] overflow-hidden shadow-xl">
+      <div className="flex-1 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 flex flex-col min-h-0">
+        <div className="flex-1 max-w-[1400px] w-full mx-auto relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
+          {/* Hero Background Image */}
           <img
             src="/hero-section.jpg"
             alt="Modern homes"
             className="w-full h-full object-cover"
           />
 
-          {/* Gradient overlay for better card visibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent pointer-events-none" />
+          {/* Gradient overlay - stronger at bottom for cards */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80 pointer-events-none" />
 
-          {/* Cards carousel */}
-          <div
-            ref={containerRef}
-            className="absolute bottom-3 sm:bottom-6 left-0 right-0 overflow-hidden touch-pan-y"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => {
-              if (isDraggingRef.current) handleMouseUp();
-              else setIsPaused(false);
-            }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            style={{ cursor: isDragging ? "grabbing" : "grab" }}
-          >
-            <div
-              className="mx-auto overflow-visible px-3 sm:px-4"
-              style={{ maxWidth: "1380px" }}
-            >
+          {/* Hero Content Container - Flexbox for proper spacing */}
+          <div className="absolute inset-0 flex flex-col justify-between p-4 sm:p-8 lg:p-10">
+
+            {/* Top Section - Value Proposition */}
+            <div className="max-w-2xl">
+              <h1 className="text-xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white leading-tight mb-2 sm:mb-3 drop-shadow-lg">
+                Find Verified Tenants
+                <span className="block text-[#FE9200]">Looking for Rentals</span>
+              </h1>
+              <p className="text-xs sm:text-base lg:text-lg text-white/90 mb-3 sm:mb-5 max-w-lg drop-shadow-md leading-relaxed">
+                Connect with active renters in Nairobi. Get their contact details. Close deals faster.
+              </p>
+
+              {/* Trust Indicators */}
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/20">
+                  <Shield size={12} className="text-[#2E7D32] sm:w-4 sm:h-4" />
+                  <span className="text-[10px] sm:text-sm text-white font-medium">Verified Tenants</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/20">
+                  <TrendingUp size={12} className="text-[#FE9200] sm:w-4 sm:h-4" />
+                  <span className="text-[10px] sm:text-sm text-white font-medium">{displayLeads.length}+ Active Leads</span>
+                </div>
+                <div className="hidden sm:flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+                  <Zap size={14} className="text-[#FE9200]" />
+                  <span className="text-sm text-white font-medium">Pay Per Lead</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Section - Cards */}
+            <div className="mt-auto">
+              {/* Section Label */}
+              <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                <div className="w-1 h-4 sm:h-5 bg-[#FE9200] rounded-full"></div>
+                <h2 className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider">
+                  Latest Tenant Requests
+                </h2>
+              </div>
+
+              {/* Cards Carousel */}
+              <div
+                ref={containerRef}
+                className="overflow-hidden touch-pan-y"
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => {
+                  if (isDraggingRef.current) handleMouseUp();
+                  else setIsPaused(false);
+                }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{ cursor: isDragging ? "grabbing" : "grab" }}
+              >
+                <div className="overflow-visible">
               {loading ? (
                 <div className="flex gap-2 sm:gap-3 px-1 sm:px-2">
                   {(isMobile ? [1, 2, 3, 4] : [1, 2, 3, 4, 5]).map((i) => (
@@ -687,6 +695,8 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
             </div>
           </div>
         </div>
