@@ -247,12 +247,12 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
                   <Phone className="w-4 h-4 flex-shrink-0" /> {agent.phone || 'N/A'}
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
-                  <MapPin className="w-4 h-4 flex-shrink-0" /> {agent.location || 'N/A'}
+                  <MapPin className="w-4 h-4 flex-shrink-0" /> {agent.location || agent.city || 'N/A'}
                 </div>
               </div>
               <div className="space-y-2 md:space-y-3">
                 <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
-                  <Calendar className="w-4 h-4 flex-shrink-0" /> Joined: {agent.createdAt?.toDate ? agent.createdAt.toDate().toLocaleDateString() : 'N/A'}
+                  <Calendar className="w-4 h-4 flex-shrink-0" /> Joined: {agent.createdAt ? new Date(agent.createdAt).toLocaleDateString() : 'N/A'}
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600">
                   <Activity className="w-4 h-4 flex-shrink-0" /> Role: {agent.role}
@@ -345,16 +345,27 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
                     <div className="min-w-0 flex-1">
                       <p className="text-xs md:text-sm font-medium text-gray-900 truncate">
                         {tx.type === 'credit_purchase' ? 'Purchased Credits' :
-                         tx.type === 'lead_unlock' ? 'Unlocked Lead' : tx.type}
+                         tx.type === 'lead_unlock' ? 'Unlocked Lead' :
+                         tx.type === 'credit' ? 'Credit Added' :
+                         tx.type === 'debit' ? 'Credit Deducted' : tx.type}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {tx.createdAt?.toDate ? tx.createdAt.toDate().toLocaleDateString() : 'Unknown date'}
+                        {tx.created_at ? new Date(tx.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'Unknown date'}
                       </p>
+                      {tx.reason && (
+                        <p className="text-xs text-gray-400 mt-0.5">{tx.reason}</p>
+                      )}
                     </div>
                     <div className={`font-mono font-medium text-sm md:text-base flex-shrink-0 ml-2 ${
-                      tx.type === 'credit_add' || tx.type === 'credit_purchase' ? 'text-[#16A34A]' : 'text-red-600'
+                      tx.type === 'credit_add' || tx.type === 'credit_purchase' || tx.type === 'credit' ? 'text-[#16A34A]' : 'text-red-600'
                     }`}>
-                      {tx.type === 'credit_add' || tx.type === 'credit_purchase' ? '+' : '-'}{tx.amount}
+                      {tx.type === 'credit_add' || tx.type === 'credit_purchase' || tx.type === 'credit' ? '+' : '-'}{Math.abs(tx.amount)}
                     </div>
                   </div>
                 ))
@@ -363,6 +374,33 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
               )}
             </div>
           </div>
+
+          {/* Recent Lead Unlocks */}
+          {agent.recentUnlocks?.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+              <h3 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
+                <Unlock className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
+                Recent Lead Unlocks
+              </h3>
+              <div className="space-y-3">
+                {agent.recentUnlocks.map((unlock, idx) => (
+                  <div key={idx} className="flex justify-between items-start py-2 border-b border-gray-100 last:border-0">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs md:text-sm font-medium text-gray-900">
+                        {unlock.lead?.tenant_name || 'Lead'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {unlock.lead?.location || 'Unknown location'} • {unlock.lead?.property_type || 'Property'}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-400 flex-shrink-0 ml-2">
+                      {unlock.created_at ? new Date(unlock.created_at).toLocaleDateString() : 'N/A'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Wallet & Stats */}
@@ -385,13 +423,54 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
             <h3 className="font-bold text-gray-900 mb-3 md:mb-4 text-sm md:text-base">Performance</h3>
             <div className="space-y-3 md:space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-xs md:text-sm text-gray-600">Total Unlocks</span>
+                <span className="text-xs md:text-sm text-gray-600">Total Leads Unlocked</span>
                 <span className="font-semibold text-sm md:text-base">{agent.stats?.unlockedCount || 0}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs md:text-sm text-gray-600">Referrals</span>
-                <span className="font-semibold text-sm md:text-base">0</span>
+                <span className="text-xs md:text-sm text-gray-600">Properties Listed</span>
+                <span className="font-semibold text-sm md:text-base">{agent.stats?.propertiesCount || 0}</span>
               </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs md:text-sm text-gray-600">Referrals</span>
+                <span className="font-semibold text-sm md:text-base">{agent.stats?.referralsCount || 0}</span>
+              </div>
+              {agent.average_rating > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs md:text-sm text-gray-600">Rating</span>
+                  <span className="font-semibold text-sm md:text-base">⭐ {agent.average_rating?.toFixed(1)} ({agent.total_ratings || 0})</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Account Info */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+            <h3 className="font-bold text-gray-900 mb-3 md:mb-4 text-sm md:text-base">Account Details</h3>
+            <div className="space-y-2 text-xs md:text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Account Status</span>
+                <span className={`font-medium ${agent.status === 'active' ? 'text-green-600' : 'text-red-600'}`}>
+                  {agent.status?.charAt(0).toUpperCase() + agent.status?.slice(1) || 'Active'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Subscription</span>
+                <span className="font-medium text-gray-700">
+                  {agent.subscriptionStatus?.charAt(0).toUpperCase() + agent.subscriptionStatus?.slice(1) || 'Free'}
+                </span>
+              </div>
+              {agent.verifiedAt && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Verified On</span>
+                  <span className="text-gray-700">{new Date(agent.verifiedAt).toLocaleDateString()}</span>
+                </div>
+              )}
+              {agent.lastLoginAt && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Last Login</span>
+                  <span className="text-gray-700">{new Date(agent.lastLoginAt).toLocaleDateString()}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

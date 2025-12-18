@@ -141,11 +141,15 @@ export const AgentManagement = () => {
                 </div>
                 <div>
                   <span className="text-gray-500">Location:</span>
-                  <span className="ml-1 text-gray-700">{agent.location || 'N/A'}</span>
+                  <span className="ml-1 text-gray-700">{agent.location || agent.city || 'N/A'}</span>
                 </div>
-                <div className="col-span-2">
+                <div>
                   <span className="text-gray-500">Joined:</span>
-                  <span className="ml-1 text-gray-700">{agent.createdAt?.toDate ? agent.createdAt.toDate().toLocaleDateString() : 'N/A'}</span>
+                  <span className="ml-1 text-gray-700">{agent.createdAt ? new Date(agent.createdAt).toLocaleDateString() : 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Leads Unlocked:</span>
+                  <span className="ml-1 font-medium text-gray-700">{agent.unlockedLeadsCount ?? 0}</span>
                 </div>
               </div>
               {agent.status === 'suspended' && (
@@ -173,6 +177,7 @@ export const AgentManagement = () => {
               <tr>
                 <th className="px-6 py-3">Agent</th>
                 <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Leads Unlocked</th>
                 <th className="px-6 py-3">Wallet</th>
                 <th className="px-6 py-3">Location</th>
                 <th className="px-6 py-3">Joined</th>
@@ -182,11 +187,11 @@ export const AgentManagement = () => {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">Loading agents...</td>
+                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">Loading agents...</td>
                 </tr>
               ) : filteredAgents.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">No agents found matching your filters.</td>
+                  <td colSpan="7" className="px-6 py-8 text-center text-gray-500">No agents found matching your filters.</td>
                 </tr>
               ) : (
                 filteredAgents.map((agent) => (
@@ -216,14 +221,17 @@ export const AgentManagement = () => {
                         )}
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-gray-600 font-medium">
+                      {agent.unlockedLeadsCount ?? 0}
+                    </td>
                     <td className="px-6 py-4 font-mono text-gray-600">
                       {agent.walletBalance || 0} CR
                     </td>
                     <td className="px-6 py-4 text-gray-600">
-                      {agent.location || 'N/A'}
+                      {agent.location || agent.city || 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-gray-500">
-                      {agent.createdAt?.toDate ? agent.createdAt.toDate().toLocaleDateString() : 'N/A'}
+                      {agent.createdAt ? new Date(agent.createdAt).toLocaleDateString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Button
