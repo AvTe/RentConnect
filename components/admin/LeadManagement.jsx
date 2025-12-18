@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, Filter, MoreVertical, Eye, ChevronLeft, ChevronRight, MapPin, DollarSign
+import {
+  Search, Filter, MoreVertical, Eye, ChevronLeft, ChevronRight, MapPin, DollarSign, Inbox
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
+import { LeadFilters } from '../ui/LeadFilters';
 import { getAllLeads, getLead } from '@/lib/database';
 import { LeadDetail } from './LeadDetail';
 
@@ -11,22 +12,30 @@ export const LeadManagement = () => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState(null);
-  const [filter, setFilter] = useState('all'); // all, active, closed
-  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all'); // all, active, closed
+  const [filteredLeads, setFilteredLeads] = useState([]);
+  const [activeFilters, setActiveFilters] = useState({});
+
+  // Handle filter change from LeadFilters component
+  const handleFilterChange = (filtered, filters) => {
+    setFilteredLeads(filtered);
+    setActiveFilters(filters);
+  };
 
   useEffect(() => {
     fetchLeads();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [statusFilter]);
 
   const fetchLeads = async () => {
     setLoading(true);
     // Pass 'all' to get all leads if filter is 'all', otherwise pass specific status
-    const statusFilter = filter === 'all' ? 'all' : filter;
-    const result = await getAllLeads({ status: statusFilter, limit: 100 });
-    
+    const status = statusFilter === 'all' ? 'all' : statusFilter;
+    const result = await getAllLeads({ status, limit: 100 });
+
     if (result.success) {
       setLeads(result.data);
+      setFilteredLeads(result.data); // Initialize filtered leads
     }
     setLoading(false);
   };
@@ -43,20 +52,12 @@ export const LeadManagement = () => {
     }
   };
 
-  const filteredLeads = leads.filter(lead => {
-    const location = lead.location || lead.requirements?.location || '';
-    const propertyType = lead.property_type || lead.requirements?.property_type || '';
-    const tenantName = lead.tenant_name || '';
-    const tenantEmail = lead.tenant_email || '';
-    
-    const matchesSearch = 
-      location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      propertyType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tenantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tenantEmail.toLowerCase().includes(searchTerm.toLowerCase());
-      
-    return matchesSearch;
-  });
+  // Determine which leads to display
+  const displayLeads = filteredLeads.length > 0 || Object.keys(activeFilters).some(k => activeFilters[k])
+    ? filteredLeads
+    : leads;
+
+  const hasActiveFilters = Object.keys(activeFilters).some(k => activeFilters[k]);
 
   if (selectedLead) {
     return (
@@ -81,43 +82,54 @@ export const LeadManagement = () => {
         </div>
       </div>
 
-      {/* Filters & Search */}
-      <div className="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3 md:gap-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by location or property type..."
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-          {['all', 'active', 'closed'].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium capitalize whitespace-nowrap transition-colors ${
-                filter === f
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+      {/* Status Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {['all', 'active', 'closed'].map((f) => (
+          <button
+            key={f}
+            onClick={() => setStatusFilter(f)}
+            className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium capitalize whitespace-nowrap transition-colors ${
+              statusFilter === f
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            {f === 'all' ? 'All Leads' : f}
+          </button>
+        ))}
+      </div>
+
+      {/* Advanced Filters */}
+      <div className="bg-white p-3 md:p-4 rounded-xl shadow-sm border border-gray-200">
+        <LeadFilters
+          leads={leads}
+          onFilterChange={handleFilterChange}
+          showSearch={true}
+          showPropertyType={true}
+          showLocation={true}
+          showBudget={true}
+          className="w-full"
+        />
+        {hasActiveFilters && (
+          <p className="text-xs text-gray-500 mt-2">
+            Showing {displayLeads.length} of {leads.length} leads
+          </p>
+        )}
       </div>
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
         {loading ? (
           <div className="bg-white rounded-xl p-6 text-center text-gray-500">Loading leads...</div>
-        ) : filteredLeads.length === 0 ? (
-          <div className="bg-white rounded-xl p-6 text-center text-gray-500">No leads found matching your filters.</div>
+        ) : displayLeads.length === 0 ? (
+          <div className="bg-white rounded-xl p-6 text-center">
+            <Inbox className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <p className="text-gray-500">
+              {hasActiveFilters ? 'No leads match your filters.' : 'No leads found.'}
+            </p>
+          </div>
         ) : (
-          filteredLeads.map((lead) => (
+          displayLeads.map((lead) => (
             <div key={lead.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="min-w-0 flex-1">
@@ -180,12 +192,14 @@ export const LeadManagement = () => {
                 <tr>
                   <td colSpan="6" className="px-6 py-8 text-center text-gray-500">Loading leads...</td>
                 </tr>
-              ) : filteredLeads.length === 0 ? (
+              ) : displayLeads.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">No leads found matching your filters.</td>
+                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                    {hasActiveFilters ? 'No leads match your filters.' : 'No leads found.'}
+                  </td>
                 </tr>
               ) : (
-                filteredLeads.map((lead) => (
+                displayLeads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-900">
                       {lead.property_type || lead.requirements?.property_type || 'N/A'}
@@ -230,7 +244,7 @@ export const LeadManagement = () => {
 
         {/* Pagination (Mock) */}
         <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between text-sm text-gray-500">
-          <span>Showing {filteredLeads.length} leads</span>
+          <span>Showing {displayLeads.length} of {leads.length} leads</span>
           <div className="flex gap-2">
             <button className="p-1 rounded hover:bg-gray-100 disabled:opacity-50" disabled><ChevronLeft className="w-4 h-4" /></button>
             <button className="p-1 rounded hover:bg-gray-100 disabled:opacity-50" disabled><ChevronRight className="w-4 h-4" /></button>
@@ -240,7 +254,7 @@ export const LeadManagement = () => {
 
       {/* Mobile Pagination */}
       <div className="md:hidden px-4 py-3 bg-white rounded-xl border border-gray-200 flex items-center justify-between text-xs text-gray-500">
-        <span>Showing {filteredLeads.length} leads</span>
+        <span>Showing {displayLeads.length} of {leads.length} leads</span>
         <div className="flex gap-2">
           <button className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-50" disabled><ChevronLeft className="w-4 h-4" /></button>
           <button className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-50" disabled><ChevronRight className="w-4 h-4" /></button>

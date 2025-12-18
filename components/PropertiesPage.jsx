@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Filter, Search, Lock, Phone, MessageCircle, Home, Bed, Bath, DollarSign } from 'lucide-react';
+import { MapPin, Filter, Search, Lock, Phone, MessageCircle, Home, Bed, Bath, DollarSign, Inbox } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
+import { LeadFilters } from './ui/LeadFilters';
 import { getAllLeads, unlockLead, getUnlockedLeads, getWalletBalance } from '@/lib/database';
 
 export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [unlockedLeads, setUnlockedLeads] = useState([]);
   const [walletBalance, setWalletBalance] = useState(0);
+  const [filteredLeads, setFilteredLeads] = useState([]);
+  const [activeFilters, setActiveFilters] = useState({});
+
+  // Handle filter change from LeadFilters component
+  const handleFilterChange = (filtered, filters) => {
+    setFilteredLeads(filtered);
+    setActiveFilters(filters);
+  };
 
   useEffect(() => {
     fetchLeads();
@@ -24,6 +32,7 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
     const result = await getAllLeads({ status: 'active' });
     if (result.success) {
       setLeads(result.data);
+      setFilteredLeads(result.data); // Initialize filtered leads
     }
     setLoading(false);
   };
@@ -73,49 +82,76 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
 
   const isLeadUnlocked = (leadId) => unlockedLeads.includes(leadId);
 
-  const filteredLeads = leads.filter(lead => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      lead.requirements?.location?.toLowerCase().includes(searchLower) ||
-      lead.requirements?.property_type?.toLowerCase().includes(searchLower)
-    );
-  });
+  // Determine which leads to display
+  const displayLeads = filteredLeads.length > 0 || Object.keys(activeFilters).some(k => activeFilters[k])
+    ? filteredLeads
+    : leads;
+
+  const hasActiveFilters = Object.keys(activeFilters).some(k => activeFilters[k]);
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Requested Properties</h1>
-            <p className="text-gray-600 mt-1">Browse property requests from verified tenants</p>
-          </div>
-          
-          {/* Search & Filter */}
-          <div className="flex gap-2 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search location..." 
-                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FE9200] bg-white text-gray-900 placeholder-gray-400"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+        {/* Header Section */}
+        <div className="flex flex-col gap-4 mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Requested Properties</h1>
+              <p className="text-gray-600 mt-1">
+                {displayLeads.length} property request{displayLeads.length !== 1 ? 's' : ''} from verified tenants
+                {hasActiveFilters && (
+                  <span className="text-[#FE9200] ml-1">(filtered from {leads.length})</span>
+                )}
+              </p>
             </div>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
           </div>
+
+          {/* Lead Filters Component */}
+          <LeadFilters
+            leads={leads}
+            onFilterChange={handleFilterChange}
+            showSearch={true}
+            showPropertyType={true}
+            showLocation={true}
+            showBudget={true}
+            className="w-full"
+          />
         </div>
 
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FE9200]"></div>
           </div>
+        ) : displayLeads.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+              <Inbox className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
+              {hasActiveFilters ? 'No properties match your filters' : 'No property requests yet'}
+            </h3>
+            <p className="text-gray-500 text-sm mb-6 text-center max-w-sm">
+              {hasActiveFilters
+                ? 'Try adjusting your filters to see more results.'
+                : 'Check back soon for new property requests from tenants.'}
+            </p>
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => {
+                  setFilteredLeads(leads);
+                  setActiveFilters({});
+                }}
+              >
+                <Filter className="w-4 h-4" />
+                Clear Filters
+              </Button>
+            )}
+          </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredLeads.map((lead) => (
+            {displayLeads.map((lead) => (
               <div key={lead.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300">
                 <div className="p-6">
                   {/* Header */}

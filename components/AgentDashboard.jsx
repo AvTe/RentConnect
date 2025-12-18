@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
+import { LeadFilters } from "./ui/LeadFilters";
 import { AgentProfile } from "./AgentProfile";
 import { NotificationBell } from "./NotificationBell";
 import {
@@ -70,6 +71,19 @@ export const AgentDashboard = ({
   const [loadingSubscription, setLoadingSubscription] = useState(false);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [filteredLeads, setFilteredLeads] = useState(leads);
+  const [activeFilters, setActiveFilters] = useState({});
+
+  // Update filtered leads when leads prop changes
+  useEffect(() => {
+    setFilteredLeads(leads);
+  }, [leads]);
+
+  // Handle filter change from LeadFilters component
+  const handleFilterChange = (filtered, filters) => {
+    setFilteredLeads(filtered);
+    setActiveFilters(filters);
+  };
 
   // Handle responsive sidebar close on navigation
   const handleTabChange = (tabId) => {
@@ -669,46 +683,81 @@ export const AgentDashboard = ({
     }
 
     // Leads Tab (Default)
+    // Use filteredLeads for display, which updates via AJAX filtering
+    const displayLeads = filteredLeads.length > 0 || Object.keys(activeFilters).some(k => activeFilters[k])
+      ? filteredLeads
+      : leads;
+
     return (
       <div className="space-y-4 md:space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div>
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-              Leads Dashboard
-            </h2>
-            <p className="text-gray-500 text-sm">
-              Potential tenants matching your criteria
-            </p>
+        {/* Header */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+                Leads Dashboard
+              </h2>
+              <p className="text-gray-500 text-sm">
+                {displayLeads.length} lead{displayLeads.length !== 1 ? 's' : ''} available
+                {Object.keys(activeFilters).some(k => activeFilters[k]) && (
+                  <span className="text-[#FE9200] ml-1">
+                    (filtered from {leads.length})
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">
-              <Filter className="w-4 h-4" />
-              Filter
-            </button>
-          </div>
+
+          {/* Lead Filters Component */}
+          <LeadFilters
+            leads={leads}
+            onFilterChange={handleFilterChange}
+            showSearch={true}
+            showPropertyType={true}
+            showLocation={true}
+            showBudget={true}
+            className="w-full"
+          />
         </div>
 
         {/* Leads Grid - 4 columns on desktop, 2-3 on tablet, 1 on mobile */}
         <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {leads.length === 0 ? (
+          {displayLeads.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                 <Inbox className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-1">
-                No leads found yet
+                {Object.keys(activeFilters).some(k => activeFilters[k])
+                  ? 'No leads match your filters'
+                  : 'No leads found yet'}
               </h3>
               <p className="text-gray-500 text-sm mb-6 text-center max-w-sm">
-                Once potential tenants match your criteria, they will appear
-                here.
+                {Object.keys(activeFilters).some(k => activeFilters[k])
+                  ? 'Try adjusting your filters to see more leads.'
+                  : 'Once potential tenants match your criteria, they will appear here.'}
               </p>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Settings className="w-4 h-4" />
-                Update Criteria
-              </Button>
+              {Object.keys(activeFilters).some(k => activeFilters[k]) ? (
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  onClick={() => {
+                    setFilteredLeads(leads);
+                    setActiveFilters({});
+                  }}
+                >
+                  <Filter className="w-4 h-4" />
+                  Clear Filters
+                </Button>
+              ) : (
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  Update Criteria
+                </Button>
+              )}
             </div>
           ) : (
-            leads.map((lead) => {
+            displayLeads.map((lead) => {
               // property_type is the main field where the type is stored (e.g., "1 Bedroom", "2 Bedroom", etc.)
               const propertyType = lead.property_type || lead.requirements?.property_type || lead.type || 'Property';
               const location = lead.location || lead.requirements?.location || 'Location';
