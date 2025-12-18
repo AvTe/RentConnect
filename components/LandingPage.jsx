@@ -583,7 +583,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
       </div>
 
       {/* Hero Section */}
-      <div className="flex-1 px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 flex flex-col min-h-0">
+      <div className="flex-1 px-4 sm:px-6 lg:px-8 flex flex-col min-h-0">
         <div className="flex-1 max-w-[1400px] w-full mx-auto relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
           {/* Hero Background Image */}
           <img

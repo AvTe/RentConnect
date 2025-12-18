@@ -9,11 +9,13 @@ import {
   adminHasPermission
 } from '@/lib/database';
 
-// Create Supabase admin client for sending invites
-const supabaseAdmin = createSupabaseClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+// Create Supabase admin client lazily (only when needed at runtime)
+const getSupabaseAdmin = () => {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+};
 
 // Helper function to send admin invite email via Supabase Auth
 const sendAdminInviteEmail = async ({ to, name, role, inviteUrl, customMessage, invitedBy }) => {
@@ -28,7 +30,7 @@ const sendAdminInviteEmail = async ({ to, name, role, inviteUrl, customMessage, 
     // Use Supabase Auth to invite user
     console.log(`Sending admin invite to ${to} via Supabase Auth`);
 
-    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(to, {
+    const { data, error } = await getSupabaseAdmin().auth.admin.inviteUserByEmail(to, {
       data: {
         name: name,
         role: role || 'sub_admin',
