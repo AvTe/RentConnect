@@ -118,6 +118,43 @@ html {
 .animate-slide-in-down { animation: slideInDown 0.4s ease-out; }
 .animate-skeleton { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
+/* AI Sparkle Animation */
+@keyframes sparkle {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(1.1) rotate(5deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(0.95) rotate(-3deg);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(1.05) rotate(3deg);
+    opacity: 0.95;
+  }
+}
+
+@keyframes sparkle-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(254, 146, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px rgba(254, 146, 0, 0.3);
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle 2.5s ease-in-out infinite;
+}
+
+.animate-sparkle-glow {
+  animation: sparkle-glow 2s ease-in-out infinite;
+}
+
 /* Image optimization */
 img {
   max-width: 100%;

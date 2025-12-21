@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Bug, X, ChevronDown, ChevronUp, Database, User, Globe, Server, AlertCircle, CheckCircle, Loader2, RefreshCw, Trash2, Copy, Check, Filter } from 'lucide-react';
+import { Bug, X, ChevronDown, ChevronUp, Database, User, Globe, Server, AlertCircle, CheckCircle, Loader2, RefreshCw, Trash2, Copy, Check, Filter, Sparkles } from 'lucide-react';
 
 export default function DebugPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,6 +16,7 @@ export default function DebugPanel() {
     auth: { status: 'checking', message: 'Checking...', user: null },
     api: { status: 'checking', message: 'Checking...', endpoints: {} },
     env: { status: 'checking', message: 'Checking...', vars: {} },
+    ai: { status: 'checking', message: 'Checking...', details: null },
   });
 
   // Track if initial checks have run to prevent duplicates
@@ -277,6 +278,63 @@ export default function DebugPanel() {
     }
   }, [addLog]);
 
+  // Check AI Service (Groq)
+  const checkAI = useCallback(async () => {
+    setStatus(prev => ({ ...prev, ai: { ...prev.ai, status: 'checking', message: 'Testing AI service...' } }));
+    addLog('info', 'AI', 'Testing Groq AI service...');
+
+    try {
+      const startTime = Date.now();
+      const response = await fetch('/api/ai/parse-requirements', {
+        method: 'GET',
+      });
+      const latency = Date.now() - startTime;
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.status === 'configured') {
+        setStatus(prev => ({
+          ...prev,
+          ai: {
+            status: 'ok',
+            message: `Ready (${latency}ms)`,
+            details: {
+              model: data.model,
+              apiKeyPreview: data.apiKeyPreview,
+              latency
+            }
+          }
+        }));
+        addLog('success', 'AI', `Groq AI configured - ${data.model} (${latency}ms)`);
+      } else {
+        setStatus(prev => ({
+          ...prev,
+          ai: {
+            status: 'error',
+            message: 'API key not configured',
+            details: { hint: 'Add GROQ_API_KEY to .env.local' }
+          }
+        }));
+        addLog('error', 'AI', 'Groq API key not configured');
+      }
+    } catch (err) {
+      const errorMessage = err.message || 'Unknown error';
+      setStatus(prev => ({
+        ...prev,
+        ai: {
+          status: 'error',
+          message: errorMessage,
+          details: { error: errorMessage }
+        }
+      }));
+      addLog('error', 'AI', `AI service check failed: ${errorMessage}`);
+    }
+  }, [addLog]);
+
   // Run all checks
   const runAllChecks = useCallback(async () => {
     addLog('info', 'System', '=== Starting diagnostics ===');
@@ -284,8 +342,9 @@ export default function DebugPanel() {
     await checkDatabase();
     await checkAuth();
     await checkAPIs();
+    await checkAI();
     addLog('info', 'System', '=== Diagnostics complete ===');
-  }, [checkEnv, checkDatabase, checkAuth, checkAPIs, addLog]);
+  }, [checkEnv, checkDatabase, checkAuth, checkAPIs, checkAI, addLog]);
 
   // Listen for auth state changes - only set up once
   useEffect(() => {
@@ -623,6 +682,22 @@ export default function DebugPanel() {
                 {getStatusIcon(status.env.status)}
               </div>
               <p className="text-xs text-gray-400 truncate">{status.env.message}</p>
+            </div>
+
+            {/* AI Status */}
+            <div className="bg-gray-800 p-2 rounded border border-gray-700 col-span-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-3 h-3 text-pink-400" />
+                <span className="text-xs font-medium">AI (Groq)</span>
+                {getStatusIcon(status.ai.status)}
+                {status.ai.details?.model && (
+                  <span className="text-xs text-gray-500 ml-auto">{status.ai.details.model}</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 truncate">{status.ai.message}</p>
+              {status.ai.details?.apiKeyPreview && (
+                <p className="text-xs text-gray-500 font-mono mt-0.5">Key: {status.ai.details.apiKeyPreview}</p>
+              )}
             </div>
           </div>
 
