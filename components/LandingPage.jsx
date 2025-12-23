@@ -562,13 +562,13 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
               <>
                 <button
                   onClick={() => onNavigate("login", { tab: "agent" })}
-                  className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#FE9200] text-white font-medium hover:bg-[#E58300] transition-all shadow-md hover:shadow-lg text-xs whitespace-nowrap"
+                  className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#FE9200] text-white font-medium hover:bg-[#E58300] transition-all hover:shadow-lg text-xs whitespace-nowrap"
                 >
                   I Am An Agent
                 </button>
                 <button
                   onClick={() => onNavigate("login", { tab: "tenant" })}
-                  className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#0B8A4D] text-white font-medium hover:bg-[#097a43] transition-all shadow-md hover:shadow-lg text-xs whitespace-nowrap"
+                  className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#0B8A4D] text-white font-medium hover:bg-[#097a43] transition-all hover:shadow-lg text-xs whitespace-nowrap"
                 >
                   Sign In
                 </button>
@@ -615,13 +615,13 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
               <button
                 onClick={() => onNavigate("tenant-form")}
-                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white border-2 border-[#FE9200] text-[#FE9200] font-medium hover:bg-orange-50 transition-all text-sm shadow-md hover:shadow-lg"
+                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white/20 backdrop-blur-md border-2 border-[#FE9200] text-[#ffffff] font-medium hover:bg-[#FE9200] hover:text-white transition-all text-sm  hover:shadow-lg"
               >
                 I Need a Place to Rent
               </button>
               <button
                 onClick={() => onNavigate("tenant-form")}
-                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#FE9200] text-white font-medium hover:bg-[#E58300] transition-all shadow-md hover:shadow-lg text-sm"
+                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#FE9200] text-white font-medium hover:bg-[#E58300] transition-all  hover:shadow-lg text-sm"
               >
                 I&apos;m Looking For House
               </button>
