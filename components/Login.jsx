@@ -54,8 +54,8 @@ const GoogleLogo = () => (
   </svg>
 );
 
-export const Login = ({ onNavigate, onLogin, authError }) => {
-  const [userType, setUserType] = useState('tenant');
+export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
+  const [userType, setUserType] = useState(initialTab || 'tenant');
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -72,6 +72,13 @@ export const Login = ({ onNavigate, onLogin, authError }) => {
       setError(authError);
     }
   }, [authError]);
+
+  // Update userType when initialTab prop changes
+  useEffect(() => {
+    if (initialTab) {
+      setUserType(initialTab);
+    }
+  }, [initialTab]);
 
   const handleResendConfirmation = async () => {
     if (!email.trim()) {

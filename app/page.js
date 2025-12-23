@@ -26,11 +26,18 @@ import { useLeads, useSubscription } from '@/lib/hooks';
 
 export default function RentalLeadApp() {
   const [view, setView] = useState('landing');
+  const [viewOptions, setViewOptions] = useState({});
   const [currentUser, setCurrentUser] = useState(null);
   const [prefilledData, setPrefilledData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedAgentId, setSelectedAgentId] = useState(null);
   const [authError, setAuthError] = useState(null);
+
+  // Handle navigation with optional parameters
+  const handleNavigate = (newView, options = {}) => {
+    setView(newView);
+    setViewOptions(options);
+  };
   
   // Use custom hooks for data management
   // Only fetch leads if user is logged in (to avoid permission errors)
@@ -528,14 +535,14 @@ export default function RentalLeadApp() {
   const renderView = () => {
     switch (view) {
       case 'landing':
-        return <LandingPage onNavigate={setView} onSearch={handleSearch} currentUser={currentUser} authError={authError} />;
+        return <LandingPage onNavigate={handleNavigate} onSearch={handleSearch} currentUser={currentUser} authError={authError} />;
       case 'login':
-        return <Login onNavigate={setView} onLogin={handleLogin} authError={authError} />;
+        return <Login onNavigate={handleNavigate} onLogin={handleLogin} authError={authError} initialTab={viewOptions.tab} />;
       case 'tenant-form':
         return (
-          <TenantForm 
-            onNavigate={setView} 
-            onSubmit={handleTenantSubmit} 
+          <TenantForm
+            onNavigate={handleNavigate}
+            onSubmit={handleTenantSubmit}
             initialData={prefilledData}
             currentUser={currentUser}
             onUpdateUser={(data) => setCurrentUser(prev => prev ? ({ ...prev, ...data }) : prev)}
@@ -543,22 +550,22 @@ export default function RentalLeadApp() {
         );
       case 'user-dashboard':
         return (
-          <UserDashboard 
-            onNavigate={setView} 
-            initialTab="dashboard" 
+          <UserDashboard
+            onNavigate={handleNavigate}
+            initialTab="dashboard"
             currentUser={currentUser}
             onUpdateUser={handleUpdateUser}
             onLogout={handleLogout}
           />
         );
       case 'profile':
-        return currentUser?.type === 'agent' 
+        return currentUser?.type === 'agent'
           ? (
-            <AgentDashboard 
-              onNavigate={setView} 
-              leads={leads} 
+            <AgentDashboard
+              onNavigate={handleNavigate}
+              leads={leads}
               isPremium={isPremium}
-              onUnlock={() => setView('subscription')} 
+              onUnlock={() => handleNavigate('subscription')}
               initialTab="profile"
               currentUser={currentUser}
               onUpdateUser={handleUpdateUser}
@@ -566,8 +573,8 @@ export default function RentalLeadApp() {
             />
           )
           : (
-            <UserDashboard 
-              onNavigate={setView} 
+            <UserDashboard
+              onNavigate={handleNavigate}
               initialTab="profile"
               currentUser={currentUser}
               onUpdateUser={handleUpdateUser}
@@ -575,14 +582,14 @@ export default function RentalLeadApp() {
             />
           );
       case 'agent-registration':
-        return <AgentRegistration onNavigate={setView} onSubmit={handleAgentRegistration} />;
+        return <AgentRegistration onNavigate={handleNavigate} onSubmit={handleAgentRegistration} />;
       case 'agent-dashboard':
         return (
-          <AgentDashboard 
-            onNavigate={setView} 
-            leads={leads} 
+          <AgentDashboard
+            onNavigate={handleNavigate}
+            leads={leads}
             isPremium={isPremium}
-            onUnlock={() => setView('subscription')} 
+            onUnlock={() => handleNavigate('subscription')}
             initialTab="leads"
             currentUser={currentUser}
             onUpdateUser={handleUpdateUser}
@@ -591,9 +598,9 @@ export default function RentalLeadApp() {
         );
       case 'subscription':
         return (
-          <SubscriptionPage 
-            onNavigate={setView} 
-            onBuyCredits={handleSubscribe} 
+          <SubscriptionPage
+            onNavigate={handleNavigate}
+            onBuyCredits={handleSubscribe}
           />
         );
       case 'agents-listing':
@@ -601,7 +608,7 @@ export default function RentalLeadApp() {
         if (currentUser && currentUser.type !== 'agent') {
           return (
             <UserDashboard
-              onNavigate={setView}
+              onNavigate={handleNavigate}
               initialTab="dashboard"
               currentUser={currentUser}
               onUpdateUser={handleUpdateUser}
@@ -612,7 +619,7 @@ export default function RentalLeadApp() {
         return (
           <AgentsListingPage
             currentUser={currentUser}
-            onNavigate={setView}
+            onNavigate={handleNavigate}
             onViewAgentProfile={handleViewAgentProfile}
           />
         );
@@ -621,7 +628,7 @@ export default function RentalLeadApp() {
         if (currentUser && currentUser.type !== 'agent') {
           return (
             <UserDashboard
-              onNavigate={setView}
+              onNavigate={handleNavigate}
               initialTab="dashboard"
               currentUser={currentUser}
               onUpdateUser={handleUpdateUser}
@@ -633,15 +640,15 @@ export default function RentalLeadApp() {
           <AgentDetailPage
             agentId={selectedAgentId}
             currentUser={currentUser}
-            onNavigate={setView}
-            onBack={() => setView('agents-listing')}
+            onNavigate={handleNavigate}
+            onBack={() => handleNavigate('agents-listing')}
           />
         );
       case 'user-subscription':
         return (
           <UserSubscriptionPage
             currentUser={currentUser}
-            onNavigate={setView}
+            onNavigate={handleNavigate}
             onSubscribe={handleSubscribe}
           />
         );
@@ -649,14 +656,14 @@ export default function RentalLeadApp() {
         return (
           <AdminDashboard
             currentUser={currentUser}
-            onNavigate={setView}
+            onNavigate={handleNavigate}
             onLogout={handleLogout}
           />
         );
       case 'properties':
         return (
           <PropertiesPage
-            onNavigate={setView}
+            onNavigate={handleNavigate}
             currentUser={currentUser}
             isPremium={isPremium}
           />
@@ -667,30 +674,30 @@ export default function RentalLeadApp() {
             onContinue={() => {
               if (currentUser) {
                 const dashboardView = currentUser.role === 'agent' ? 'agent-dashboard' : 'user-dashboard';
-                setView(dashboardView);
+                handleNavigate(dashboardView);
               } else {
-                setView('login');
+                handleNavigate('login');
               }
             }}
-            onGoHome={() => setView('landing')}
+            onGoHome={() => handleNavigate('landing')}
           />
         );
       case 'password-reset-success':
         return (
           <PasswordResetSuccess
-            onContinue={() => setView('login')}
-            onSignIn={() => setView('login')}
+            onContinue={() => handleNavigate('login')}
+            onSignIn={() => handleNavigate('login')}
           />
         );
       case 'reset-password':
         return (
           <PasswordResetForm
-            onSuccess={() => setView('password-reset-success')}
-            onCancel={() => setView('landing')}
+            onSuccess={() => handleNavigate('password-reset-success')}
+            onCancel={() => handleNavigate('landing')}
           />
         );
       default:
-        return <LandingPage onNavigate={setView} onSearch={handleSearch} />;
+        return <LandingPage onNavigate={handleNavigate} onSearch={handleSearch} />;
     }
   };
 
@@ -698,10 +705,10 @@ export default function RentalLeadApp() {
     <main className="min-h-screen bg-white">
 
       {currentUser && view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && view !== 'admin-dashboard' && view !== 'email-confirmed' && view !== 'password-reset-success' && view !== 'reset-password' && (
-        <Header 
-          onNavigate={setView} 
-          currentUser={currentUser} 
-          onLogout={handleLogout} 
+        <Header
+          onNavigate={handleNavigate}
+          currentUser={currentUser}
+          onLogout={handleLogout}
         />
       )}
       {renderView()}

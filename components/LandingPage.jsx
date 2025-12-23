@@ -71,7 +71,7 @@ const LeadCard = ({
 
   const handleOverlayClick = () => {
     if (!currentUser) {
-      onNavigate("login");
+      onNavigate("login", { tab: "agent" });
       return;
     }
     if (!isPremium) {
@@ -536,45 +536,41 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
     <div className="h-screen w-screen bg-white font-sans overflow-hidden flex flex-col">
       {/* Header */}
       <div className="px-3 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-2 sm:pb-3 relative z-20">
-        <div className="max-w-[1380px] mx-auto bg-white rounded-full shadow-lg border border-gray-100 px-4 sm:px-8 py-2 sm:py-3 flex justify-between items-center">
+        <div className="max-w-[1400px] mx-auto bg-white rounded-full shadow-lg border border-gray-100 px-4 sm:px-8 py-2 sm:py-3 flex justify-between items-center">
           <div className="cursor-pointer" onClick={() => onNavigate("landing")}>
             <img
               src="/yoombaa-logo.svg"
               alt="Yoombaa"
-              className="h-6 sm:h-9 w-auto"
+              className="h-7 sm:h-10 w-auto"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {currentUser ? (
               <div
-                className="flex items-center gap-1.5 sm:gap-3 cursor-pointer"
+                className="flex items-center gap-2 sm:gap-3 cursor-pointer"
                 onClick={() => onNavigate("profile")}
               >
                 <span className="hidden sm:block text-gray-700 font-medium text-sm">
                   Hi {String(currentUser.name || "User").split(" ")[0]}
                 </span>
-                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-[#FE9200] to-[#7A00AA] flex items-center justify-center text-white font-bold text-xs sm:text-sm">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[#FE9200] to-[#FF6B00] flex items-center justify-center text-white font-bold text-sm sm:text-base shadow-md">
                   {String(currentUser.name || "U").charAt(0)}
                 </div>
               </div>
             ) : (
               <>
                 <button
-                  onClick={() => onNavigate("tenant-form")}
-                  className="px-2.5 sm:px-6 py-1.5 sm:py-2.5 rounded-full bg-white border-2 border-[#FE9200] text-[#FE9200] font-semibold hover:bg-orange-50 transition-all text-[10px] sm:text-sm whitespace-nowrap"
+                  onClick={() => onNavigate("login", { tab: "agent" })}
+                  className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#FE9200] text-white font-medium hover:bg-[#E58300] transition-all shadow-md hover:shadow-lg text-xs whitespace-nowrap"
                 >
-                  <span className="hidden sm:inline">
-                    I Need a Place to Rent
-                  </span>
-                  <span className="sm:hidden">Find Home</span>
+                  I Am An Agent
                 </button>
                 <button
-                  onClick={() => onNavigate("login")}
-                  className="px-2.5 sm:px-6 py-1.5 sm:py-2.5 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all shadow-md text-[10px] sm:text-sm whitespace-nowrap"
+                  onClick={() => onNavigate("login", { tab: "tenant" })}
+                  className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-[#0B8A4D] text-white font-medium hover:bg-[#097a43] transition-all shadow-md hover:shadow-lg text-xs whitespace-nowrap"
                 >
-                  <span className="hidden sm:inline">I Am An Agent</span>
-                  <span className="sm:hidden">Agent</span>
+                  Sign In
                 </button>
               </>
             )}
@@ -583,150 +579,151 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
       </div>
 
       {/* Hero Section */}
-      <div className="flex-1 px-4 sm:px-6 lg:px-8 flex flex-col min-h-0">
-        <div className="flex-1 max-w-[1400px] w-full mx-auto relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
-          {/* Hero Background Image */}
-          <img
-            src="/hero-section.jpg"
-            alt="Modern homes"
-            className="w-full h-full object-cover"
-          />
+      <div className="flex-1 relative flex flex-col min-h-0">
+        {/* Hero Background Container */}
+        <div className="absolute inset-0 mx-3 sm:mx-6 lg:mx-8 mb-16 sm:mb-20">
+          <div className="h-[115%] w-full max-w-[1400px] mx-auto relative rounded-2xl sm:rounded-3xl overflow-hidden">
+            {/* Hero Background Image */}
+            <img
+              src="/hero-section.jpg"
+              alt="Modern homes"
+              className="w-full h-full object-cover"
+            />
 
-          {/* Gradient overlay - stronger at bottom for cards */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80 pointer-events-none" />
-
-          {/* Hero Content Container - Flexbox for proper spacing */}
-          <div className="absolute inset-0 flex flex-col justify-between p-4 sm:p-8 lg:p-10">
-
-            {/* Top Section - Value Proposition */}
-            <div className="max-w-2xl">
-              <h1 className="text-xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white leading-tight mb-2 sm:mb-3 drop-shadow-lg">
-                Find Verified Tenants
-                <span className="block text-[#FE9200]">Looking for Rentals</span>
-              </h1>
-              <p className="text-xs sm:text-base lg:text-lg text-white/90 mb-3 sm:mb-5 max-w-lg drop-shadow-md leading-relaxed">
-                Connect with active renters in Nairobi. Get their contact details. Close deals faster.
-              </p>
-
-              {/* Trust Indicators */}
-              <div className="flex flex-wrap gap-2 sm:gap-3">
-                <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/20">
-                  <Shield size={12} className="text-[#2E7D32] sm:w-4 sm:h-4" />
-                  <span className="text-[10px] sm:text-sm text-white font-medium">Verified Tenants</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/20">
-                  <TrendingUp size={12} className="text-[#FE9200] sm:w-4 sm:h-4" />
-                  <span className="text-[10px] sm:text-sm text-white font-medium">{displayLeads.length}+ Active Leads</span>
-                </div>
-                <div className="hidden sm:flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-                  <Zap size={14} className="text-[#FE9200]" />
-                  <span className="text-sm text-white font-medium">Pay Per Lead</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Section - Cards */}
-            <div className="mt-auto">
-              {/* Section Label */}
-              <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                <div className="w-1 h-4 sm:h-5 bg-[#FE9200] rounded-full"></div>
-                <h2 className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider">
-                  Latest Tenant Requests
-                </h2>
-              </div>
-
-              {/* Cards Carousel */}
-              <div
-                ref={containerRef}
-                className="overflow-hidden touch-pan-y"
-                onMouseEnter={() => setIsPaused(true)}
-                onMouseLeave={() => {
-                  if (isDraggingRef.current) handleMouseUp();
-                  else setIsPaused(false);
-                }}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                style={{ cursor: isDragging ? "grabbing" : "grab" }}
-              >
-                <div className="overflow-visible">
-              {loading ? (
-                <div className="flex gap-2 sm:gap-3 px-1 sm:px-2">
-                  {(isMobile ? [1, 2, 3, 4] : [1, 2, 3, 4, 5]).map((i) => (
-                    <SkeletonCardSmall key={i} isMobile={isMobile} />
-                  ))}
-                </div>
-              ) : extendedLeads.length > 0 ? (
-                <div
-                  ref={trackRef}
-                  className="flex will-change-transform"
-                  style={{
-                    gap: `${gap}px`,
-                    transform: `translateX(${translateX}px)`,
-                    transition:
-                      isTransitioning && !isDragging
-                        ? "transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
-                        : "none",
-                  }}
-                >
-                  {extendedLeads.map((lead, index) => (
-                    <div
-                      key={`${lead.id}-${index}`}
-                      ref={index === 0 ? cardRef : null}
-                    >
-                      <LeadCard
-                        lead={lead}
-                        currentUser={currentUser}
-                        isPremium={isPremium}
-                        onNavigate={onNavigate}
-                        onContactClick={handleContactClick}
-                        isMobile={isMobile}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-32 sm:h-64 text-gray-500 bg-white/80 backdrop-blur-sm rounded-xl mx-2 sm:mx-4">
-                  <p className="text-xs sm:text-base">
-                    No property leads available yet
-                  </p>
-                </div>
-              )}
-            </div>
+            {/* Dark gradient overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 pointer-events-none" />
           </div>
+        </div>
+
+        {/* Hero Content - Centered */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pb-48 sm:pb-56">
+          <div className="text-center max-w-3xl mx-auto">
+            {/* Main Headline */}
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-2 sm:mb-3 drop-shadow-sm">
+              Find Verified Tenants
+            </h1>
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-medium italic text-[#FE9200] leading-tight mb-4 sm:mb-5 drop-shadow-sm">
+              Looking For Rentals
+            </h2>
+
+{/* 
+            <p className="text-base text-gray-700 mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed px-4">
+              Connect With Active Renters In Nairobi. Get Their Contact Details. Close Deals Faster.
+            </p> */}
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+              <button
+                onClick={() => onNavigate("tenant-form")}
+                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white border-2 border-[#FE9200] text-[#FE9200] font-medium hover:bg-orange-50 transition-all text-sm shadow-md hover:shadow-lg"
+              >
+                I Need a Place to Rent
+              </button>
+              <button
+                onClick={() => onNavigate("tenant-form")}
+                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#FE9200] text-white font-medium hover:bg-[#E58300] transition-all shadow-md hover:shadow-lg text-sm"
+              >
+                I&apos;m Looking For House
+              </button>
             </div>
           </div>
         </div>
-        {/* Pagination dots - Smaller on mobile */}
-        {displayLeads.length > 0 && (
-          <div className="flex justify-center items-center gap-1.5 sm:gap-2 py-2 sm:py-4">
-            {displayLeads
-              .slice(0, Math.min(displayLeads.length, isMobile ? 6 : 8))
-              .map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setIsTransitioning(true);
-                    setCurrentIndex(index);
-                  }}
-                  className={`rounded-full transition-all duration-300 ${
-                    activeIndex === index
-                      ? "bg-[#FE9200] w-2.5 h-2.5 sm:w-3.5 sm:h-3.5"
-                      : "bg-gray-300 w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 hover:bg-gray-400"
-                  }`}
-                />
-              ))}
-            {displayLeads.length > (isMobile ? 6 : 8) && (
-              <span className="text-[10px] sm:text-xs text-gray-400 ml-0.5 sm:ml-1">
-                +{displayLeads.length - (isMobile ? 6 : 8)}
-              </span>
-            )}
+
+        {/* Cards Section - Positioned at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 px-3 sm:px-6 lg:px-8">
+          <div className="max-w-[1400px] mx-auto">
+            {/* Cards Carousel */}
+            <div
+              ref={containerRef}
+              className="overflow-hidden touch-pan-y pb-4 sm:pb-6"
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => {
+                if (isDraggingRef.current) handleMouseUp();
+                else setIsPaused(false);
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{ cursor: isDragging ? "grabbing" : "grab" }}
+            >
+              <div className="overflow-visible">
+                {loading ? (
+                  <div className="flex gap-2 sm:gap-3 px-1 sm:px-2">
+                    {(isMobile ? [1, 2, 3, 4] : [1, 2, 3, 4, 5, 6]).map((i) => (
+                      <SkeletonCardSmall key={i} isMobile={isMobile} />
+                    ))}
+                  </div>
+                ) : extendedLeads.length > 0 ? (
+                  <div
+                    ref={trackRef}
+                    className="flex will-change-transform"
+                    style={{
+                      gap: `${gap}px`,
+                      transform: `translateX(${translateX}px)`,
+                      transition:
+                        isTransitioning && !isDragging
+                          ? "transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+                          : "none",
+                    }}
+                  >
+                    {extendedLeads.map((lead, index) => (
+                      <div
+                        key={`${lead.id}-${index}`}
+                        ref={index === 0 ? cardRef : null}
+                      >
+                        <LeadCard
+                          lead={lead}
+                          currentUser={currentUser}
+                          isPremium={isPremium}
+                          onNavigate={onNavigate}
+                          onContactClick={handleContactClick}
+                          isMobile={isMobile}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-32 sm:h-48 text-gray-500 bg-white/90 backdrop-blur-sm rounded-xl mx-2 sm:mx-4">
+                    <p className="text-xs sm:text-base">
+                      No property leads available yet
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Pagination dots */}
+      {displayLeads.length > 0 && (
+        <div className="flex justify-center items-center gap-1.5 sm:gap-2 py-2 sm:py-3 bg-white/80 backdrop-blur-sm">
+          {displayLeads
+            .slice(0, Math.min(displayLeads.length, isMobile ? 6 : 8))
+            .map((_, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setIsTransitioning(true);
+                  setCurrentIndex(index);
+                }}
+                className={`rounded-full transition-all duration-300 ${
+                  activeIndex === index
+                    ? "bg-[#FE9200] w-2.5 h-2.5 sm:w-3.5 sm:h-3.5"
+                    : "bg-gray-400 w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 hover:bg-gray-500"
+                }`}
+              />
+            ))}
+          {displayLeads.length > (isMobile ? 6 : 8) && (
+            <span className="text-[10px] sm:text-xs text-gray-500 ml-0.5 sm:ml-1">
+              +{displayLeads.length - (isMobile ? 6 : 8)}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 };
