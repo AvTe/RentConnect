@@ -533,10 +533,10 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
   const activeIndex = displayLeads.length > 0 ? currentIndex % totalCards : 0;
 
   return (
-    <div className="h-screen w-screen bg-[#F5F5F5] font-sans overflow-hidden flex flex-col">
-      {/* Header - Compact on mobile */}
-      <div className="px-3 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-2 sm:pb-3">
-        <div className="max-w-[1380px] mx-auto bg-white rounded-full shadow-sm border border-gray-100 px-3 sm:px-8 py-1.5 sm:py-2.5 flex justify-between items-center">
+    <div className="h-screen w-screen bg-white font-sans overflow-hidden flex flex-col">
+      {/* Header */}
+      <div className="px-3 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-2 sm:pb-3 relative z-20">
+        <div className="max-w-[1380px] mx-auto bg-white rounded-full shadow-lg border border-gray-100 px-4 sm:px-8 py-2 sm:py-3 flex justify-between items-center">
           <div className="cursor-pointer" onClick={() => onNavigate("landing")}>
             <img
               src="/yoombaa-logo.svg"
