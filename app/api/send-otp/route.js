@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 // ============================================================================
-// Twilio SMS Service - Unified messaging provider
+// Africa's Talking SMS Service - Primary SMS provider for Kenya/Africa
 // ============================================================================
-import { sendOTP as sendTwilioOTP } from '@/lib/twilio';
+import { sendOTP as sendAfricasTalkingOTP, isConfigured as isATConfigured } from '@/lib/africastalking';
 
 // ============================================================================
 // Global OTP Store - uses globalThis to persist across serverless invocations
@@ -51,8 +51,8 @@ export async function POST(request) {
       );
     }
 
-    // Check if Twilio is configured
-    const twilioConfigured = !!process.env.TWILIO_ACCOUNT_SID && !!process.env.TWILIO_AUTH_TOKEN && !!process.env.TWILIO_PHONE_NUMBER;
+    // Check if Africa's Talking is configured
+    const africasTalkingConfigured = isATConfigured();
     const isDevelopment = process.env.NODE_ENV === 'development';
 
     // Clean expired OTPs periodically
@@ -98,7 +98,7 @@ export async function POST(request) {
     });
 
     // In development mode or if SMS not configured, just log the OTP
-    if (isDevelopment && !twilioConfigured) {
+    if (isDevelopment && !africasTalkingConfigured) {
       console.log('='.repeat(60));
       console.log('🔐 DEVELOPMENT MODE - OTP VERIFICATION CODE');
       console.log('='.repeat(60));
@@ -116,15 +116,15 @@ export async function POST(request) {
       });
     }
 
-    // Send OTP via Twilio SMS
-    if (twilioConfigured) {
+    // Send OTP via Africa's Talking SMS
+    if (africasTalkingConfigured) {
       try {
-        console.log(`[Twilio] Sending SMS OTP to ${phoneNumber}...`);
-        const smsResult = await sendTwilioOTP(phoneNumber, otp);
+        console.log(`[Africa's Talking] Sending SMS OTP to ${phoneNumber}...`);
+        const smsResult = await sendAfricasTalkingOTP(phoneNumber, otp);
 
         if (smsResult.success) {
-          console.log(`[Twilio] OTP sent to ${phoneNumber} successfully`);
-          console.log(`[Twilio] Message SID: ${smsResult.messageId}`);
+          console.log(`[Africa's Talking] OTP sent to ${phoneNumber} successfully`);
+          console.log(`[Africa's Talking] Message ID: ${smsResult.messageId}, Cost: ${smsResult.cost || 'N/A'}`);
 
           return NextResponse.json({
             success: true,
@@ -135,11 +135,11 @@ export async function POST(request) {
             ...(isDevelopment && { devOtp: otp })
           });
         } else {
-          console.error('[Twilio] Failed to send OTP:', smsResult.error);
+          console.error("[Africa's Talking] Failed to send OTP:", smsResult.error);
           // Fall through to fallback
         }
       } catch (smsError) {
-        console.error('[Twilio] Error sending OTP:', smsError);
+        console.error("[Africa's Talking] Error sending OTP:", smsError);
         // Fall through to fallback
       }
     }

@@ -13,6 +13,7 @@
     "@google/generative-ai": "^0.24.1",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.86.0",
+    "africastalking": "^0.7.8",
     "canvas-confetti": "^1.9.4",
     "groq-sdk": "^0.37.0",
     "lucide-react": "^0.460.0",
