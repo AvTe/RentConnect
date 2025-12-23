@@ -395,10 +395,12 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 ---
 
 ## Messaging Services
-- **SMS OTP**: Twilio (`lib/twilio.js`) - used for tenant phone verification via `/api/send-otp`
-- **WhatsApp**: Twilio (`lib/twilio.js`) - via `/api/whatsapp/send`
+- **SMS OTP**: Africa's Talking (`lib/africastalking.js`) - used for tenant phone verification via `/api/send-otp`
+- **WhatsApp**: Infobip (`lib/infobip.js`) - via `/api/whatsapp/send` with SMS fallback
+- **WhatsApp Webhooks**: `/api/whatsapp/webhook` - handles delivery reports and incoming messages
 - **Email**: Supabase Auth handles auth emails; custom via `/api/send-email`
 - **In-app**: Real-time via `subscribeToNotifications()` + `NotificationBell` component
+- **Twilio**: DEPRECATED (`lib/twilio.js`) - do not use for new code
 
 ---
 
@@ -419,7 +421,8 @@ npm run lint
 | Auth (signUp, signIn, signOut, OAuth) | `lib/auth-supabase.js` |
 | React hooks (useLeads, useSubscription) | `lib/hooks.js` |
 | Payment integration | `lib/pesapal.js` |
-| SMS & WhatsApp (Twilio) | `lib/twilio.js` |
+| SMS (Africa's Talking) | `lib/africastalking.js` |
+| WhatsApp (Infobip) | `lib/infobip.js` |
 | DB schema | `supabase_complete_schema.sql` |
 | Admin components (19) | `components/admin/*.jsx` |
 | UI primitives | `components/ui/*.jsx` |
@@ -435,7 +438,7 @@ npm run lint
 4. **Real-time subscriptions**: Use `subscribeToLeads()` from database.js, not raw Supabase
 5. **Image uploads**: Use `lib/storage-supabase.js`, not direct Supabase storage calls
 6. **Agent verification required**: Agents can't unlock leads until `verificationStatus === 'verified'`
-7. **OTP via SMS**: Uses Twilio, requires `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` env vars
+7. **OTP via SMS**: Uses Africa's Talking, requires `AT_API_KEY`, `AT_USERNAME` env vars
 8. **Landing page welcome popup**: Resets by deleting `yoombaa_welcome_seen` from localStorage
 9. **Case transformation**: DB uses `snake_case`, components use `camelCase` - use `transformUserData()`
 
@@ -598,11 +601,15 @@ PESAPAL_CONSUMER_KEY=...
 PESAPAL_CONSUMER_SECRET=...
 PESAPAL_ENV=sandbox  # or production
 
-# SMS & WhatsApp (Twilio)
-TWILIO_ACCOUNT_SID=your_account_sid
-TWILIO_AUTH_TOKEN=your_auth_token
-TWILIO_PHONE_NUMBER=+1234567890
-TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+# SMS (Africa's Talking)
+AT_API_KEY=your_africastalking_api_key
+AT_USERNAME=sandbox
+AT_USE_SANDBOX=true
+
+# WhatsApp (Infobip)
+INFOBIP_API_KEY=your_infobip_api_key
+INFOBIP_BASE_URL=https://xxxxx.api.infobip.com
+INFOBIP_WHATSAPP_SENDER=254700000000
 
 # Optional
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=...

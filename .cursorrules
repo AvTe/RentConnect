@@ -73,6 +73,7 @@ const memoizedFilters = useMemo(() => filters, [JSON.stringify(filters)]);
 | ALL DB operations | `lib/database.js` |
 | Auth functions | `lib/auth-supabase.js` |
 | SMS (Africa's Talking) | `lib/africastalking.js` |
+| WhatsApp (Infobip) | `lib/infobip.js` |
 | React hooks | `lib/hooks.js` |
 | Supabase clients | `utils/supabase/client.js`, `server.js` |
 | UI components | `components/ui/*.jsx` |
