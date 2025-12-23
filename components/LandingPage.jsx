@@ -599,7 +599,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pb-48 sm:pb-56">
           <div className="text-center max-w-3xl mx-auto">
             {/* Main Headline */}
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-2 sm:mb-3 drop-shadow-sm">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-2 sm:mb-3 drop-shadow-sm">
               Find Verified Tenants
             </h1>
             <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-medium italic text-[#FE9200] leading-tight mb-4 sm:mb-5 drop-shadow-sm">
