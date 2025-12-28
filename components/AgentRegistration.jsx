@@ -36,33 +36,34 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
   };
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden bg-white font-sans">
+    <div className="min-h-screen w-screen flex overflow-x-hidden bg-white font-sans">
       {/* Left Side - Form */}
-      <div className="w-full md:w-1/2 flex flex-col justify-center px-8 sm:px-12 lg:px-24 relative z-10 overflow-y-auto">
-        {/* Logo/Back */}
-        <div className="absolute top-8 left-8 sm:left-12 lg:left-24 flex items-center gap-4">
-          <button 
-            onClick={() => onNavigate('landing')} 
-            className="flex items-center text-gray-500 hover:text-gray-900 transition-colors"
+      <div className="w-full md:w-1/2 flex flex-col justify-start md:justify-center px-4 sm:px-8 lg:px-24 relative z-10 overflow-y-auto pb-20 md:pb-8">
+        {/* Logo/Back - 44px touch target */}
+        <div className="sticky top-0 bg-white py-4 mb-4 md:absolute md:top-8 md:left-8 lg:left-24 flex items-center gap-4 z-10">
+          <button
+            onClick={() => onNavigate('landing')}
+            className="flex items-center text-gray-500 hover:text-gray-900 transition-colors min-h-[44px] px-2 -ml-2"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back
           </button>
         </div>
 
-        <div className="max-w-md w-full mx-auto mt-20 md:mt-0">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Agent Registration</h2>
-          <p className="text-gray-500 mb-8">Join our network of verified agents and connect with serious tenants.</p>
+        <div className="max-w-md w-full mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Agent Registration</h2>
+          <p className="text-gray-500 mb-6 md:mb-8 text-sm md:text-base">Join our network of verified agents and connect with serious tenants.</p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Form with proper mobile spacing */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-11 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFE4C4] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
                   placeholder="John Doe"
                   value={formData.fullName}
                   onChange={(e) => setFormData({...formData, fullName: e.target.value})}
@@ -71,13 +72,13 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Agency Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Agency Name</label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-11 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFE4C4] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
                   placeholder="Nairobi Homes Ltd."
                   value={formData.agencyName}
                   onChange={(e) => setFormData({...formData, agencyName: e.target.value})}
@@ -86,13 +87,13 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="email"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-11 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFE4C4] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
                   placeholder="agent@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -101,7 +102,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
             </div>
 
             {/* Phone Verification with OTP */}
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <div className="bg-gray-50 rounded-xl p-3 md:p-4 border border-gray-200">
               <PhoneVerification
                 phoneNumber={formData.phone}
                 onPhoneChange={(value) => {
@@ -124,13 +125,13 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="password"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-11 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFE4C4] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -139,13 +140,13 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-11 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFE4C4] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
                   placeholder="e.g. Westlands, Nairobi"
                   value={formData.location}
                   onChange={(e) => setFormData({...formData, location: e.target.value})}
@@ -154,12 +155,12 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Referral Code (Optional)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Referral Code (Optional)</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+                  className="w-full pl-11 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFE4C4] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
                   placeholder="e.g. JOH1234"
                   value={formData.referralCode}
                   onChange={(e) => setFormData({...formData, referralCode: e.target.value})}
@@ -168,8 +169,8 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Government ID (NIN, Passport, or Driver&apos;s License)</label>
-              <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-[#FE9200] transition-colors text-center cursor-pointer">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Government ID (NIN, Passport, or Driver&apos;s License)</label>
+              <div className="relative border-2 border-dashed border-gray-200 rounded-xl p-4 md:p-6 hover:border-[#FE9200] transition-colors text-center cursor-pointer min-h-[80px]">
                 <input
                   type="file"
                   required
@@ -191,10 +192,11 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
               </div>
             </div>
 
+            {/* Submit button - 48px height per guidelines */}
             <Button
               type="submit"
               disabled={!isPhoneVerified}
-              className={`w-full py-3 ${isPhoneVerified ? 'bg-[#FE9200] hover:bg-[#E58300]' : 'bg-gray-400 cursor-not-allowed'} text-white rounded-lg font-medium shadow-lg shadow-[#FFE4C4] transition-all mt-4`}
+              className={`w-full min-h-[48px] py-3 ${isPhoneVerified ? 'bg-[#FE9200] hover:bg-[#E58300]' : 'bg-gray-400 cursor-not-allowed'} text-white rounded-xl font-medium shadow-lg shadow-[#FFE4C4] transition-all mt-4 text-sm`}
             >
               {isPhoneVerified ? 'Create Agent Account' : 'Verify Phone to Continue'}
             </Button>
@@ -204,10 +206,10 @@ export const AgentRegistration = ({ onNavigate, onSubmit }) => {
                 ⚠️ Please verify your phone number above to enable account creation
               </p>
             )}
-            
-            <p className="text-center text-sm text-gray-500 mt-4">
-              Already have an account? 
-              <button onClick={() => onNavigate('login')} className="ml-1 font-semibold text-[#FE9200] hover:underline">
+
+            <p className="text-center text-sm text-gray-500 mt-4 pb-4">
+              Already have an account?
+              <button onClick={() => onNavigate('login')} className="ml-1 font-semibold text-[#FE9200] hover:underline min-h-[44px]">
                 Sign In
               </button>
             </p>

@@ -1097,15 +1097,15 @@ export const AgentDashboard = ({
           />
         )}
 
-        {/* Top Header - Mobile shows logo, Desktop shows breadcrumb */}
+        {/* Top Header - 56px mobile (h-14), 64px desktop (h-16) */}
         <header className="h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0">
           <div className="flex items-center gap-3">
-            {/* Mobile: Show Logo */}
+            {/* Mobile: Show Logo - proper sizing */}
             <div className="md:hidden flex items-center gap-2">
-              <div className="w-7 h-7 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center text-white font-bold text-sm">
                 R
               </div>
-              <span className="font-bold text-gray-900">Yoombaa</span>
+              <span className="font-bold text-gray-900 text-base">Yoombaa</span>
             </div>
 
             {/* Desktop: Show breadcrumb */}
@@ -1124,11 +1124,11 @@ export const AgentDashboard = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4">
-            {/* Mobile: Show wallet balance */}
-            <div className="md:hidden flex items-center gap-1.5 bg-gray-100 px-2.5 py-1.5 rounded-full">
-              <Wallet className="w-3.5 h-3.5 text-[#FE9200]" />
-              <span className="text-xs font-semibold text-gray-900">{walletBalance}</span>
+          <div className="flex items-center gap-3 md:gap-4">
+            {/* Mobile: Show wallet balance - 44px touch target */}
+            <div className="md:hidden flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-xl min-h-[44px]">
+              <Wallet className="w-4 h-4 text-[#FE9200]" />
+              <span className="text-sm font-semibold text-gray-900">{walletBalance}</span>
             </div>
 
             <div className="relative hidden lg:block">
@@ -1136,7 +1136,7 @@ export const AgentDashboard = ({
               <input
                 type="text"
                 placeholder="Search leads..."
-                className="pl-9 pr-12 py-2 bg-gray-100 border-transparent rounded-lg text-sm focus:bg-white focus:border-gray-300 focus:ring-0 transition-all w-64 text-gray-900 placeholder-gray-400"
+                className="pl-9 pr-12 py-2.5 bg-gray-100 border-transparent rounded-xl text-sm focus:bg-white focus:border-gray-300 focus:ring-0 transition-all w-64 text-gray-900 placeholder-gray-400 min-h-[44px]"
               />
             </div>
             {currentUser?.id && (
@@ -1152,9 +1152,10 @@ export const AgentDashboard = ({
           </div>
         </header>
 
-        {/* Scrollable Content Area - Add bottom padding for mobile nav */}
-        <div className="flex-1 overflow-auto p-4 md:p-8 pb-24 md:pb-8">
-          <div className="max-w-6xl mx-auto">{renderContent()}</div>
+        {/* Scrollable Content Area - proper spacing per guidelines */}
+        {/* Top padding: 16px, Bottom: 80px for nav safe area */}
+        <div className="flex-1 overflow-auto px-4 md:px-8 pt-4 md:pt-6 pb-20 md:pb-8">
+          <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">{renderContent()}</div>
         </div>
       </main>
 

@@ -271,15 +271,15 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header - Mobile shows logo, Desktop shows breadcrumb */}
+        {/* Top Header - 56px mobile (h-14), 64px desktop (h-16) */}
         <header className="h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0">
           <div className="flex items-center gap-3">
-            {/* Mobile: Show Logo */}
+            {/* Mobile: Show Logo - proper sizing */}
             <div className="md:hidden flex items-center gap-2">
-              <div className="w-7 h-7 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center text-white font-bold text-sm">
                 R
               </div>
-              <span className="font-bold text-gray-900">Yoombaa</span>
+              <span className="font-bold text-gray-900 text-base">Yoombaa</span>
             </div>
 
             {/* Desktop: Show breadcrumb */}
@@ -294,13 +294,13 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4">
-            {/* Mobile: Post Request button */}
+          <div className="flex items-center gap-3 md:gap-4">
+            {/* Mobile: Post Request button - 44px touch target */}
             <button
               onClick={() => onNavigate('tenant-form')}
-              className="md:hidden flex items-center gap-1.5 bg-[#FE9200] text-white px-3 py-1.5 rounded-full text-xs font-medium"
+              className="md:hidden flex items-center gap-1.5 bg-[#FE9200] text-white px-4 py-2.5 rounded-xl text-sm font-medium min-h-[44px]"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               Post
             </button>
 
@@ -309,22 +309,24 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
               <input
                 type="text"
                 placeholder="Search or ask a question"
-                className="pl-9 pr-12 py-2 bg-gray-100 border-transparent rounded-lg text-sm focus:bg-white focus:border-gray-300 focus:ring-0 transition-all w-64 text-gray-900 placeholder-gray-400"
+                className="pl-9 pr-12 py-2.5 bg-gray-100 border-transparent rounded-xl text-sm focus:bg-white focus:border-gray-300 focus:ring-0 transition-all w-64 text-gray-900 placeholder-gray-400 min-h-[44px]"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
                 <kbd className="hidden sm:inline-block px-1.5 h-5 text-[10px] font-medium text-gray-500 bg-white border border-gray-300 rounded shadow-sm">⌘K</kbd>
               </div>
             </div>
-            <button className="p-2 text-gray-400 hover:text-gray-600 relative">
+            {/* Notification bell - 44px touch target */}
+            <button className="p-2.5 text-gray-400 hover:text-gray-600 relative min-w-[44px] min-h-[44px] flex items-center justify-center">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
           </div>
         </header>
 
-        {/* Scrollable Content Area - Add bottom padding for mobile nav */}
-        <div className="flex-1 overflow-auto p-4 md:p-8 pb-24 md:pb-8">
-          <div className="max-w-6xl mx-auto">
+        {/* Scrollable Content Area - proper spacing per guidelines */}
+        {/* Top padding: 16px, Bottom: 80px for nav safe area */}
+        <div className="flex-1 overflow-auto px-4 md:px-8 pt-4 md:pt-6 pb-20 md:pb-8">
+          <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
             {renderContent()}
           </div>
         </div>

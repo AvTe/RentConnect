@@ -2,6 +2,13 @@
 import React from 'react';
 import { Phone, Mail } from 'lucide-react';
 
+/**
+ * LeadCard Component
+ * Mobile Guidelines:
+ * - Card padding: 12-16px
+ * - Border radius: 12-16px (rounded-xl = 12px)
+ * - Text sizes: Title 16-18px, Body 14px, Small 12px
+ */
 export const LeadCard = ({
   lead,
   onContact,
@@ -25,25 +32,26 @@ export const LeadCard = ({
     return `KSh ${num.toLocaleString()}`;
   };
 
+  // Compact version for carousel/grid display
   if (compact) {
     return (
-      <div className="bg-[#FFF5E6] rounded-[20px] p-[6px] min-w-[260px] max-w-[280px]">
-        <div className="bg-white rounded-[16px] p-4 border-2 border-[#FE9200]/40 h-full">
+      <div className="bg-[#FFF5E6] rounded-xl p-1.5 min-w-[240px] max-w-[280px]">
+        <div className="bg-white rounded-xl p-3 border border-[#FE9200]/30 h-full">
           <div className="flex items-start justify-between mb-2">
-            <div>
-              <h3 className="text-base font-bold text-gray-900">{type}</h3>
-              <p className="text-gray-400 text-xs">{location}</p>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-bold text-gray-900 truncate">{type}</h3>
+              <p className="text-gray-400 text-xs truncate">{location}</p>
             </div>
           </div>
-          <div className="flex gap-2 mb-3">
-            <div className="bg-[#E8F5E9] text-[#2E7D32] px-2 py-1 rounded-full text-[10px] font-medium">
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            <div className="bg-[#E8F5E9] text-[#2E7D32] px-2 py-0.5 rounded-full text-[10px] font-medium">
               {contactCount} Contacts
             </div>
-            <div className="bg-[#FE9200] text-white px-3 py-1 rounded-full text-[10px] font-semibold">
+            <div className="bg-[#FE9200] text-white px-2 py-0.5 rounded-full text-[10px] font-semibold">
               {formatBudget(budget)}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="grid grid-cols-2 gap-1.5 mb-2">
             <div className="bg-gray-50 rounded-lg px-2 py-1.5">
               <span className="text-[10px] text-gray-600">Property: <span className="text-[#FE9200] font-medium">{type}</span></span>
             </div>
@@ -57,13 +65,13 @@ export const LeadCard = ({
               <span className="text-[10px] text-gray-600">Status: <span className="text-[#FE9200] font-medium">Active</span></span>
             </div>
           </div>
-          <div className="bg-[#FFF5E6] rounded-xl p-2 border-2 border-[#FE9200]/30">
+          <div className="bg-[#FFF5E6] rounded-lg p-2 border border-[#FE9200]/20">
             <div className="flex items-center justify-between text-[10px]">
               <div className="flex items-center gap-1">
                 <Phone className="w-3 h-3 text-gray-500" />
                 <span className="text-gray-600">Mobile</span>
               </div>
-              <div className="w-px h-4 bg-[#FE9200]/40" />
+              <div className="w-px h-3 bg-[#FE9200]/40" />
               <div className="flex items-center gap-1">
                 <Mail className="w-3 h-3 text-gray-500" />
                 <span className="text-gray-600">Email</span>
@@ -75,60 +83,66 @@ export const LeadCard = ({
     );
   }
 
+  // Full-size card - responsive for mobile
   return (
-    <div className="bg-[#FFF5E6] rounded-[24px] p-2">
-      <div className="bg-white rounded-[20px] p-6 border-2 border-[#FE9200]/40 h-full">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="text-2xl font-bold text-gray-900">{type}</h3>
-            <p className="text-gray-400 text-lg">{location}</p>
+    <div className="bg-[#FFF5E6] rounded-xl md:rounded-2xl p-1.5 md:p-2">
+      <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 border border-[#FE9200]/30 h-full">
+        {/* Header - stack on mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3 md:mb-4">
+          <div className="min-w-0">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900 truncate">{type}</h3>
+            <p className="text-gray-400 text-sm truncate">{location}</p>
           </div>
-          <div className="flex gap-3">
-            <div className="bg-[#E8F5E9] text-[#2E7D32] px-4 py-2 rounded-full text-xs font-medium">
+          <div className="flex flex-wrap gap-2">
+            <div className="bg-[#E8F5E9] text-[#2E7D32] px-2.5 py-1 rounded-full text-xs font-medium">
               {contactCount} Contacts
             </div>
-            <div className="bg-[#FE9200] text-white px-5 py-2 rounded-full text-sm font-semibold">
+            <div className="bg-[#FE9200] text-white px-3 py-1 rounded-full text-xs font-semibold">
               {formatBudget(budget)}
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-gray-50 rounded-2xl px-5 py-4">
-            <span className="text-sm text-gray-700">Property: <span className="text-[#FE9200] font-semibold">{type}</span></span>
+
+        {/* Info grid - 12-16px padding per guidelines */}
+        <div className="grid grid-cols-2 gap-2 md:gap-3 mb-3 md:mb-4">
+          <div className="bg-gray-50 rounded-xl px-3 py-2.5 md:px-4 md:py-3">
+            <span className="text-xs md:text-sm text-gray-700">Property: <span className="text-[#FE9200] font-semibold">{type}</span></span>
           </div>
-          <div className="bg-gray-50 rounded-2xl px-5 py-4">
-            <span className="text-sm text-gray-700">Budget: <span className="text-[#FE9200] font-semibold">{formatBudget(budget)}</span></span>
+          <div className="bg-gray-50 rounded-xl px-3 py-2.5 md:px-4 md:py-3">
+            <span className="text-xs md:text-sm text-gray-700">Budget: <span className="text-[#FE9200] font-semibold">{formatBudget(budget)}</span></span>
           </div>
-          <div className="bg-gray-50 rounded-2xl px-5 py-4">
-            <span className="text-sm text-gray-700">Location: <span className="text-[#FE9200] font-semibold">{location}</span></span>
+          <div className="bg-gray-50 rounded-xl px-3 py-2.5 md:px-4 md:py-3">
+            <span className="text-xs md:text-sm text-gray-700">Location: <span className="text-[#FE9200] font-semibold truncate">{location}</span></span>
           </div>
-          <div className="bg-gray-50 rounded-2xl px-5 py-4">
-            <span className="text-sm text-gray-700">Status: <span className="text-[#FE9200] font-semibold">Active</span></span>
+          <div className="bg-gray-50 rounded-xl px-3 py-2.5 md:px-4 md:py-3">
+            <span className="text-xs md:text-sm text-gray-700">Status: <span className="text-[#FE9200] font-semibold">Active</span></span>
           </div>
         </div>
-        <div className="bg-[#FFF5E6] rounded-2xl p-5 border-2 border-[#FE9200]/30">
+
+        {/* Contact info section */}
+        <div className="bg-[#FFF5E6] rounded-xl p-3 md:p-4 border border-[#FE9200]/20">
           {showContactInfo || isPremium ? (
-            <div className="flex items-center justify-around">
-              <div className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-gray-600" />
-                <span className="text-sm font-medium text-gray-700">{whatsapp || 'N/A'}</span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-around gap-2 sm:gap-0">
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                <span className="text-xs md:text-sm font-medium text-gray-700 truncate">{whatsapp || 'N/A'}</span>
               </div>
-              <div className="w-px h-8 bg-[#FE9200]/40" />
-              <div className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-gray-600" />
-                <span className="text-sm font-medium text-gray-700">{email || 'N/A'}</span>
+              <div className="hidden sm:block w-px h-6 bg-[#FE9200]/40" />
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                <span className="text-xs md:text-sm font-medium text-gray-700 truncate">{email || 'N/A'}</span>
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-around">
-              <div className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-500">Mobile Number</span>
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-gray-400" />
+                <span className="text-xs md:text-sm text-gray-500">Mobile Number</span>
               </div>
-              <div className="w-px h-8 bg-[#FE9200]/40" />
-              <div className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-500">Email Address</span>
+              <div className="w-px h-5 bg-[#FE9200]/40" />
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-gray-400" />
+                <span className="text-xs md:text-sm text-gray-500">Email Address</span>
               </div>
             </div>
           )}

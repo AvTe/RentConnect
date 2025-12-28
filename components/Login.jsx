@@ -355,7 +355,7 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
               </div>
             )}
 
-            {/* Form */}
+            {/* Form - proper mobile spacing */}
             <form className="space-y-4" onSubmit={handleEmailAuth}>
               {/* Full Name - Only for Registration */}
               {isRegistering && (
@@ -368,7 +368,7 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
                       required={isRegistering}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
+                      className="w-full pl-11 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
                       placeholder="Enter your name"
                     />
                   </div>
@@ -385,7 +385,7 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
+                    className="w-full pl-11 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
                     placeholder="Enter your email"
                   />
                 </div>
@@ -401,37 +401,37 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-11 py-3 border-2 border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
+                    className="w-full pl-11 pr-11 py-3 min-h-[48px] border border-gray-200 rounded-xl focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
                     placeholder="Enter your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
 
-              {/* Forgot Password */}
+              {/* Forgot Password - 44px touch target */}
               {!isRegistering && (
                 <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={handlePasswordReset}
-                    className="text-sm font-medium text-[#FE9200] hover:text-[#E58300] transition-colors"
+                    className="text-sm font-medium text-[#FE9200] hover:text-[#E58300] transition-colors min-h-[44px] flex items-center"
                   >
                     Forgot Password?
                   </button>
                 </div>
               )}
 
-              {/* Submit Button */}
+              {/* Submit Button - 48px height per guidelines */}
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4]/50 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 min-h-[48px] bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4]/50 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Processing...' : (isRegistering ? 'Sign Up' : 'Sign In')}
               </Button>

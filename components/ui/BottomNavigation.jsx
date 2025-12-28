@@ -3,7 +3,10 @@ import React from 'react';
 
 /**
  * Mobile Bottom Navigation Bar
- * Minimal pill-style navigation with active label badge
+ * Height: 56-64px (within 60-72px guideline)
+ * Icons: 20px (within 18-24px guideline)
+ * Touch targets: 44px min
+ * Nav labels: 11px (within 10-12px guideline)
  */
 export const BottomNavigation = ({
   items = [],
@@ -14,9 +17,9 @@ export const BottomNavigation = ({
   if (items.length === 0) return null;
 
   return (
-    <nav className={`fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center ${className}`}>
-      {/* Centered dark pill container */}
-      <div className="bg-gray-900 backdrop-blur-lg mb-4 rounded-full shadow-xl px-2 py-2 flex items-center gap-1">
+    <nav className={`fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center pb-safe ${className}`}>
+      {/* Centered dark pill container - height ~56px */}
+      <div className="bg-gray-900 backdrop-blur-lg mb-3 rounded-full shadow-xl px-3 py-2 flex items-center gap-0.5">
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = activeId === item.id;
@@ -26,18 +29,20 @@ export const BottomNavigation = ({
               key={item.id}
               onClick={() => onNavigate(item.id)}
               className={`
-                flex items-center gap-1.5 rounded-full
+                flex items-center justify-center gap-2 rounded-full
                 transition-all duration-200 ease-out
+                min-h-[44px] min-w-[44px]
                 ${isActive
-                  ? 'bg-white text-gray-900 px-3 py-1.5'
-                  : 'text-gray-400 hover:text-gray-300 p-2'
+                  ? 'bg-white text-gray-900 px-4 py-2'
+                  : 'text-gray-400 hover:text-gray-300 px-3 py-2'
                 }
               `}
             >
-              <Icon className="w-4 h-4" strokeWidth={2} />
-              {/* Label only visible when active */}
+              {/* Icons: 20px per guidelines */}
+              <Icon className="w-5 h-5" strokeWidth={2} />
+              {/* Label only visible when active - 11px */}
               {isActive && (
-                <span className="text-xs font-medium">
+                <span className="text-[11px] font-medium leading-none">
                   {item.label}
                 </span>
               )}

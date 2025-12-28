@@ -86,15 +86,18 @@ export const SidebarSection = ({ title, children, className = '' }) => (
 
 /**
  * Mobile-friendly card component for displaying stats and info
+ * Mobile Guidelines:
+ * - Padding: 12-16px (p-3 = 12px, p-4 = 16px)
+ * - Border radius: 12-16px (rounded-xl = 12px)
  */
-export const ResponsiveCard = ({ 
-  children, 
+export const ResponsiveCard = ({
+  children,
   className = '',
   padding = 'default' // 'default' | 'compact' | 'none'
 }) => {
   const paddingClasses = {
-    default: 'p-4 md:p-6',
-    compact: 'p-3 md:p-4',
+    default: 'p-3 md:p-4 lg:p-6',   // 12px mobile, 16px tablet, 24px desktop
+    compact: 'p-3 md:p-4',           // 12px mobile, 16px tablet+
     none: ''
   };
 
@@ -107,17 +110,19 @@ export const ResponsiveCard = ({
 
 /**
  * Responsive grid wrapper for dashboard stats and cards
+ * Mobile Guidelines:
+ * - Card gap: 12-16px (gap-3 = 12px, gap-4 = 16px)
  */
-export const ResponsiveGrid = ({ 
-  children, 
+export const ResponsiveGrid = ({
+  children,
   cols = { default: 1, sm: 2, md: 2, lg: 3, xl: 4 },
   gap = 'default',
   className = ''
 }) => {
   const gapClasses = {
-    default: 'gap-4 md:gap-6',
-    compact: 'gap-3 md:gap-4',
-    wide: 'gap-6 md:gap-8'
+    default: 'gap-3 md:gap-4',   // 12px mobile, 16px tablet+
+    compact: 'gap-2 md:gap-3',   // 8px mobile, 12px tablet+
+    wide: 'gap-4 md:gap-6'       // 16px mobile, 24px tablet+
   };
 
   const gridCols = `grid-cols-${cols.default} sm:grid-cols-${cols.sm || cols.default} md:grid-cols-${cols.md || cols.sm || cols.default} lg:grid-cols-${cols.lg || cols.md || cols.sm || cols.default}`;

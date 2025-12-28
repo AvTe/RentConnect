@@ -620,17 +620,18 @@ export const TenantForm = ({
           How can agents reach you?
         </p>
 
-        <div className="space-y-3 sm:space-y-4">
+        {/* Form fields - 44-52px height per mobile guidelines */}
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Your Name
             </label>
             <div className="relative">
-              <User className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 required
-                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm bg-white placeholder-gray-400"
+                className="w-full pl-11 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl text-sm text-gray-900 focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all bg-white placeholder-gray-400"
                 placeholder="John Doe"
                 value={formData.name}
                 onChange={(e) =>
@@ -641,15 +642,15 @@ export const TenantForm = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="email"
                 required
-                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus:border-[#FE9200] focus:ring-0 outline-none transition-all shadow-sm bg-white placeholder-gray-400"
+                className="w-full pl-11 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl text-sm text-gray-900 focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all bg-white placeholder-gray-400"
                 placeholder="john@example.com"
                 value={formData.email}
                 onChange={(e) =>
@@ -660,7 +661,7 @@ export const TenantForm = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
               WhatsApp Number
             </label>
             <div className="relative">
@@ -679,11 +680,11 @@ export const TenantForm = ({
                 disabled={
                   verificationStep === "verified" || verificationStep === "sent"
                 }
-                className="w-full pl-3 sm:pl-4 pr-4 py-3 sm:py-4 border-2 border-gray-100 rounded-xl text-base sm:text-lg text-gray-900 focus-within:border-[#FE9200] focus-within:ring-0 transition-all shadow-sm bg-white [&>input]:outline-none [&>input]:bg-transparent [&>input]:w-full [&>input]:ml-2 [&>input]:text-gray-900"
+                className="w-full pl-3 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl text-sm text-gray-900 focus-within:border-[#FE9200] focus-within:ring-2 focus-within:ring-[#FFE4C4] transition-all bg-white [&>input]:outline-none [&>input]:bg-transparent [&>input]:w-full [&>input]:ml-2 [&>input]:text-gray-900"
               />
               {verificationStep === "verified" && (
-                <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-[#FE9200]">
-                  <ShieldCheck className="w-5 sm:w-6 h-5 sm:h-6" />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#FE9200]">
+                  <ShieldCheck className="w-5 h-5" />
                 </div>
               )}
             </div>
