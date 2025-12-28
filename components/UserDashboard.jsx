@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import {
   LayoutGrid, FileText, History, Settings, LogOut,
-  Plus, Search, Bell, Menu, X, Users
+  Plus, Search, Bell, Menu, X, Users, User
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { UserProfile } from './UserProfile';
 import { RatingPrompt } from './RatingPrompt';
 import { getAllLeads } from '@/lib/database';
+import { BottomNavigation } from './ui/BottomNavigation';
 
 export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUser, onUpdateUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -198,36 +199,18 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
     );
   };
 
+  // Bottom navigation items for mobile
+  const bottomNavItems = [
+    { id: 'dashboard', label: 'Home', icon: LayoutGrid },
+    { id: 'requests', label: 'Requests', icon: FileText },
+    { id: 'profile', label: 'Profile', icon: User },
+  ];
+
   return (
     <div className="flex h-screen bg-[#F3F4F6] font-sans overflow-hidden">
-      {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar - Mobile slide-in, Desktop fixed */}
-      <aside className={`
-        fixed md:relative inset-y-0 left-0 z-50
-        w-64 bg-[#F9FAFB] border-r border-gray-200
-        flex flex-col flex-shrink-0
-        transform transition-transform duration-300 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:translate-x-0
-      `}>
+      {/* Sidebar - Desktop only */}
+      <aside className="hidden md:flex md:relative inset-y-0 left-0 w-64 bg-[#F9FAFB] border-r border-gray-200 flex-col flex-shrink-0">
         <div className="p-4">
-          {/* Mobile Close Button */}
-          <div className="md:hidden flex justify-end mb-2">
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
           {/* App Switcher / Logo */}
           <div className="flex items-center gap-3 px-2 mb-6">
             <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold">
@@ -238,7 +221,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
 
           {/* Create Button */}
           <button
-            onClick={() => { onNavigate('tenant-form'); setIsSidebarOpen(false); }}
+            onClick={() => { onNavigate('tenant-form'); }}
             className="w-full bg-white border border-gray-200 shadow-sm hover:shadow text-gray-900 font-medium py-2.5 px-4 rounded-lg mb-6 transition-all flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
@@ -258,7 +241,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             <div className="space-y-1">
               <SidebarItem icon={Settings} label="Profile Settings" id="profile" active={activeTab === 'profile'} />
               <button
-                onClick={() => { onLogout(); setIsSidebarOpen(false); }}
+                onClick={() => { onLogout(); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all"
               >
                 <LogOut className="w-4 h-4" />
@@ -288,21 +271,22 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header - Mobile optimized */}
+        {/* Top Header - Mobile shows logo, Desktop shows breadcrumb */}
         <header className="h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0">
           <div className="flex items-center gap-3">
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden p-2 -ml-2 rounded-lg text-gray-600 hover:bg-gray-100"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+            {/* Mobile: Show Logo */}
+            <div className="md:hidden flex items-center gap-2">
+              <div className="w-7 h-7 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                R
+              </div>
+              <span className="font-bold text-gray-900">Yoombaa</span>
+            </div>
 
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            {/* Desktop: Show breadcrumb */}
+            <div className="hidden md:flex items-center gap-2 text-sm text-gray-500">
               <span className="font-medium text-gray-900">Dashboard</span>
-              <span className="hidden sm:inline">/</span>
-              <span className="hidden sm:inline text-gray-900">
+              <span>/</span>
+              <span className="text-gray-900">
                 {activeTab === 'dashboard' ? 'Overview' :
                  activeTab === 'requests' ? 'My Requests' :
                  activeTab === 'profile' ? 'Profile' : 'Overview'}
@@ -311,6 +295,15 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
+            {/* Mobile: Post Request button */}
+            <button
+              onClick={() => onNavigate('tenant-form')}
+              className="md:hidden flex items-center gap-1.5 bg-[#FE9200] text-white px-3 py-1.5 rounded-full text-xs font-medium"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Post
+            </button>
+
             <div className="relative hidden lg:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -329,13 +322,20 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
           </div>
         </header>
 
-        {/* Scrollable Content Area - Mobile optimized padding */}
-        <div className="flex-1 overflow-auto p-4 md:p-8">
+        {/* Scrollable Content Area - Add bottom padding for mobile nav */}
+        <div className="flex-1 overflow-auto p-4 md:p-8 pb-24 md:pb-8">
           <div className="max-w-6xl mx-auto">
             {renderContent()}
           </div>
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNavigation
+        items={bottomNavItems}
+        activeId={activeTab}
+        onNavigate={handleTabChange}
+      />
     </div>
   );
 };

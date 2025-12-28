@@ -38,6 +38,7 @@ import {
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
 import { LeadFilters } from "./ui/LeadFilters";
+import { BottomNavigation } from "./ui/BottomNavigation";
 import { AgentProfile } from "./AgentProfile";
 import { NotificationBell } from "./NotificationBell";
 import {
@@ -460,6 +461,148 @@ export const AgentDashboard = ({
             </div>
           </div>
 
+          {/* Connected Leads Section - MOVED TO TOP */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-4 md:p-5 border-b border-gray-200">
+              <h3 className="font-bold text-gray-900">My Connected Leads</h3>
+              <p className="text-sm text-gray-500">
+                Leads you&apos;ve paid to connect with ({connectedLeads.length} total)
+              </p>
+            </div>
+
+            {connectedLeads.length === 0 ? (
+              <div className="p-6 md:p-8 text-center">
+                <div className="w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Inbox className="w-7 h-7 md:w-8 md:h-8 text-gray-400" />
+                </div>
+                <h4 className="font-medium text-gray-900 mb-2">No Connected Leads Yet</h4>
+                <p className="text-sm text-gray-500 mb-4">
+                  When you unlock leads from the dashboard, they&apos;ll appear here.
+                </p>
+                <Button
+                  onClick={() => handleTabChange('leads')}
+                  className="bg-[#FE9200] hover:bg-[#E58300]"
+                >
+                  Browse Leads
+                </Button>
+              </div>
+            ) : (
+              <div className="p-3 md:p-4">
+                <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-3">
+                  {connectedLeads.map((connection) => {
+                    const propertyType = connection.lead?.property_type || 'Property';
+                    const location = connection.lead?.location || 'Location';
+                    const budget = connection.lead?.budget || 0;
+                    const tenantName = String(connection.lead?.tenant_name || 'User');
+                    const bedrooms = connection.lead?.bedrooms;
+
+                    return (
+                      <div
+                        key={connection.id}
+                        className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200"
+                      >
+                        <div className="p-3 flex flex-col h-full">
+                          {/* Top Row: Contact Count Badge + Budget */}
+                          <div className="flex items-center justify-between mb-2 gap-1">
+                            <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1 rounded-full">
+                              <Users size={10} className="text-[#2E7D32]" />
+                              <span className="text-[10px] font-semibold text-[#2E7D32]">
+                                {connection.lead?.contacts || 0}
+                              </span>
+                            </div>
+                            <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
+                              {formatBudget(budget)}
+                            </span>
+                          </div>
+
+                          {/* Title - Looking for [Property Type] */}
+                          <h3 className="text-sm font-bold text-gray-900 mb-1 line-clamp-2">
+                            Looking for {propertyType}
+                          </h3>
+
+                          {/* Location with icon */}
+                          <div className="flex items-center gap-1 mb-2">
+                            <MapPin size={11} className="text-[#FE9200] flex-shrink-0" />
+                            <p className="text-xs text-gray-600 truncate">
+                              {formatLocation(location)}
+                            </p>
+                          </div>
+
+                          {/* Requirement Badge */}
+                          <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                            <div className="inline-flex items-center gap-1 bg-[#FFF5E6] border border-[#FE9200]/30 rounded-md px-2 py-1">
+                              <Home size={11} className="text-[#FE9200] flex-shrink-0" />
+                              <span className="text-[11px] text-[#E58300] font-semibold truncate">
+                                {bedrooms ? `${bedrooms} Bedroom` : propertyType}
+                              </span>
+                            </div>
+                            <div className="inline-flex items-center gap-1 bg-gray-100 rounded-md px-2 py-1">
+                              <Calendar size={10} className="text-gray-500 flex-shrink-0" />
+                              <span className="text-[10px] text-gray-600">
+                                {new Date(connection.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Tenant Info */}
+                          <div className="flex items-center gap-2 mb-2 p-2 bg-gray-50 rounded-lg">
+                            <div className="w-7 h-7 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs flex-shrink-0">
+                              {tenantName.charAt(0)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-gray-900 truncate">
+                                {tenantName}
+                              </p>
+                              <p className="text-[10px] text-gray-500">Looking for rent</p>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons - Always show since leads are unlocked */}
+                          <div className="grid grid-cols-2 gap-2 mt-auto">
+                            {connection.lead?.tenant_phone ? (
+                              <a
+                                href={`tel:${connection.lead.tenant_phone}`}
+                                className="flex items-center justify-center gap-1.5 px-2 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors text-xs"
+                              >
+                                <Phone className="w-3.5 h-3.5" />
+                                Call
+                              </a>
+                            ) : (
+                              <div className="flex items-center justify-center gap-1.5 px-2 py-2 bg-gray-100 text-gray-400 rounded-lg text-xs cursor-not-allowed">
+                                <Phone className="w-3.5 h-3.5" />
+                                N/A
+                              </div>
+                            )}
+                            {connection.lead?.tenant_phone || connection.lead?.tenant_email ? (
+                              <a
+                                href={
+                                  connection.lead?.tenant_phone
+                                    ? `https://wa.me/${connection.lead.tenant_phone.replace(/[^0-9]/g, '')}`
+                                    : `mailto:${connection.lead.tenant_email}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-1.5 px-2 py-2 bg-[#FE9200] text-white rounded-lg hover:bg-[#E58300] font-medium transition-colors text-xs"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                Chat
+                              </a>
+                            ) : (
+                              <div className="flex items-center justify-center gap-1.5 px-2 py-2 bg-gray-100 text-gray-400 rounded-lg text-xs cursor-not-allowed">
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                N/A
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Verification & Subscription Status Cards */}
           <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2">
             {/* Verification Status Card */}
@@ -590,94 +733,6 @@ export const AgentDashboard = ({
               )}
             </div>
           )}
-
-          {/* Connected Leads Section */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-4 md:p-5 border-b border-gray-200">
-              <h3 className="font-bold text-gray-900">My Connected Leads</h3>
-              <p className="text-sm text-gray-500">
-                Leads you&apos;ve paid to connect with ({connectedLeads.length} total)
-              </p>
-            </div>
-
-            {connectedLeads.length === 0 ? (
-              <div className="p-6 md:p-8 text-center">
-                <div className="w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Inbox className="w-7 h-7 md:w-8 md:h-8 text-gray-400" />
-                </div>
-                <h4 className="font-medium text-gray-900 mb-2">No Connected Leads Yet</h4>
-                <p className="text-sm text-gray-500 mb-4">
-                  When you unlock leads from the dashboard, they&apos;ll appear here.
-                </p>
-                <Button
-                  onClick={() => handleTabChange('leads')}
-                  className="bg-[#FE9200] hover:bg-[#E58300]"
-                >
-                  Browse Leads
-                </Button>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {connectedLeads.map((connection) => (
-                  <div key={connection.id} className="p-3 md:p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h4 className="font-medium text-gray-900 truncate">
-                            {connection.lead?.tenant_name || 'Anonymous Lead'}
-                          </h4>
-                          <Badge className={getConnectionStatusBadge(connection.status)}>
-                            {connection.status}
-                          </Badge>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            {connection.lead?.location || 'Unknown'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Home className="w-3 h-3" />
-                            {connection.lead?.property_type || 'Any'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(connection.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        {connection.lead?.budget && (
-                          <p className="text-sm font-medium text-[#FE9200] mt-1">
-                            Budget: KSh {connection.lead.budget.toLocaleString()}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        {connection.lead?.tenant_phone && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs"
-                            onClick={() => window.open(`tel:${connection.lead.tenant_phone}`)}
-                          >
-                            <Phone className="w-3 h-3 sm:mr-1" /> <span className="hidden sm:inline">Call</span>
-                          </Button>
-                        )}
-                        {connection.lead?.tenant_email && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs"
-                            onClick={() => window.open(`mailto:${connection.lead.tenant_email}`)}
-                          >
-                            <MessageCircle className="w-3 h-3 sm:mr-1" /> <span className="hidden sm:inline">Email</span>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       );
     }
@@ -720,8 +775,8 @@ export const AgentDashboard = ({
           />
         </div>
 
-        {/* Leads Grid - 4 columns on desktop, 2-3 on tablet, 1 on mobile */}
-        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {/* Leads Grid - 4 columns on desktop, 2-3 on tablet, 2 on mobile */}
+        <div className="grid gap-2 md:gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {displayLeads.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
@@ -862,35 +917,19 @@ export const AgentDashboard = ({
     );
   };
 
+  // Bottom navigation items for mobile
+  const bottomNavItems = [
+    { id: 'leads', label: 'Leads', icon: LayoutGrid },
+    { id: 'properties', label: 'Properties', icon: Home },
+    { id: 'referrals', label: 'Refer', icon: Share2 },
+    { id: 'profile', label: 'Profile', icon: User },
+  ];
+
   return (
     <div className="flex h-screen bg-[#F3F4F6] font-sans overflow-hidden">
-      {/* Mobile Overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar - Mobile slide-in, Desktop fixed */}
-      <aside className={`
-        fixed md:relative inset-y-0 left-0 z-50
-        w-64 bg-[#F9FAFB] border-r border-gray-200
-        flex flex-col flex-shrink-0
-        transform transition-transform duration-300 ease-in-out
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:translate-x-0
-      `}>
+      {/* Sidebar - Desktop only */}
+      <aside className="hidden md:flex md:relative inset-y-0 left-0 w-64 bg-[#F9FAFB] border-r border-gray-200 flex-col flex-shrink-0">
         <div className="p-4">
-          {/* Mobile Close Button */}
-          <div className="md:hidden flex justify-end mb-2">
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
 
           {/* App Switcher / Logo */}
           <div className="flex items-center gap-3 px-2 mb-6">
@@ -1058,21 +1097,22 @@ export const AgentDashboard = ({
           />
         )}
 
-        {/* Top Header - Responsive with hamburger menu */}
+        {/* Top Header - Mobile shows logo, Desktop shows breadcrumb */}
         <header className="h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 flex-shrink-0">
           <div className="flex items-center gap-3">
-            {/* Mobile Hamburger Menu */}
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden p-2 -ml-2 rounded-lg text-gray-600 hover:bg-gray-100"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+            {/* Mobile: Show Logo */}
+            <div className="md:hidden flex items-center gap-2">
+              <div className="w-7 h-7 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                R
+              </div>
+              <span className="font-bold text-gray-900">Yoombaa</span>
+            </div>
 
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span className="font-medium text-gray-900 hidden sm:inline">Agent Portal</span>
-              <span className="hidden sm:inline">/</span>
-              <span className="text-gray-900 font-medium sm:font-normal">
+            {/* Desktop: Show breadcrumb */}
+            <div className="hidden md:flex items-center gap-2 text-sm text-gray-500">
+              <span className="font-medium text-gray-900">Agent Portal</span>
+              <span>/</span>
+              <span className="text-gray-900">
                 {activeTab === "leads"
                   ? "Leads"
                   : activeTab === "properties"
@@ -1085,6 +1125,12 @@ export const AgentDashboard = ({
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
+            {/* Mobile: Show wallet balance */}
+            <div className="md:hidden flex items-center gap-1.5 bg-gray-100 px-2.5 py-1.5 rounded-full">
+              <Wallet className="w-3.5 h-3.5 text-[#FE9200]" />
+              <span className="text-xs font-semibold text-gray-900">{walletBalance}</span>
+            </div>
+
             <div className="relative hidden lg:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -1106,11 +1152,18 @@ export const AgentDashboard = ({
           </div>
         </header>
 
-        {/* Scrollable Content Area - Responsive padding */}
-        <div className="flex-1 overflow-auto p-4 md:p-8">
+        {/* Scrollable Content Area - Add bottom padding for mobile nav */}
+        <div className="flex-1 overflow-auto p-4 md:p-8 pb-24 md:pb-8">
           <div className="max-w-6xl mx-auto">{renderContent()}</div>
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNavigation
+        items={bottomNavItems}
+        activeId={activeTab}
+        onNavigate={handleTabChange}
+      />
     </div>
   );
 };

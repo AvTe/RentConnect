@@ -619,12 +619,6 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
               >
                 I Need a Place to Rent
               </button>
-              <button
-                onClick={() => onNavigate("tenant-form")}
-                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#FE9200] text-white font-medium hover:bg-[#E58300] transition-all  hover:shadow-lg text-sm"
-              >
-                I&apos;m Looking For House
-              </button>
             </div>
           </div>
         </div>

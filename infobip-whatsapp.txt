@@ -1,22 +1,27 @@
+# Infobip WhatsApp for RentConnect - Feasibility & Planning
 
-# Twilio WhatsApp for RentConnect - Feasibility & Planning
-
-Great question! Let me break this down conceptually.
+This document outlines the WhatsApp Business API integration using Infobip.
 
 ---
 
-## 1. Is This Possible with Twilio?
+## 1. Is This Possible with Infobip?
 
-**Yes, absolutely.** Twilio offers a robust WhatsApp Business API that supports all the use cases you mentioned. Here's what Twilio WhatsApp can do:
+**Yes, absolutely.** Infobip offers a robust WhatsApp Business API that supports all the use cases you mentioned. Here's what Infobip WhatsApp can do:
 
 | Capability | Supported | Notes |
 |------------|-----------|-------|
 | Send notifications | ✅ | Requires pre-approved templates |
-| Receive messages | ✅ | Webhook-based |
+| Receive messages | ✅ | Webhook-based (`/api/whatsapp/webhook`) |
 | Two-way conversations | ✅ | 24-hour session window |
 | Scheduled messages | ✅ | Via your backend scheduler |
 | Rich media (images, docs) | ✅ | Can send property images |
 | Buttons & quick replies | ✅ | Interactive messages |
+
+**Why Infobip over Twilio?**
+- Better pricing for Kenya/Africa region
+- Direct carrier relationships in Africa
+- Native Kenyan phone number support (+254)
+- Unified platform with SMS fallback via Africa's Talking
 
 ---
 
@@ -62,7 +67,7 @@ This is **critical** to understand before planning:
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────────┐  │
-│  │   Events     │───▶│  Message     │───▶│   Twilio         │  │
+│  │   Events     │───▶│  Message     │───▶│   Infobip        │  │
 │  │   Triggers   │    │  Queue       │    │   WhatsApp API   │  │
 │  └──────────────┘    └──────────────┘    └──────────────────┘  │
 │        │                                          │              │
@@ -71,12 +76,13 @@ This is **critical** to understand before planning:
 │  │  Scheduler   │                         │   WhatsApp   │      │
 │  │  (Cron Jobs) │                         │   Users      │      │
 │  └──────────────┘                         └──────────────┘      │
-│        │                                                         │
+│        │                                          │              │
+│        │                                          ▼              │
 │  ┌─────▼────────────────────────────────────────────────────┐   │
 │  │                    Analytics & Tracking                   │   │
 │  │  • Agent activity (logins, unlocks, response times)      │   │
 │  │  • Engagement scores                                      │   │
-│  │  • Message delivery/read status                          │   │
+│  │  • Message delivery/read status (via webhook)            │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
@@ -115,7 +121,50 @@ This is **critical** to understand before planning:
 
 ---
 
-## 6. Resource Requirements
+## 6. Current Implementation Status
+
+### ✅ Completed Integration
+
+| Component | Status | File Location |
+|-----------|--------|---------------|
+| Infobip Library | ✅ Done | `lib/infobip.js` |
+| WhatsApp Send API | ✅ Done | `app/api/whatsapp/send/route.js` |
+| Webhook Handler | ✅ Done | `app/api/whatsapp/webhook/route.js` |
+| SMS Fallback | ✅ Done | Via Africa's Talking |
+| Test Script | ✅ Done | `scripts/test-infobip.js` |
+
+### Environment Variables (in `.env.local`)
+
+```
+INFOBIP_API_KEY=your_infobip_api_key
+INFOBIP_BASE_URL=https://xxxxx.api.infobip.com
+INFOBIP_WHATSAPP_SENDER=254731840804
+INFOBIP_WEBHOOK_SECRET=optional_webhook_secret
+```
+
+### Available Functions in `lib/infobip.js`
+
+```javascript
+// Send text message (requires 24hr opt-in)
+sendWhatsApp(phoneNumber, message)
+
+// Send template message (no opt-in required)
+sendWhatsAppTemplate(phoneNumber, templateName, templateNamespace, templateData, language)
+
+// Send OTP via WhatsApp
+sendWhatsAppOTP(phoneNumber, otp)
+
+// Check message delivery status
+getMessageStatus(messageId)
+
+// Webhook utilities
+validateWebhookSignature(signature, payload)
+parseWebhookEvent(body)
+```
+
+---
+
+## 7. Resource Requirements
 
 ### Can One Person Handle This?
 
@@ -132,21 +181,23 @@ This is **critical** to understand before planning:
 - **Backend development** (Node.js/Next.js API routes)
 - **Database design** (tracking tables in Supabase)
 - **Cron/scheduler setup** (Vercel Cron, or external like Inngest)
-- **Twilio API integration**
+- **Infobip API integration** (already done!)
 - **Template copywriting** (for Meta approval)
 
 **One skilled full-stack developer can absolutely build this** if done in phases.
 
 ---
 
-## 7. Key Considerations
+## 8. Key Considerations
 
-### Costs
+### Costs (Infobip Pricing)
 | Item | Estimate |
 |------|----------|
-| Twilio WhatsApp per message | $0.005 - $0.05 (varies by country) |
+| Infobip WhatsApp per message | $0.003 - $0.03 (varies by country) |
 | Template submission | Free (but time for approval) |
-| Monthly estimate (1000 agents, 10 msgs each) | ~$500-1000/month |
+| Monthly estimate (1000 agents, 10 msgs each) | ~$300-600/month |
+
+**Infobip is generally cheaper than Twilio for Africa/Kenya messaging.**
 
 ### Compliance
 - Users must **opt-in** to WhatsApp messages
@@ -161,15 +212,16 @@ This is **critical** to understand before planning:
 - Takes 24-48 hours per template
 - Rejections happen (plan for iterations)
 - Keep templates professional, no spam-like language
+- Submit templates via Infobip Portal: https://portal.infobip.com
 
 ---
 
-## 8. Recommended Phased Approach
+## 9. Recommended Phased Approach
 
 ```
-Phase 1 (MVP - Week 1-3)
-├── Set up Twilio WhatsApp Business
-├── Create 3-5 core templates
+Phase 1 (MVP - Week 1-3) ← INFRASTRUCTURE COMPLETE
+├── ✅ Set up Infobip WhatsApp Business
+├── Create 3-5 core templates in Infobip Portal
 ├── Welcome message on signup/login
 └── New lead notification to agents
 
@@ -193,16 +245,88 @@ Phase 4 (Optimization - Week 11+)
 
 ---
 
-## 9. Summary
+## 10. API Usage Examples
 
-| Question | Answer |
-|----------|--------|
-| Is this possible with Twilio? | **Yes, fully supported** |
-| High-level complexity | **Medium-High** (multiple moving parts) |
-| Can one person do it? | **Yes, if phased over 2-3 months** |
-| Main challenges | Template approvals, scheduler setup, behavior tracking logic |
-| Estimated timeline (full) | **8-12 weeks** for complete solution |
+### Sending a Text Message
+
+```javascript
+import { sendWhatsApp } from '@/lib/infobip';
+
+const result = await sendWhatsApp('+254712345678', 'Hello from Yoombaa!');
+if (result.success) {
+  console.log('Message sent:', result.messageId);
+} else {
+  console.error('Failed:', result.error);
+}
+```
+
+### Sending a Template Message
+
+```javascript
+import { sendWhatsAppTemplate } from '@/lib/infobip';
+
+const result = await sendWhatsAppTemplate(
+  '+254712345678',
+  'lead_notification',      // template name
+  'your_namespace',         // template namespace
+  ['John', 'Westlands', '2BR'],  // placeholder values
+  'en'                      // language
+);
+```
+
+### Via API Route
+
+```bash
+# Text message
+curl -X POST /api/whatsapp/send \
+  -H "Content-Type: application/json" \
+  -d '{"phoneNumber": "+254712345678", "message": "Hello!"}'
+
+# Template message
+curl -X POST /api/whatsapp/send \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+254712345678",
+    "templateName": "welcome_message",
+    "templateData": ["John"]
+  }'
+```
 
 ---
 
-Would you like me to elaborate on any specific aspect—perhaps the database schema needed for tracking, the template approval process, or the scheduler architecture?
+## 11. Summary
+
+| Question | Answer |
+|----------|--------|
+| Is this possible with Infobip? | **Yes, fully supported** |
+| Current implementation status | **Core infrastructure complete** |
+| High-level complexity | **Medium-High** (multiple moving parts) |
+| Can one person do it? | **Yes, if phased over 2-3 months** |
+| Main challenges | Template approvals, scheduler setup, behavior tracking logic |
+| Estimated timeline (remaining) | **6-10 weeks** for complete solution |
+
+---
+
+## 12. Next Steps
+
+1. **Create WhatsApp Templates** in Infobip Portal for:
+   - Welcome message
+   - New lead notification
+   - Daily digest
+   - Credit reminder
+
+2. **Set up Webhook URL** in Infobip Portal:
+   - URL: `https://your-domain.com/api/whatsapp/webhook`
+   - Events: Delivery reports, Incoming messages
+
+3. **Implement Business Logic** for:
+   - Agent notification on new lead
+   - Scheduled messages (cron jobs)
+   - Re-engagement automation
+
+---
+
+**Portal Links:**
+- Infobip Dashboard: https://portal.infobip.com
+- WhatsApp Templates: Channels → WhatsApp → Templates
+- Webhook Setup: Channels → WhatsApp → Senders → [Your Sender] → Webhooks
