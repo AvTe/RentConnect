@@ -15,6 +15,7 @@ import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { PropertiesPage } from '@/components/PropertiesPage';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
+import { SubscriptionModal } from '@/components/SubscriptionModal';
 import EmailConfirmationSuccess from '@/components/EmailConfirmationSuccess';
 import PasswordResetSuccess from '@/components/PasswordResetSuccess';
 import PasswordResetForm from '@/components/PasswordResetForm';
@@ -32,13 +33,16 @@ export default function RentalLeadApp() {
   const [loading, setLoading] = useState(true);
   const [selectedAgentId, setSelectedAgentId] = useState(null);
   const [authError, setAuthError] = useState(null);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+
+  const handleOpenSubscriptionModal = () => setIsSubscriptionModalOpen(true);
 
   // Handle navigation with optional parameters
   const handleNavigate = (newView, options = {}) => {
     setView(newView);
     setViewOptions(options);
   };
-  
+
   // Use custom hooks for data management
   // Only fetch leads if user is logged in (to avoid permission errors)
   const { leads } = useLeads({}, !!currentUser);
@@ -50,7 +54,7 @@ export default function RentalLeadApp() {
       const params = new URLSearchParams(window.location.search);
       const error = params.get('error');
       const viewParam = params.get('view');
-      
+
       // Handle view parameter from URL
       if (viewParam === 'email-confirmed') {
         setView('email-confirmed');
@@ -144,7 +148,7 @@ export default function RentalLeadApp() {
 
           // Always fetch fresh data in background
           const userResult = await getUser(user.id);
-          
+
           if (userResult.success) {
             let userData = userResult.data;
 
@@ -186,10 +190,10 @@ export default function RentalLeadApp() {
               status: 'active',
               wallet_balance: 0
             };
-            
+
             // Create user profile in database
             const createResult = await createUser(user.id, newUserData);
-            
+
             if (createResult.success) {
               console.log('User profile created successfully');
               setCurrentUser({
@@ -236,7 +240,7 @@ export default function RentalLeadApp() {
 
   const handleLogin = async (user) => {
     setCurrentUser(user);
-    
+
     // Create user in Supabase if doesn't exist
     const userResult = await getUser(user.uid);
     if (!userResult.success) {
@@ -267,7 +271,7 @@ export default function RentalLeadApp() {
         return;
       }
     }
-    
+
     if (user.type === 'agent') {
       setView('agent-dashboard');
     } else {
@@ -279,6 +283,7 @@ export default function RentalLeadApp() {
     try {
       await signOut();
       setCurrentUser(null);
+      setIsSubscriptionModalOpen(false);
       setView('landing');
     } catch (error) {
       console.error("Error signing out:", error);
@@ -298,7 +303,7 @@ export default function RentalLeadApp() {
     try {
       const { createLead } = await import('@/lib/database');
       const { sendEmailNotification, EMAIL_TEMPLATES } = await import('@/lib/notifications');
-      
+
       // Get current session to check if user is authenticated
       const { user, session } = await getCurrentSession();
       let userId = user?.id || null;
@@ -307,7 +312,7 @@ export default function RentalLeadApp() {
       if (user) {
         try {
           const userResult = await getUser(user.id);
-          
+
           if (!userResult.success) {
             // Create new profile
             const userData = {
@@ -320,7 +325,7 @@ export default function RentalLeadApp() {
               avatar: null
             };
             await createUser(user.id, userData);
-            
+
             setCurrentUser({
               uid: user.id,
               id: user.id,
@@ -334,7 +339,7 @@ export default function RentalLeadApp() {
               phone: formData.whatsapp
             };
             await updateUser(user.id, updates);
-            
+
             setCurrentUser(prev => ({
               ...prev,
               ...updates
@@ -363,9 +368,9 @@ export default function RentalLeadApp() {
           amenities: formData.amenities || []
         }
       };
-      
+
       const result = await createLead(leadData);
-      
+
       if (result.success) {
         // Send confirmation email to tenant
         if (leadData.tenant_email) {
@@ -377,7 +382,7 @@ export default function RentalLeadApp() {
             // Don't fail the submission if email fails
           }
         }
-        
+
         return { success: true, data: result.data };
       }
       return { success: false, error: 'Failed to create lead' };
@@ -397,15 +402,15 @@ export default function RentalLeadApp() {
       setLoading(true);
       // Import Supabase auth function
       const { signUpWithEmail } = await import('@/lib/auth-supabase');
-      
+
       // 1. Create Auth User - signUpWithEmail(email, password, name, metadata)
       const result = await signUpWithEmail(
-        formData.email, 
-        formData.password, 
+        formData.email,
+        formData.password,
         formData.fullName,
         { phone: formData.phone, type: 'agent' }
       );
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Registration failed');
       }
@@ -417,14 +422,14 @@ export default function RentalLeadApp() {
         setLoading(false);
         return;
       }
-      
+
       const user = result.user;
 
       // 2. Upload ID Document
       let idDocumentUrl = null;
       if (formData.idDocument) {
         const uploadResult = await uploadImage(
-          formData.idDocument, 
+          formData.idDocument,
           `verification_docs/${user.id}/${formData.idDocument.name}`
         );
         if (uploadResult.success) {
@@ -448,14 +453,14 @@ export default function RentalLeadApp() {
         referredBy: formData.referralCode || null,
         status: 'active'
       };
-      
+
       await createUser(user.id, agentData);
-      
+
       setCurrentUser({
         ...agentData,
         uid: user.id
       });
-      
+
       setView('agent-dashboard');
     } catch (error) {
       console.error('Error registering agent:', error);
@@ -535,7 +540,7 @@ export default function RentalLeadApp() {
   const renderView = () => {
     switch (view) {
       case 'landing':
-        return <LandingPage onNavigate={handleNavigate} onSearch={handleSearch} currentUser={currentUser} authError={authError} />;
+        return <LandingPage onNavigate={handleNavigate} onSearch={handleSearch} currentUser={currentUser} authError={authError} onOpenSubscription={handleOpenSubscriptionModal} />;
       case 'login':
         return <Login onNavigate={handleNavigate} onLogin={handleLogin} authError={authError} initialTab={viewOptions.tab} />;
       case 'tenant-form':
@@ -565,7 +570,8 @@ export default function RentalLeadApp() {
               onNavigate={handleNavigate}
               leads={leads}
               isPremium={isPremium}
-              onUnlock={() => handleNavigate('subscription')}
+              onUnlockLead={(lead) => console.log('Lead unlocked:', lead)}
+              onOpenSubscription={handleOpenSubscriptionModal}
               initialTab="profile"
               currentUser={currentUser}
               onUpdateUser={handleUpdateUser}
@@ -589,18 +595,12 @@ export default function RentalLeadApp() {
             onNavigate={handleNavigate}
             leads={leads}
             isPremium={isPremium}
-            onUnlock={() => handleNavigate('subscription')}
+            onUnlockLead={(lead) => console.log('Lead unlocked:', lead)}
+            onOpenSubscription={handleOpenSubscriptionModal}
             initialTab="leads"
             currentUser={currentUser}
             onUpdateUser={handleUpdateUser}
             onLogout={handleLogout}
-          />
-        );
-      case 'subscription':
-        return (
-          <SubscriptionPage
-            onNavigate={handleNavigate}
-            onBuyCredits={handleSubscribe}
           />
         );
       case 'agents-listing':
@@ -621,6 +621,7 @@ export default function RentalLeadApp() {
             currentUser={currentUser}
             onNavigate={handleNavigate}
             onViewAgentProfile={handleViewAgentProfile}
+            onOpenSubscription={handleOpenSubscriptionModal}
           />
         );
       case 'agent-detail':
@@ -666,6 +667,7 @@ export default function RentalLeadApp() {
             onNavigate={handleNavigate}
             currentUser={currentUser}
             isPremium={isPremium}
+            onOpenSubscription={handleOpenSubscriptionModal}
           />
         );
       case 'email-confirmed':
@@ -712,6 +714,13 @@ export default function RentalLeadApp() {
         />
       )}
       {renderView()}
+
+      <SubscriptionModal
+        isOpen={isSubscriptionModalOpen}
+        onClose={() => setIsSubscriptionModalOpen(false)}
+        onBuyCredits={handleSubscribe}
+        currentUser={currentUser}
+      />
     </main>
   );
 }

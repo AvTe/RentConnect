@@ -49,6 +49,7 @@ import {
   getAgentConnectedLeads,
   getActiveSubscription,
   createSubscription,
+  getReferralStats,
 } from "@/lib/database";
 import { PersonaVerification } from "./PersonaVerification";
 import { initializePayment } from "@/lib/pesapal";
@@ -56,7 +57,8 @@ import { initializePayment } from "@/lib/pesapal";
 export const AgentDashboard = ({
   onNavigate,
   leads,
-  onUnlock,
+  onUnlockLead, // Rename from onUnlock to avoid confusion
+  onOpenSubscription,
   initialTab = "leads",
   currentUser,
   onUpdateUser,
@@ -71,6 +73,8 @@ export const AgentDashboard = ({
   const [showVerification, setShowVerification] = useState(false);
   const [loadingSubscription, setLoadingSubscription] = useState(false);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [referralStats, setReferralStats] = useState({ count: 0, totalCredits: 0 });
+  const [copySuccess, setCopySuccess] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [filteredLeads, setFilteredLeads] = useState(leads);
   const [activeFilters, setActiveFilters] = useState({});
@@ -146,11 +150,19 @@ export const AgentDashboard = ({
       setSubscriptionLoading(false);
     };
 
+    const fetchReferralStats = async () => {
+      const result = await getReferralStats(userId);
+      if (result.success) {
+        setReferralStats(result.stats);
+      }
+    };
+
     if (userId) {
       fetchBalance();
       fetchUnlockedLeads();
       fetchConnectedLeads();
       fetchSubscription();
+      fetchReferralStats();
       if (currentUser.referralCode) {
         setReferralCode(currentUser.referralCode);
       }
@@ -174,7 +186,7 @@ export const AgentDashboard = ({
         if (result.success) {
           setWalletBalance((prev) => prev - LEAD_COST); // Optimistic update
           setUnlockedLeads([...unlockedLeads, lead.id]);
-          if (onUnlock) onUnlock(lead);
+          if (onUnlockLead) onUnlockLead(lead);
 
           // Refresh balance to be sure
           const balanceResult = await getWalletBalance(userId);
@@ -189,8 +201,8 @@ export const AgentDashboard = ({
         if (onUnlock) onUnlock(lead);
       }
     } else {
-      // Redirect to buy credits
-      onNavigate("subscription"); // We'll reuse this route for the Credit Bundle page
+      // Open subscription modal
+      if (onOpenSubscription) onOpenSubscription();
     }
   };
 
@@ -283,11 +295,10 @@ export const AgentDashboard = ({
   const SidebarItem = ({ icon: Icon, label, id, active }) => (
     <button
       onClick={() => handleTabChange(id)}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-        active
-          ? "bg-[#FFF5E6] text-[#E58300] shadow-sm"
-          : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
-      }`}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active
+        ? "bg-[#FFF5E6] text-[#E58300] shadow-sm"
+        : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/50"
+        }`}
     >
       <Icon
         className={`w-4 h-4 ${active ? "text-[#FE9200]" : "text-gray-500"}`}
@@ -298,83 +309,162 @@ export const AgentDashboard = ({
 
   const renderContent = () => {
     if (activeTab === "referrals") {
-      return (
-        <div className="space-y-4 md:space-y-6">
-          <div className="bg-gradient-to-r from-[#FE9200] to-teal-600 rounded-xl md:rounded-2xl p-4 md:p-8 text-white relative overflow-hidden">
-            <div className="relative z-10 max-w-xl">
-              <h2 className="text-xl md:text-3xl font-bold mb-2 md:mb-4">
-                Invite Agents, Get Free Credits
-              </h2>
-              <p className="text-[#FFE4C4] text-sm md:text-lg mb-4 md:mb-8">
-                Share your referral code with other agents. When they sign up,
-                you both get 5 free credits!
-              </p>
+      const shareUrl = `${window.location.origin}/signup?ref=${referralCode || "GEN123"}`;
 
-              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 md:p-6 flex flex-col sm:flex-row items-center gap-3 md:gap-4">
-                <div className="flex-1 text-center sm:text-left">
-                  <p className="text-xs md:text-sm text-[#FFD4A3] mb-1">
-                    Your Referral Code
-                  </p>
-                  <p className="text-2xl md:text-3xl font-mono font-bold tracking-wider">
-                    {referralCode || "GEN123"}
-                  </p>
+      const handleCopy = () => {
+        navigator.clipboard.writeText(referralCode || "GEN123");
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      };
+
+      const handleShare = async () => {
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: 'Join RentConnect',
+              text: `Use my referral code ${referralCode || "GEN123"} to get 2 free credits!`,
+              url: shareUrl,
+            });
+          } catch (err) {
+            console.error('Share failed', err);
+          }
+        } else {
+          handleCopy();
+        }
+      };
+
+      return (
+        <div className="space-y-6 max-w-5xl">
+          {/* Header Section */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">Refer & Earn</h2>
+            <p className="text-gray-500 text-sm italic">Grow your business by inviting fellow agents to the platform</p>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 transition-all hover:border-[#FE9200]/30 group">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 bg-gray-50 rounded-xl group-hover:bg-[#FFF5E6] transition-colors">
+                  <Users className="w-6 h-6 text-gray-400 group-hover:text-[#FE9200]" />
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <Button
-                    onClick={() => {
-                      navigator.clipboard.writeText(referralCode || "GEN123");
-                      alert("Code copied to clipboard!");
-                    }}
-                    className="bg-white text-[#FE9200] hover:bg-[#FFF5E6] border-0 flex-1 sm:flex-none"
-                  >
-                    <Copy className="w-4 h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Copy Code</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="bg-transparent border-white text-white hover:bg-white/10 flex-1 sm:flex-none"
-                  >
-                    <Share2 className="w-4 h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Share</span>
-                  </Button>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Agents Invited</p>
+                  <p className="text-2xl font-black text-gray-900">{referralStats.count}</p>
                 </div>
               </div>
             </div>
 
-            {/* Decorative circles - hidden on mobile for performance */}
-            <div className="hidden md:block absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-            <div className="hidden md:block absolute bottom-0 left-0 -mb-10 -ml-10 w-48 h-48 bg-[#FE9200]/20 rounded-full blur-2xl"></div>
+            <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 transition-all hover:border-[#FE9200]/30 group">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 bg-gray-50 rounded-xl group-hover:bg-[#FFF5E6] transition-colors">
+                  <Coins className="w-6 h-6 text-gray-400 group-hover:text-[#FE9200]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Credits Earned</p>
+                  <p className="text-2xl font-black text-gray-900">{referralStats.totalCredits}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border-2 border-[#FE9200]/10 rounded-2xl p-6 border-dashed relative overflow-hidden">
+              <div className="flex flex-col justify-center h-full">
+                <p className="text-xs font-bold text-[#E58300] uppercase tracking-wider mb-2">Bonus Status</p>
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-[#FE9200] fill-[#FE9200]" />
+                  <span className="text-sm font-bold text-gray-700">5 Credits per Sign-up</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-            <h3 className="font-bold text-gray-900 mb-4">How it works</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
-              <div className="text-center flex flex-col items-center">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mb-3 md:mb-4">
-                  <Share2 className="w-5 h-5 md:w-6 md:h-6" />
+          {/* Main Referral Card */}
+          <div className="bg-white border-2 border-gray-100 rounded-[32px] overflow-hidden">
+            <div className="p-8 md:p-10">
+              <div className="flex flex-col lg:flex-row gap-10 items-center">
+                <div className="flex-1 space-y-6">
+                  <div>
+                    <h3 className="text-3xl font-black text-gray-900 leading-tight mb-4">
+                      Earn <span className="text-[#FE9200]">Free Credits</span> for Every Agent You Bring
+                    </h3>
+                    <p className="text-gray-500 font-medium leading-relaxed">
+                      Know another agent looking for quality leads? Share your unique code.
+                      When they join, you get <span className="text-gray-900 font-bold underline decoration-[#FE9200] decoration-4">5 credits instantly</span> and they get a 2-credit welcome bonus.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Your Personal Code</p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 py-4 flex items-center justify-between group cursor-pointer hover:border-[#FE9200]/20 transition-all" onClick={handleCopy}>
+                        <span className="font-mono text-2xl font-black tracking-widest text-gray-900 uppercase">
+                          {referralCode || "GEN123"}
+                        </span>
+                        {copySuccess ? (
+                          <div className="flex items-center gap-1.5 text-green-600 animate-in fade-in slide-in-from-right-2">
+                            <CheckCircle className="w-5 h-5" />
+                            <span className="text-sm font-bold">Copied!</span>
+                          </div>
+                        ) : (
+                          <Copy className="w-5 h-5 text-gray-300 group-hover:text-[#FE9200]" />
+                        )}
+                      </div>
+                      <Button
+                        onClick={handleShare}
+                        variant="primary"
+                        size="lg"
+                        className="sm:w-auto w-full rounded-2xl"
+                      >
+                        <Share2 className="w-5 h-5" />
+                        Share Invite
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <h4 className="font-semibold mb-1 md:mb-2">1. Share Code</h4>
-                <p className="text-sm text-gray-500">
-                  Send your unique code to fellow real estate agents.
-                </p>
+
+                <div className="flex -space-x-4">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="w-14 h-14 rounded-full border-4 border-white bg-gray-100 overflow-hidden shadow-sm">
+                      <img src={`https://i.pravatar.cc/100?u=${i + 50}`} alt="User" />
+                    </div>
+                  ))}
+                  <div className="w-14 h-14 rounded-full border-4 border-white bg-[#FFF5E6] flex items-center justify-center text-[#FE9200] font-black text-sm">
+                    +50
+                  </div>
+                </div>
               </div>
-              <div className="text-center flex flex-col items-center">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mb-3 md:mb-4">
-                  <User className="w-5 h-5 md:w-6 md:h-6" />
+            </div>
+
+            {/* How it Works Footer */}
+            <div className="bg-gray-50/50 border-t border-gray-100 p-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
+                    <span className="font-black text-[#FE9200]">1</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm mb-1">Send Invite</h4>
+                    <p className="text-xs text-gray-500 font-medium">Text, WhatsApp or email your code to other agents.</p>
+                  </div>
                 </div>
-                <h4 className="font-semibold mb-1 md:mb-2">2. They Sign Up</h4>
-                <p className="text-sm text-gray-500">
-                  They enter your code during their registration process.
-                </p>
-              </div>
-              <div className="text-center flex flex-col items-center">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-[#FFE4C4] rounded-full flex items-center justify-center text-[#FE9200] mb-3 md:mb-4">
-                  <Coins className="w-5 h-5 md:w-6 md:h-6" />
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
+                    <span className="font-black text-[#FE9200]">2</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm mb-1">Agent Joins</h4>
+                    <p className="text-xs text-gray-500 font-medium">They enter your code during their registration process.</p>
+                  </div>
                 </div>
-                <h4 className="font-semibold mb-1 md:mb-2">3. Earn Credits</h4>
-                <p className="text-sm text-gray-500">
-                  You get 5 credits instantly. They get a welcome bonus too!
-                </p>
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
+                    <span className="font-black text-[#FE9200]">3</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm mb-1">Get Rewarded</h4>
+                    <p className="text-xs text-gray-500 font-medium">5 credits added to your wallet automatically.</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -393,50 +483,13 @@ export const AgentDashboard = ({
     }
 
     if (activeTab === "properties") {
-      // Handler for credit purchase via Pesapal
-      const handleCreditPurchase = async (planType) => {
+      // Handler for credit purchase
+      const handleOpenPricing = () => {
         if (!isVerified) {
           alert("Please verify your account before purchasing credits.");
           return;
         }
-
-        setLoadingSubscription(true);
-        try {
-          const userId = currentUser?.uid || currentUser?.id;
-          const plans = {
-            basic: { name: 'Basic', amount: 500, credits: 10 },
-            premium: { name: 'Premium', amount: 1500, credits: 50 },
-            pro: { name: 'Pro', amount: 3000, credits: 150 },
-          };
-
-          const plan = plans[planType];
-
-          const result = await initializePayment({
-            email: currentUser?.email,
-            phone: currentUser?.phone || '',
-            amount: plan.amount,
-            description: `${plan.name} Credit Bundle - ${plan.credits} Credits`,
-            firstName: currentUser?.name?.split(' ')[0] || '',
-            lastName: currentUser?.name?.split(' ').slice(1).join(' ') || '',
-            metadata: {
-              agentId: userId,
-              type: 'credit_purchase',
-              plan: planType,
-              planName: plan.name,
-              credits: plan.credits,
-            },
-          });
-
-          if (result.success && result.redirectUrl) {
-            window.location.href = result.redirectUrl;
-          } else {
-            alert("Failed to initialize payment: " + (result.error || 'Unknown error'));
-          }
-        } catch (error) {
-          alert("Error: " + error.message);
-        } finally {
-          setLoadingSubscription(false);
-        }
+        if (onOpenSubscription) onOpenSubscription();
       };
 
       const getConnectionStatusBadge = (status) => {
@@ -630,8 +683,8 @@ export const AgentDashboard = ({
               </div>
               <Badge className={
                 isVerified ? 'bg-green-100 text-green-800 border-green-200' :
-                isPending ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
-                'bg-red-100 text-red-800 border-red-200'
+                  isPending ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                    'bg-red-100 text-red-800 border-red-200'
               }>
                 {isVerified ? '✓ Verified' : isPending ? '⏳ Pending Review' : '✗ Unverified'}
               </Badge>
@@ -640,17 +693,16 @@ export const AgentDashboard = ({
             {/* Subscription Status Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-5">
               <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  subscription ? 'bg-purple-100' : 'bg-gray-100'
-                }`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${subscription ? 'bg-purple-100' : 'bg-gray-100'
+                  }`}>
                   <Crown className={`w-5 h-5 ${subscription ? 'text-purple-600' : 'text-gray-400'}`} />
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Subscription Status</h3>
                   <p className="text-sm text-gray-500">
                     {subscriptionLoading ? 'Loading...' :
-                     subscription ? `${subscription.plan_name || subscription.plan || 'Active'} Plan` :
-                     'No Active Subscription'}
+                      subscription ? `${subscription.plan_name || subscription.plan || 'Active'} Plan` :
+                        'No Active Subscription'}
                   </p>
                 </div>
               </div>
@@ -673,64 +725,34 @@ export const AgentDashboard = ({
 
           {/* Credit Purchase Section */}
           {!subscription && (
-            <div className="bg-gradient-to-r from-[#FE9200] to-[#E58300] rounded-xl p-4 md:p-6 text-white">
-              <h3 className="text-lg md:text-xl font-bold mb-2">Buy Credits to Unlock Leads</h3>
-              <p className="text-white/80 mb-4 text-sm md:text-base">
-                Purchase credits to unlock tenant contact details and grow your business
-              </p>
+            <div className="bg-white border-2 border-[#FE9200]/20 rounded-[32px] p-6 md:p-10 flex flex-col md:flex-row items-center gap-8 md:justify-between relative overflow-hidden">
+              <div className="absolute top-0 left-0 bottom-0 w-2 bg-[#FE9200]"></div>
 
-              <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-3">
-                {/* Basic Plan */}
-                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
-                  <span className="text-xs font-medium uppercase">Starter</span>
-                  <p className="text-2xl font-bold mb-1">KSh 500</p>
-                  <p className="text-xs text-white/70 mb-3">10 Credits</p>
-                  <Button
-                    onClick={() => handleCreditPurchase('basic')}
-                    disabled={loadingSubscription || !isVerified}
-                    className="w-full bg-white/20 hover:bg-white/30 text-sm"
-                  >
-                    {loadingSubscription ? 'Processing...' : 'Buy Now'}
-                  </Button>
+              <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left relative z-10">
+                <div className="w-16 h-16 bg-[#FFF5E6] rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <Coins className="w-8 h-8 text-[#FE9200]" />
                 </div>
-
-                {/* Premium Plan */}
-                <div className="bg-white/20 rounded-lg p-4 border-2 border-white relative">
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-white text-[#FE9200] text-[10px]">POPULAR</Badge>
-                  </div>
-                  <span className="text-xs font-medium uppercase">Premium</span>
-                  <p className="text-2xl font-bold mb-1">KSh 1,500</p>
-                  <p className="text-xs text-white/70 mb-3">50 Credits</p>
-                  <Button
-                    onClick={() => handleCreditPurchase('premium')}
-                    disabled={loadingSubscription || !isVerified}
-                    className="w-full bg-white text-[#FE9200] hover:bg-white/90 text-sm"
-                  >
-                    {loadingSubscription ? 'Processing...' : 'Buy Now'}
-                  </Button>
-                </div>
-
-                {/* Pro Plan */}
-                <div className="bg-white/10 rounded-lg p-4 border border-white/20">
-                  <span className="text-xs font-medium uppercase">Pro</span>
-                  <p className="text-2xl font-bold mb-1">KSh 3,000</p>
-                  <p className="text-xs text-white/70 mb-3">150 Credits</p>
-                  <Button
-                    onClick={() => handleCreditPurchase('pro')}
-                    disabled={loadingSubscription || !isVerified}
-                    className="w-full bg-white/20 hover:bg-white/30 text-sm"
-                  >
-                    {loadingSubscription ? 'Processing...' : 'Buy Now'}
-                  </Button>
+                <div className="space-y-1">
+                  <h3 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Need More Credits?</h3>
+                  <p className="text-gray-500 text-sm md:text-base font-medium max-w-md leading-relaxed">
+                    Purchase flexible credit bundles to unlock premium tenant leads and grow your agency business faster.
+                  </p>
                 </div>
               </div>
 
-              {!isVerified && (
-                <p className="text-xs text-white/60 mt-4 text-center">
-                  ⚠️ Please verify your account to purchase credits
-                </p>
-              )}
+              <div className="w-full md:w-auto flex flex-col gap-3 relative z-10">
+                <Button
+                  onClick={handleOpenPricing}
+                  className="w-full md:px-12 h-16 rounded-[24px] text-lg font-black shadow-none border-0"
+                >
+                  View New Plans
+                </Button>
+                {!isVerified && (
+                  <p className="text-[10px] text-red-500 font-bold uppercase tracking-[0.2em] text-center">
+                    Verification Required
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -962,7 +984,7 @@ export const AgentDashboard = ({
                   return;
                 }
                 setIsSidebarOpen(false);
-                onNavigate("subscription");
+                if (onOpenSubscription) onOpenSubscription();
               }}
               className="mt-3 w-full py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2"
             >

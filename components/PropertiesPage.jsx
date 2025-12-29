@@ -5,7 +5,7 @@ import { Badge } from './ui/Badge';
 import { LeadFilters } from './ui/LeadFilters';
 import { getAllLeads, unlockLead, getUnlockedLeads, getWalletBalance } from '@/lib/database';
 
-export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
+export const PropertiesPage = ({ onNavigate, currentUser, isPremium, onOpenSubscription }) => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unlockedLeads, setUnlockedLeads] = useState([]);
@@ -39,7 +39,7 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
 
   const fetchAgentData = async () => {
     if (!currentUser?.uid) return;
-    
+
     const balanceResult = await getWalletBalance(currentUser.uid);
     if (balanceResult.success) setWalletBalance(balanceResult.balance);
 
@@ -62,9 +62,9 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
     // User requirement: "prompted to purchase a subscription"
     // We'll check if they have credits or are premium. 
     // Assuming 1 credit cost for now as per existing logic, or redirect to subscription.
-    
+
     const LEAD_COST = 1;
-    
+
     if (walletBalance >= LEAD_COST) {
       const result = await unlockLead(currentUser.uid, lead.id);
       if (result.success) {
@@ -74,7 +74,9 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
         alert("Failed to unlock: " + result.error);
       }
     } else {
-      if (confirm("You need credits to view contact details. Would you like to purchase a subscription?")) {
+      if (onOpenSubscription) {
+        onOpenSubscription();
+      } else {
         onNavigate('subscription');
       }
     }
@@ -231,10 +233,10 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
                               <div className="h-9 bg-gray-300 rounded-lg"></div>
                             </div>
                           </div>
-                          
+
                           {/* Overlay Button */}
                           <div className="absolute inset-0 flex items-center justify-center bg-white/50 group-hover:bg-white/30 transition-colors">
-                            <Button 
+                            <Button
                               onClick={() => handleUnlock(lead)}
                               className="bg-gray-900 text-white hover:bg-black shadow-lg transform transition-transform group-hover:scale-105"
                             >
@@ -249,8 +251,8 @@ export const PropertiesPage = ({ onNavigate, currentUser, isPremium }) => {
                       <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 text-center">
                         <p className="text-sm text-gray-500">Contact details visible to verified agents only.</p>
                         {!currentUser && (
-                          <Button 
-                            variant="link" 
+                          <Button
+                            variant="link"
                             onClick={() => onNavigate('login')}
                             className="text-[#FE9200] p-0 h-auto font-medium mt-1"
                           >

@@ -31,6 +31,7 @@ const LeadCard = ({
   isPremium,
   onNavigate,
   onContactClick,
+  onOpenSubscription,
   isMobile,
 }) => {
   const formatBudget = (amount) => {
@@ -75,7 +76,8 @@ const LeadCard = ({
       return;
     }
     if (!isPremium) {
-      onNavigate("subscription");
+      if (onOpenSubscription) onOpenSubscription();
+      else onNavigate("subscription");
       return;
     }
   };
@@ -87,7 +89,8 @@ const LeadCard = ({
     }
 
     if (!isPremium) {
-      onNavigate("subscription");
+      if (onOpenSubscription) onOpenSubscription();
+      else onNavigate("subscription");
       return;
     }
 
@@ -301,7 +304,7 @@ const SkeletonCardSmall = ({ isMobile }) => {
   );
 };
 
-export const LandingPage = ({ onNavigate, currentUser, authError }) => {
+export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscription }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -366,9 +369,9 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
   const extendedLeads =
     displayLeads.length > 0
       ? [
-          ...displayLeads,
-          ...displayLeads.slice(0, Math.min(5, displayLeads.length)),
-        ]
+        ...displayLeads,
+        ...displayLeads.slice(0, Math.min(5, displayLeads.length)),
+      ]
       : [];
 
   // Check subscription status for logged-in agents
@@ -606,7 +609,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
               Looking For Rentals
             </h2>
 
-{/* 
+            {/* 
             <p className="text-base text-gray-700 mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed px-4">
               Connect With Active Renters In Nairobi. Get Their Contact Details. Close Deals Faster.
             </p> */}
@@ -674,6 +677,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
                           isPremium={isPremium}
                           onNavigate={onNavigate}
                           onContactClick={handleContactClick}
+                          onOpenSubscription={onOpenSubscription}
                           isMobile={isMobile}
                         />
                       </div>
@@ -704,11 +708,10 @@ export const LandingPage = ({ onNavigate, currentUser, authError }) => {
                   setIsTransitioning(true);
                   setCurrentIndex(index);
                 }}
-                className={`rounded-full transition-all duration-300 ${
-                  activeIndex === index
-                    ? "bg-[#FE9200] w-2.5 h-2.5 sm:w-3.5 sm:h-3.5"
-                    : "bg-gray-400 w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 hover:bg-gray-500"
-                }`}
+                className={`rounded-full transition-all duration-300 ${activeIndex === index
+                  ? "bg-[#FE9200] w-2.5 h-2.5 sm:w-3.5 sm:h-3.5"
+                  : "bg-gray-400 w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 hover:bg-gray-500"
+                  }`}
               />
             ))}
           {displayLeads.length > (isMobile ? 6 : 8) && (

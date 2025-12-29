@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 /* eslint-disable @next/next/no-img-element */
-import { 
-  Search, MapPin, Users, Building2, Phone, Mail, 
+import {
+  Search, MapPin, Users, Building2, Phone, Mail,
   MessageCircle, UserPlus, Star, Filter, Award,
   Lock, CheckCircle
 } from 'lucide-react';
@@ -10,7 +10,7 @@ import { Badge } from './ui/Badge';
 import { StarRating } from './ui/StarRating';
 import { getAllAgents, searchAgents, sendConnectionRequest, checkUserCanViewContact } from '../lib/database';
 
-export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile }) => {
+export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile, onOpenSubscription }) => {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -157,7 +157,7 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
                 {agent.experience}
               </div>
             )}
-            
+
             {/* Contact Info - Conditional Display */}
             {showContact ? (
               <>
@@ -179,7 +179,7 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
                 )}
               </>
             ) : (
-              <div 
+              <div
                 onClick={() => handleContactClick(agent)}
                 className="flex items-center text-sm text-gray-400 bg-gray-50 p-3 rounded-lg cursor-pointer hover:bg-gray-100"
               >
@@ -206,7 +206,11 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
                   <Button
                     variant="outline"
                     className="flex-1"
-                    onClick={() => showContact ? null : onNavigate('user-subscription')}
+                    onClick={() => {
+                      if (showContact) return;
+                      if (onOpenSubscription) onOpenSubscription();
+                      else onNavigate('user-subscription');
+                    }}
                   >
                     <MessageCircle className="w-4 h-4 mr-2" />
                     {showContact ? 'Message' : 'Subscribe to Contact'}
@@ -354,7 +358,8 @@ export const AgentsListingPage = ({ currentUser, onNavigate, onViewAgentProfile 
                 className="flex-1"
                 onClick={() => {
                   setSelectedAgent(null);
-                  onNavigate('user-subscription');
+                  if (onOpenSubscription) onOpenSubscription();
+                  else onNavigate('user-subscription');
                 }}
               >
                 Subscribe Now
