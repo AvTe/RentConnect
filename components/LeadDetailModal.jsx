@@ -151,7 +151,7 @@ export const LeadDetailModal = ({ lead, onClose, currentUser, onUnlock }) => {
                                     <div className="bg-[#FFF9F2] border border-[#FE9200]/10 rounded-2xl p-5">
                                         <p className="text-[10px] font-bold text-[#E58300] uppercase tracking-widest mb-2">Special Notes</p>
                                         <p className="text-sm text-gray-700 leading-relaxed italic">
-                                            "{lead.requirements.additional_requirements}"
+                                            &quot;{lead.requirements.additional_requirements}&quot;
                                         </p>
                                     </div>
                                 )}

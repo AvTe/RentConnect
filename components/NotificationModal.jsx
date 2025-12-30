@@ -177,7 +177,7 @@ export const NotificationModal = ({ notification, onClose, currentUser }) => {
                                         {data.requirements?.additional_requirements && (
                                             <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
                                                 <p className="text-xs text-blue-700 leading-relaxed">
-                                                    "{data.requirements.additional_requirements}"
+                                                    &quot;{data.requirements.additional_requirements}&quot;
                                                 </p>
                                             </div>
                                         )}
@@ -266,7 +266,7 @@ export const NotificationModal = ({ notification, onClose, currentUser }) => {
                                     {/* Bio */}
                                     {data.bio && (
                                         <p className="text-gray-500 text-sm leading-relaxed max-w-sm mx-auto">
-                                            "{data.bio}"
+                                            &quot;{data.bio}&quot;
                                         </p>
                                     )}
 
