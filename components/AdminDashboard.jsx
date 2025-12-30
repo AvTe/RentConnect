@@ -28,18 +28,17 @@ import { NotificationBell } from './NotificationBell';
 const SidebarItem = ({ icon: Icon, label, id, active, onClick }) => (
   <button
     onClick={() => onClick(id)}
-    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-      active
-        ? 'bg-blue-50 text-blue-700 shadow-sm'
-        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
-    }`}
+    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active
+      ? 'bg-blue-50 text-blue-700 shadow-sm'
+      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+      }`}
   >
     <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-blue-600' : 'text-gray-500'}`} />
     <span className="truncate">{label}</span>
   </button>
 );
 
-export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
+export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificationClick }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [pendingAgents, setPendingAgents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -285,6 +284,9 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout }) => {
               <NotificationBell
                 userId={currentUser.id}
                 onNotificationClick={(notif) => {
+                  if (onNotificationClick) {
+                    onNotificationClick(notif);
+                  }
                   // Handle notification click - navigate to relevant section
                   if (notif.type === 'new_lead' && notif.data?.lead_id) {
                     setActiveTab('leads');

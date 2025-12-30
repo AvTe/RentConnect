@@ -517,11 +517,10 @@ export const TenantForm = ({
                 key={type.id}
                 type="button"
                 onClick={() => setFormData({ ...formData, type: type.id })}
-                className={`group relative p-4 sm:p-5 rounded-2xl border-2 text-left transition-all duration-200 ${
-                  isSelected
+                className={`group relative p-4 sm:p-5 rounded-2xl border-2 text-left transition-all duration-200 ${isSelected
                     ? "border-[#FE9200] bg-gradient-to-br from-[#FFF5E6] to-[#FFE4C4] shadow-lg shadow-[#FFE4C4]/50 scale-[1.02]"
                     : "border-gray-100 hover:border-[#FFD4A3] hover:bg-gray-50 hover:shadow-md"
-                }`}
+                  }`}
               >
                 {/* Selection indicator */}
                 {isSelected && (
@@ -533,18 +532,16 @@ export const TenantForm = ({
                 )}
 
                 {/* Icon with gradient background */}
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3 transition-all ${
-                  isSelected
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3 transition-all ${isSelected
                     ? `bg-gradient-to-br ${type.color} shadow-md`
                     : 'bg-gray-100 group-hover:bg-gray-200'
-                }`}>
+                  }`}>
                   <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 ${isSelected ? 'text-white' : 'text-gray-600'}`} />
                 </div>
 
                 {/* Label */}
-                <p className={`font-semibold text-sm sm:text-base mb-1 ${
-                  isSelected ? "text-[#7A00AA]" : "text-gray-800"
-                }`}>
+                <p className={`font-semibold text-sm sm:text-base mb-1 ${isSelected ? "text-[#7A00AA]" : "text-gray-800"
+                  }`}>
                   {type.label}
                 </p>
 
@@ -661,8 +658,9 @@ export const TenantForm = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              WhatsApp Number
+            <label className="block text-sm font-medium text-gray-700 mb-1.5 flex justify-between items-center">
+              <span>WhatsApp Number</span>
+              <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full uppercase tracking-wider">Optional</span>
             </label>
             <div className="relative">
               <PhoneInput
@@ -682,6 +680,9 @@ export const TenantForm = ({
                 }
                 className="w-full pl-3 pr-4 py-3 min-h-[48px] border border-gray-200 rounded-xl text-sm text-gray-900 focus-within:border-[#FE9200] focus-within:ring-2 focus-within:ring-[#FFE4C4] transition-all bg-white [&>input]:outline-none [&>input]:bg-transparent [&>input]:w-full [&>input]:ml-2 [&>input]:text-gray-900"
               />
+              <p className="mt-1.5 text-[11px] text-gray-500 font-medium">
+                Note: Agents will use this number to contact you via WhatsApp.
+              </p>
               {verificationStep === "verified" && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#FE9200]">
                   <ShieldCheck className="w-5 h-5" />
@@ -824,10 +825,10 @@ export const TenantForm = ({
         </div>
       </div>
 
-      {/* Phone verification required notice */}
-      {verificationStep !== "verified" && formData.whatsapp && (
-        <p className="text-xs text-amber-600 text-center font-medium">
-          ⚠️ Phone verification is required to submit your request.
+      {/* Verification optional notice */}
+      {verificationStep !== "verified" && formData.whatsapp && isValidPhoneNumber(formData.whatsapp) && (
+        <p className="text-xs text-blue-600 text-center font-medium">
+          ℹ️ Mobile verification is currently optional.
         </p>
       )}
 
@@ -836,8 +837,6 @@ export const TenantForm = ({
         disabled={
           !formData.name ||
           !isValidEmail(formData.email) ||
-          !formData.whatsapp ||
-          verificationStep !== "verified" ||
           isSubmitting
         }
         className="w-full py-3 sm:py-4 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold shadow-lg shadow-[#FFE4C4] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"

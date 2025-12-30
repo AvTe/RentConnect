@@ -20,16 +20,28 @@ const nextConfig = {
         level: 'error',
       };
     }
-    
+
     return config;
   },
-  
+
   // Image Optimization
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '*.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.pravatar.cc',
       },
     ],
     formats: ['image/avif', 'image/webp'],

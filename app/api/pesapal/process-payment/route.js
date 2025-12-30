@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getApiUrl, getPaymentStatusLabel, calculateSubscriptionEndDate, verifyMetadataSignature } from '@/lib/pesapal';
-import { 
-  createUserSubscription, 
-  addAgentCredits 
+import {
+  createUserSubscription,
+  addAgentCredits
 } from '@/lib/database';
 import pg from 'pg';
 
@@ -90,8 +90,8 @@ export async function POST(request) {
     }
 
     const paymentRecord = paymentResult.rows[0];
-    const metadata = typeof paymentRecord.metadata === 'string' 
-      ? JSON.parse(paymentRecord.metadata) 
+    const metadata = typeof paymentRecord.metadata === 'string'
+      ? JSON.parse(paymentRecord.metadata)
       : paymentRecord.metadata;
 
     // Check if already fulfilled
@@ -116,7 +116,7 @@ export async function POST(request) {
     // If payment is not yet marked as completed, verify with Pesapal
     if (paymentRecord.status !== 'completed' && paymentRecord.status !== 'fulfilled') {
       const trackingId = orderTrackingId || paymentRecord.order_tracking_id;
-      
+
       if (!trackingId) {
         return NextResponse.json({
           success: false,
@@ -126,7 +126,7 @@ export async function POST(request) {
       }
 
       const token = await getValidToken();
-      
+
       const statusResponse = await fetch(
         `${getApiUrl('getStatus')}?orderTrackingId=${encodeURIComponent(trackingId)}`,
         {
@@ -173,10 +173,10 @@ export async function POST(request) {
     }
 
     // Get the pesapal status data
-    const pesapalStatus = paymentRecord.pesapal_status 
-      ? (typeof paymentRecord.pesapal_status === 'string' 
-          ? JSON.parse(paymentRecord.pesapal_status) 
-          : paymentRecord.pesapal_status)
+    const pesapalStatus = paymentRecord.pesapal_status
+      ? (typeof paymentRecord.pesapal_status === 'string'
+        ? JSON.parse(paymentRecord.pesapal_status)
+        : paymentRecord.pesapal_status)
       : null;
 
     // Calculate subscription dates if applicable
@@ -195,6 +195,7 @@ export async function POST(request) {
     if (paymentRecord.fulfillment_status !== 'fulfilled') {
       try {
         const subscriptionData = {
+          userId: metadata.agentId || metadata.userId,
           startDate: subscriptionDetails ? new Date(subscriptionDetails.startDate) : new Date(),
           endDate: subscriptionDetails ? new Date(subscriptionDetails.endDate) : new Date(),
           paymentReference: paymentRecord.order_id,
@@ -208,8 +209,7 @@ export async function POST(request) {
         let fulfillmentResult = null;
 
         if ((metadata.type === 'agent_subscription' || metadata.type === 'user_subscription') && (metadata.agentId || metadata.userId)) {
-          const userId = metadata.agentId || metadata.userId;
-          fulfillmentResult = await createUserSubscription(userId, subscriptionData);
+          fulfillmentResult = await createUserSubscription(subscriptionData);
         } else if (metadata.type === 'credit_purchase' && metadata.agentId && metadata.credits > 0) {
           fulfillmentResult = await addAgentCredits(metadata.agentId, metadata.credits, subscriptionData);
         }

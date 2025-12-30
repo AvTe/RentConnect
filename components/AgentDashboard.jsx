@@ -50,9 +50,12 @@ import {
   getActiveSubscription,
   createSubscription,
   getReferralStats,
+  incrementLeadViews,
 } from "@/lib/database";
 import { PersonaVerification } from "./PersonaVerification";
+import { LeadDetailModal } from "./LeadDetailModal";
 import { initializePayment } from "@/lib/pesapal";
+import { checkAndNotifySubscriptionExpiry } from "@/lib/notifications";
 
 export const AgentDashboard = ({
   onNavigate,
@@ -63,6 +66,7 @@ export const AgentDashboard = ({
   currentUser,
   onUpdateUser,
   onLogout,
+  onNotificationClick,
 }) => {
   const [activeTab, setActiveTab] = useState(initialTab); // leads, properties, profile, referrals
   const [walletBalance, setWalletBalance] = useState(0);
@@ -78,6 +82,7 @@ export const AgentDashboard = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [filteredLeads, setFilteredLeads] = useState(leads);
   const [activeFilters, setActiveFilters] = useState({});
+  const [selectedLeadForDetail, setSelectedLeadForDetail] = useState(null);
 
   // Update filtered leads when leads prop changes
   useEffect(() => {
@@ -142,8 +147,12 @@ export const AgentDashboard = ({
     const fetchSubscription = async () => {
       setSubscriptionLoading(true);
       const result = await getActiveSubscription(userId);
-      if (result.success) {
+      if (result.success && result.data) {
         setSubscription(result.data);
+        // Check for expiry and notify if necessary
+        if (result.data.expires_at) {
+          checkAndNotifySubscriptionExpiry(userId, result.data.expires_at);
+        }
       } else {
         setSubscription(null);
       }
@@ -184,6 +193,9 @@ export const AgentDashboard = ({
       if (userId) {
         const result = await unlockLead(userId, lead.id);
         if (result.success) {
+          // Increment views even if they unlock directly (Unique only)
+          incrementLeadViews(lead.id, userId);
+
           setWalletBalance((prev) => prev - LEAD_COST); // Optimistic update
           setUnlockedLeads([...unlockedLeads, lead.id]);
           if (onUnlockLead) onUnlockLead(lead);
@@ -845,7 +857,8 @@ export const AgentDashboard = ({
               return (
                 <div
                   key={lead.id}
-                  className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all duration-200"
+                  onClick={() => setSelectedLeadForDetail(lead)}
+                  className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-[#FE9200]/30 transition-all duration-200 cursor-pointer group"
                 >
                   <div className="p-3 flex flex-col h-full">
                     {/* Top Row: Contact Count Badge + Budget */}
@@ -856,7 +869,7 @@ export const AgentDashboard = ({
                           {contactCount}
                         </span>
                       </div>
-                      <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
+                      <span className="bg-[#FE9200] text-white px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
                         {formatBudget(budget)}
                       </span>
                     </div>
@@ -869,7 +882,7 @@ export const AgentDashboard = ({
                     {/* Location with icon */}
                     <div className="flex items-center gap-1 mb-2">
                       <MapPin size={11} className="text-[#FE9200] flex-shrink-0" />
-                      <p className="text-xs text-gray-600 truncate">
+                      <p className="text-xs text-gray-600 truncate max-w-[120px]">
                         {formatLocation(location)}
                       </p>
                     </div>
@@ -902,6 +915,7 @@ export const AgentDashboard = ({
                       <div className="grid grid-cols-2 gap-2 mt-auto">
                         <a
                           href={`tel:${lead.tenant_info?.phone || lead.tenant_phone || lead.phone || lead.whatsapp}`}
+                          onClick={(e) => e.stopPropagation()}
                           className="flex items-center justify-center gap-1.5 px-2 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors text-xs"
                         >
                           <Phone className="w-3.5 h-3.5" />
@@ -914,6 +928,7 @@ export const AgentDashboard = ({
                           }
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
                           className="flex items-center justify-center gap-1.5 px-2 py-2 bg-[#FE9200] text-white rounded-lg hover:bg-[#E58300] font-medium transition-colors text-xs"
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
@@ -922,7 +937,10 @@ export const AgentDashboard = ({
                       </div>
                     ) : (
                       <Button
-                        onClick={() => handleUnlockLead(lead)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnlockLead(lead);
+                        }}
                         className="w-full mt-auto bg-gray-900 text-white hover:bg-black text-xs py-2"
                       >
                         <Lock className="w-3.5 h-3.5 mr-1.5" />
@@ -1165,6 +1183,9 @@ export const AgentDashboard = ({
               <NotificationBell
                 userId={currentUser.id}
                 onNotificationClick={(notif) => {
+                  if (onNotificationClick) {
+                    onNotificationClick(notif);
+                  }
                   if (notif.type === 'new_lead') {
                     setActiveTab('leads');
                   }
@@ -1187,6 +1208,22 @@ export const AgentDashboard = ({
         activeId={activeTab}
         onNavigate={handleTabChange}
       />
+
+      {selectedLeadForDetail && (
+        <LeadDetailModal
+          lead={selectedLeadForDetail}
+          currentUser={currentUser}
+          onClose={() => setSelectedLeadForDetail(null)}
+          onUnlock={(lead) => {
+            setUnlockedLeads(prev => [...prev, lead.id]);
+            // Refresh balance
+            const userId = currentUser?.uid || currentUser?.id;
+            getWalletBalance(userId).then(res => {
+              if (res.success) setWalletBalance(res.balance);
+            });
+          }}
+        />
+      )}
     </div>
   );
 };

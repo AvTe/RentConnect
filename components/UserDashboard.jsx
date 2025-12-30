@@ -9,8 +9,12 @@ import { UserProfile } from './UserProfile';
 import { RatingPrompt } from './RatingPrompt';
 import { getAllLeads } from '@/lib/database';
 import { BottomNavigation } from './ui/BottomNavigation';
+import { NotificationBell } from './NotificationBell';
 
-export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUser, onUpdateUser, onLogout }) => {
+export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUser, onUpdateUser,
+  onLogout,
+  onNotificationClick,
+}) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [myRequests, setMyRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
@@ -72,11 +76,10 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
   const SidebarItem = ({ icon: Icon, label, id, active }) => (
     <button
       onClick={() => handleTabChange(id)}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-        active
-          ? 'bg-white text-gray-900 shadow-sm'
-          : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
-      }`}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active
+        ? 'bg-white text-gray-900 shadow-sm'
+        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
+        }`}
     >
       <Icon className={`w-4 h-4 ${active ? 'text-gray-900' : 'text-gray-500'}`} />
       <span className="truncate">{label}</span>
@@ -121,9 +124,8 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                         <span className="text-sm text-gray-500">{request.budget ? `KSh ${parseInt(request.budget).toLocaleString()}` : 'Budget N/A'}</span>
                       </div>
                     </div>
-                    <div className={`px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
-                      request.status === 'active' ? 'bg-[#FFE4C4] text-[#15803D]' : 'bg-gray-100 text-gray-600'
-                    }`}>
+                    <div className={`px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 ${request.status === 'active' ? 'bg-[#FFE4C4] text-[#15803D]' : 'bg-gray-100 text-gray-600'
+                      }`}>
                       {request.status?.toUpperCase()}
                     </div>
                   </div>
@@ -157,7 +159,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
       <div className="space-y-6 md:space-y-8">
         {/* Rating Prompt - Show if there are agents to rate */}
         <RatingPrompt currentUser={currentUser} />
-        
+
         {/* Stats - Responsive grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
           <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -288,8 +290,8 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
               <span>/</span>
               <span className="text-gray-900">
                 {activeTab === 'dashboard' ? 'Overview' :
-                 activeTab === 'requests' ? 'My Requests' :
-                 activeTab === 'profile' ? 'Profile' : 'Overview'}
+                  activeTab === 'requests' ? 'My Requests' :
+                    activeTab === 'profile' ? 'Profile' : 'Overview'}
               </span>
             </div>
           </div>
@@ -315,11 +317,19 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                 <kbd className="hidden sm:inline-block px-1.5 h-5 text-[10px] font-medium text-gray-500 bg-white border border-gray-300 rounded shadow-sm">⌘K</kbd>
               </div>
             </div>
-            {/* Notification bell - 44px touch target */}
-            <button className="p-2.5 text-gray-400 hover:text-gray-600 relative min-w-[44px] min-h-[44px] flex items-center justify-center">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
+            {(currentUser?.id || currentUser?.uid) && (
+              <NotificationBell
+                userId={currentUser.id || currentUser.uid}
+                onNotificationClick={(notif) => {
+                  if (onNotificationClick) {
+                    onNotificationClick(notif);
+                  }
+                  if (notif.type === 'agent_interested' || notif.type === 'agent_contact') {
+                    handleTabChange('requests');
+                  }
+                }}
+              />
+            )}
           </div>
         </header>
 

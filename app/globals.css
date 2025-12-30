@@ -247,11 +247,7 @@ html {
   outline-offset: 2px;
 }
 
-/* Smooth transitions throughout app */
-* {
-  @apply transition-colors duration-200;
-}
-
-button, a, input {
-  @apply transition-all duration-200;
+/* Specific transitions for interactive elements only (better performance/stability) */
+button, a, input, select, textarea {
+  transition: all 0.2s ease-in-out;
 }

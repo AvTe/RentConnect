@@ -15,7 +15,10 @@ import { UserSubscriptionPage } from '@/components/UserSubscriptionPage';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { PropertiesPage } from '@/components/PropertiesPage';
 import { LoadingScreen } from '@/components/ui/LoadingScreen';
-import { SubscriptionModal } from '@/components/SubscriptionModal';
+import { NotificationModal } from '@/components/NotificationModal';
+import {
+  SubscriptionModal
+} from '@/components/SubscriptionModal';
 import EmailConfirmationSuccess from '@/components/EmailConfirmationSuccess';
 import PasswordResetSuccess from '@/components/PasswordResetSuccess';
 import PasswordResetForm from '@/components/PasswordResetForm';
@@ -31,6 +34,8 @@ export default function RentalLeadApp() {
   const [currentUser, setCurrentUser] = useState(null);
   const [prefilledData, setPrefilledData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const [selectedAgentId, setSelectedAgentId] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
@@ -230,13 +235,12 @@ export default function RentalLeadApp() {
       finishLoading();
     });
 
+    // Initial mount check
+    setMounted(true);
+
     return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Removed view dependency to prevent re-running on view change
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
 
   const handleLogin = async (user) => {
     setCurrentUser(user);
@@ -276,6 +280,18 @@ export default function RentalLeadApp() {
       setView('agent-dashboard');
     } else {
       setView('user-dashboard');
+    }
+  };
+
+  const handleNotificationClick = (notif) => {
+    setSelectedNotification(notif);
+
+    // Automatic navigation/tab switching if needed
+    if (notif.type === 'agent_interested' || notif.type === 'agent_contact') {
+      // If we are in user-dashboard, we might want to ensure we're on requests tab
+      // But let the dashboard handle its own internal tab state if it can
+    } else if (notif.type === 'new_lead') {
+      // If we are in agent-dashboard, ensure we're on leads tab
     }
   };
 
@@ -561,6 +577,7 @@ export default function RentalLeadApp() {
             currentUser={currentUser}
             onUpdateUser={handleUpdateUser}
             onLogout={handleLogout}
+            onNotificationClick={handleNotificationClick}
           />
         );
       case 'profile':
@@ -576,6 +593,7 @@ export default function RentalLeadApp() {
               currentUser={currentUser}
               onUpdateUser={handleUpdateUser}
               onLogout={handleLogout}
+              onNotificationClick={handleNotificationClick}
             />
           )
           : (
@@ -585,6 +603,7 @@ export default function RentalLeadApp() {
               currentUser={currentUser}
               onUpdateUser={handleUpdateUser}
               onLogout={handleLogout}
+              onNotificationClick={handleNotificationClick}
             />
           );
       case 'agent-registration':
@@ -601,6 +620,7 @@ export default function RentalLeadApp() {
             currentUser={currentUser}
             onUpdateUser={handleUpdateUser}
             onLogout={handleLogout}
+            onNotificationClick={handleNotificationClick}
           />
         );
       case 'agents-listing':
@@ -613,6 +633,7 @@ export default function RentalLeadApp() {
               currentUser={currentUser}
               onUpdateUser={handleUpdateUser}
               onLogout={handleLogout}
+              onNotificationClick={handleNotificationClick}
             />
           );
         }
@@ -634,6 +655,7 @@ export default function RentalLeadApp() {
               currentUser={currentUser}
               onUpdateUser={handleUpdateUser}
               onLogout={handleLogout}
+              onNotificationClick={handleNotificationClick}
             />
           );
         }
@@ -659,6 +681,7 @@ export default function RentalLeadApp() {
             currentUser={currentUser}
             onNavigate={handleNavigate}
             onLogout={handleLogout}
+            onNotificationClick={handleNotificationClick}
           />
         );
       case 'properties':
@@ -705,22 +728,32 @@ export default function RentalLeadApp() {
 
   return (
     <main className="min-h-screen bg-white">
+      {(!mounted || loading) ? (
+        <LoadingScreen />
+      ) : (
+        <>
+          {currentUser && view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && view !== 'admin-dashboard' && view !== 'email-confirmed' && view !== 'password-reset-success' && view !== 'reset-password' && (
+            <Header
+              onNavigate={handleNavigate}
+              currentUser={currentUser}
+              onLogout={handleLogout}
+            />
+          )}
+          {renderView()}
 
-      {currentUser && view !== 'landing' && view !== 'login' && view !== 'user-dashboard' && view !== 'agent-dashboard' && view !== 'admin-dashboard' && view !== 'email-confirmed' && view !== 'password-reset-success' && view !== 'reset-password' && (
-        <Header
-          onNavigate={handleNavigate}
-          currentUser={currentUser}
-          onLogout={handleLogout}
-        />
+          <SubscriptionModal
+            isOpen={isSubscriptionModalOpen}
+            onClose={() => setIsSubscriptionModalOpen(false)}
+            onBuyCredits={handleSubscribe}
+            currentUser={currentUser}
+          />
+          <NotificationModal
+            notification={selectedNotification}
+            onClose={() => setSelectedNotification(null)}
+            currentUser={currentUser}
+          />
+        </>
       )}
-      {renderView()}
-
-      <SubscriptionModal
-        isOpen={isSubscriptionModalOpen}
-        onClose={() => setIsSubscriptionModalOpen(false)}
-        onBuyCredits={handleSubscribe}
-        currentUser={currentUser}
-      />
     </main>
   );
 }

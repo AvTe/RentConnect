@@ -66,6 +66,7 @@ export default function PaymentCallbackPage() {
             if ((metadata.type === 'agent_subscription' || metadata.type === 'user_subscription') && (metadata.agentId || metadata.userId)) {
               const userId = metadata.agentId || metadata.userId;
               const subscriptionData = {
+                userId,
                 startDate: new Date(subscriptionDetails.startDate),
                 endDate: new Date(subscriptionDetails.endDate),
                 paymentReference: pesapalData.merchantReference,
@@ -76,7 +77,7 @@ export default function PaymentCallbackPage() {
                 planType: metadata.planType
               };
 
-              await createUserSubscription(userId, subscriptionData);
+              await createUserSubscription(subscriptionData);
             } else if (metadata.type === 'credit_purchase' && metadata.agentId) {
               const credits = metadata.credits || 0;
               if (credits > 0) {
