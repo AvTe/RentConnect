@@ -428,7 +428,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
             setIsTransitioning(true);
           });
         });
-      }, 500);
+      });
 
       return () => clearTimeout(timeout);
     }
@@ -536,7 +536,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
   const activeIndex = displayLeads.length > 0 ? currentIndex % totalCards : 0;
 
   return (
-    <div className="h-screen w-screen bg-white font-sans overflow-hidden flex flex-col">
+    <div className="h-[100dvh] w-screen bg-white font-sans overflow-hidden flex flex-col">
       {/* Header */}
       <div className="px-3 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-2 sm:pb-3 relative z-20">
         <div className="max-w-[1400px] mx-auto bg-white rounded-full shadow-lg border border-gray-100 px-4 sm:px-8 py-2 sm:py-3 flex justify-between items-center">
@@ -599,7 +599,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
         </div>
 
         {/* Hero Content - Centered */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pb-48 sm:pb-56">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pb-32 sm:pb-56">
           <div className="text-center max-w-3xl mx-auto">
             {/* Main Headline */}
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-2 sm:mb-3 drop-shadow-sm">
