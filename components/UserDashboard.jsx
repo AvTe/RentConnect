@@ -331,7 +331,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
           </div>
           <h2 className="text-2xl font-black text-gray-900 mb-2">My Messages</h2>
           <p className="text-gray-500 text-center max-w-xs mx-auto mb-8 font-medium">
-            Direct messaging with agents is coming soon. You'll be notified when agents respond to your requests.
+            Direct messaging with agents is coming soon. You&apos;ll be notified when agents respond to your requests.
           </p>
           <div className="flex items-center gap-3 px-6 py-3 bg-gray-50 rounded-2xl border border-gray-100">
             <Info size={18} className="text-gray-400" />
@@ -497,7 +497,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                       </div>
                       <p className="text-[10px] font-black text-gray-400 leading-none mb-3 uppercase tracking-widest">Apex Realty Ltd</p>
                       <div className="bg-gray-50 p-3 rounded-2xl text-[13px] text-gray-600 line-clamp-2 italic leading-relaxed border border-gray-100 relative group-hover/item:bg-orange-50/30 transition-colors">
-                        "Hi {user.name?.split(' ')[0]}, I have a unit in Westlands matching..."
+                        &quot;Hi {user.name?.split(' ')[0]}, I have a unit in Westlands matching...&quot;
                       </div>
                       <div className="flex items-center gap-2 mt-4">
                         <button className="flex-1 bg-[#FE9200] text-white text-xs font-bold py-2.5 rounded-xl hover:bg-[#E58300] transition-all shadow-lg shadow-orange-100 active:scale-95">Reply</button>
@@ -659,7 +659,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             {/* Profile Dropdown */}
             <div className="flex items-center gap-3 pl-2 py-1.5 pr-1.5 group cursor-pointer hover:bg-gray-50 rounded-xl transition-all">
               <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 shadow-sm border border-white">
-                {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold">{user.name?.charAt(0)}</div>}
+                {user.avatar ? <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold">{user.name?.charAt(0)}</div>}
               </div>
               <span className="hidden md:block text-sm font-bold text-gray-700">{user.name}</span>
               <Menu size={14} className="text-gray-400 hidden md:block group-hover:text-gray-900 transition-colors" />

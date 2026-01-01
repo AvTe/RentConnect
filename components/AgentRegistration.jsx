@@ -112,7 +112,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit, initialReferralCode = 
               <div className="w-16 h-16 bg-gradient-to-br from-[#FE9200] to-[#E58300] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-200">
                 <User className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-1">Let's get to know you</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-1">Let&apos;s get to know you</h3>
               <p className="text-sm text-gray-500">Tell us about yourself and your business</p>
             </div>
 
@@ -260,7 +260,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit, initialReferralCode = 
                 <FileText className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-1">Final Step</h3>
-              <p className="text-sm text-gray-500">Upload your ID and you're all set!</p>
+              <p className="text-sm text-gray-500">Upload your ID and you&apos;re all set!</p>
             </div>
 
             <div>
@@ -290,7 +290,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit, initialReferralCode = 
                       <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
                         <Upload className="w-6 h-6 text-gray-400" />
                       </div>
-                      <p className="text-sm font-medium text-gray-700">Upload your National ID, Passport, or Driver's License</p>
+                      <p className="text-sm font-medium text-gray-700">Upload your National ID, Passport, or Driver&apos;s License</p>
                       <p className="text-xs text-gray-400">PDF, JPG, PNG up to 5MB</p>
                     </>
                   )}
@@ -314,7 +314,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit, initialReferralCode = 
                     onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
                   />
                   {formData.referralCode && (
-                    <p className="text-xs text-green-600 mt-1 font-medium">🎉 You'll get 2 free credits on signup!</p>
+                    <p className="text-xs text-green-600 mt-1 font-medium">🎉 You&apos;ll get 2 free credits on signup!</p>
                   )}
                 </div>
               </div>
@@ -478,7 +478,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit, initialReferralCode = 
 
           <div className="space-y-4">
             <p className="text-lg text-gray-300 italic leading-relaxed">
-              "Since joining Yoombaa, my lead conversion rate has doubled. The quality of tenants is unmatched and the platform is so easy to use."
+              &quot;Since joining Yoombaa, my lead conversion rate has doubled. The quality of tenants is unmatched and the platform is so easy to use.&quot;
             </p>
             <div className="flex items-center gap-4 mt-8">
               <div className="w-12 h-12 rounded-full bg-[#FE9200] flex items-center justify-center font-bold text-xl text-white shadow-lg shadow-[#7A00AA]/20">
