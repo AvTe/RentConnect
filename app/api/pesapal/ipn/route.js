@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getApiUrl, getPaymentStatusLabel, calculateSubscriptionEndDate } from '@/lib/pesapal';
-import { 
-  createUserSubscription, 
-  addAgentCredits 
+import {
+  createUserSubscription,
+  addAgentCredits,
+  processReferralOnFirstPurchase
 } from '@/lib/database';
 import pg from 'pg';
 
@@ -86,6 +87,19 @@ async function fulfillPayment(metadata, pesapalData, orderId) {
       confirmationCode: pesapalData.confirmation_code
     });
     console.log('Credits added via IPN:', fulfillmentResult);
+
+    // Process referral bonus on first credit purchase
+    if (fulfillmentResult && fulfillmentResult.success) {
+      try {
+        const referralResult = await processReferralOnFirstPurchase(metadata.agentId);
+        if (referralResult.bonusAwarded > 0) {
+          console.log(`Referral bonus awarded: ${referralResult.bonusAwarded} credits to referrer ${referralResult.referrerId}`);
+        }
+      } catch (referralError) {
+        console.error('Referral processing error (non-fatal):', referralError);
+        // Don't fail the payment fulfillment due to referral processing
+      }
+    }
   }
 
   return fulfillmentResult;
@@ -127,7 +141,7 @@ async function handleIPN(request, method) {
 
     // Get transaction status from Pesapal
     const token = await getValidToken();
-    
+
     const statusResponse = await fetch(
       `${getApiUrl('getStatus')}?orderTrackingId=${encodeURIComponent(orderTrackingId)}`,
       {
@@ -145,13 +159,13 @@ async function handleIPN(request, method) {
 
     // Find the pending payment record
     const merchantRef = orderMerchantReference || statusData.merchant_reference;
-    
+
     // Try to find by tracking ID first, then by merchant reference
     let paymentResult = await pool.query(
       `SELECT * FROM pending_payments WHERE order_tracking_id = $1`,
       [orderTrackingId]
     );
-    
+
     if (paymentResult.rows.length === 0 && merchantRef) {
       paymentResult = await pool.query(
         `SELECT * FROM pending_payments WHERE order_id = $1`,
@@ -184,8 +198,8 @@ async function handleIPN(request, method) {
 
     // Check if payment was successful (status_code 1 = COMPLETED)
     if (statusData.status_code === 1) {
-      const metadata = typeof paymentRecord.metadata === 'string' 
-        ? JSON.parse(paymentRecord.metadata) 
+      const metadata = typeof paymentRecord.metadata === 'string'
+        ? JSON.parse(paymentRecord.metadata)
         : paymentRecord.metadata;
 
       // Mark payment as completed
@@ -202,7 +216,7 @@ async function handleIPN(request, method) {
       // Attempt server-side fulfillment
       try {
         const fulfillmentResult = await fulfillPayment(metadata, statusData, paymentRecord.order_id);
-        
+
         if (fulfillmentResult && fulfillmentResult.success) {
           // Mark as fulfilled with receipt
           await pool.query(
@@ -213,7 +227,7 @@ async function handleIPN(request, method) {
              WHERE order_id = $2`,
             [JSON.stringify(fulfillmentResult), paymentRecord.order_id]
           );
-          
+
           console.log('Payment fulfilled via IPN:', paymentRecord.order_id);
         }
       } catch (fulfillError) {
@@ -231,7 +245,7 @@ async function handleIPN(request, method) {
     } else if (statusData.status_code === 2) {
       // Payment failed
       console.log('Payment failed for:', paymentRecord.order_id);
-      
+
       await pool.query(
         `UPDATE pending_payments 
          SET status = 'failed', 

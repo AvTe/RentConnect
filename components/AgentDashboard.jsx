@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   LayoutGrid,
   Home,
@@ -41,6 +41,7 @@ import { LeadFilters } from "./ui/LeadFilters";
 import { BottomNavigation } from "./ui/BottomNavigation";
 import { AgentProfile } from "./AgentProfile";
 import { NotificationBell } from "./NotificationBell";
+import { useToast } from "@/context/ToastContext";
 import {
   getWalletBalance,
   deductCredits,
@@ -51,9 +52,12 @@ import {
   createSubscription,
   getReferralStats,
   incrementLeadViews,
+  getOrUpdateReferralCode,
 } from "@/lib/database";
 import { PersonaVerification } from "./PersonaVerification";
 import { LeadDetailModal } from "./LeadDetailModal";
+import { LiveActivityTicker, LiveActivityPopup } from "./LiveActivityTicker";
+import { Tooltip } from "./ui/Tooltip";
 import { initializePayment } from "@/lib/pesapal";
 import { checkAndNotifySubscriptionExpiry } from "@/lib/notifications";
 
@@ -78,6 +82,7 @@ export const AgentDashboard = ({
   const [loadingSubscription, setLoadingSubscription] = useState(false);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [referralStats, setReferralStats] = useState({ count: 0, totalCredits: 0 });
+  const [referredAgents, setReferredAgents] = useState([]);
   const [copySuccess, setCopySuccess] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [filteredLeads, setFilteredLeads] = useState(leads);
@@ -101,6 +106,24 @@ export const AgentDashboard = ({
     setIsSidebarOpen(false);
   };
 
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getRemainingTime = (createdAt) => {
+    const expiry = new Date(createdAt).getTime() + (48 * 60 * 60 * 1000);
+    const diff = expiry - currentTime.getTime();
+    if (diff <= 0) return "EXPIRED";
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  };
+
   const isVerified = currentUser?.verificationStatus === "verified";
   const isPending = currentUser?.verificationStatus === "pending";
 
@@ -112,6 +135,16 @@ export const AgentDashboard = ({
     experience: "5 Years",
     location: "Westlands, Nairobi",
     referralCode: "JOH1234",
+  };
+
+  // Helper to open lead and track view
+  const handleOpenLeadDetails = async (lead) => {
+    setSelectedLeadForDetail(lead);
+    const userId = currentUser?.uid || currentUser?.id;
+    if (userId) {
+      // Track the view uniquely for the agent
+      incrementLeadViews(lead.id, userId);
+    }
   };
 
   useEffect(() => {
@@ -126,9 +159,7 @@ export const AgentDashboard = ({
 
     const fetchUnlockedLeads = async () => {
       const result = await getUnlockedLeads(userId);
-      console.log('Fetched unlocked leads for agent:', userId, result);
       if (result.success) {
-        console.log('Unlocked lead IDs:', result.data);
         setUnlockedLeads(result.data || []);
       } else {
         // If there's an error, ensure we start with empty array
@@ -163,6 +194,17 @@ export const AgentDashboard = ({
       const result = await getReferralStats(userId);
       if (result.success) {
         setReferralStats(result.stats);
+        setReferredAgents(result.referrals || []);
+      }
+    };
+
+    // Fetch and update referral code to YOOM format if needed
+    const fetchReferralCode = async () => {
+      const result = await getOrUpdateReferralCode(userId);
+      if (result.success && result.code) {
+        setReferralCode(result.code);
+      } else if (currentUser?.referralCode) {
+        setReferralCode(currentUser.referralCode);
       }
     };
 
@@ -172,57 +214,67 @@ export const AgentDashboard = ({
       fetchConnectedLeads();
       fetchSubscription();
       fetchReferralStats();
-      if (currentUser.referralCode) {
-        setReferralCode(currentUser.referralCode);
-      }
+      fetchReferralCode(); // Fetch proper YOOM format referral code
     }
   }, [currentUser]);
 
-  const handleUnlockLead = async (lead) => {
+  const { toast, showConfirm } = useToast();
+
+  const handleUnlockLead = async (lead, isExclusive = false) => {
     if (!isVerified) {
-      alert(
+      toast.error(
         "Your account is pending verification. You cannot unlock leads yet.",
       );
       return;
     }
 
-    const LEAD_COST = 1; // 1 credit per lead
     const userId = currentUser?.uid || currentUser?.id;
+    if (!userId) return;
 
-    if (walletBalance >= LEAD_COST) {
-      if (userId) {
-        const result = await unlockLead(userId, lead.id);
-        if (result.success) {
-          // Increment views even if they unlock directly (Unique only)
-          incrementLeadViews(lead.id, userId);
+    // Calculate dynamic cost locally for the confirmation dialog
+    const basePrice = lead.base_price || 250;
+    const multipliers = [1.0, 1.5, 2.5];
+    const currentCost = isExclusive
+      ? Math.round(basePrice * 5.0 * 0.85)
+      : Math.round(basePrice * (multipliers[lead.claimed_slots || 0] || 2.5));
 
-          setWalletBalance((prev) => prev - LEAD_COST); // Optimistic update
-          setUnlockedLeads([...unlockedLeads, lead.id]);
-          if (onUnlockLead) onUnlockLead(lead);
-
-          // Refresh balance to be sure
-          const balanceResult = await getWalletBalance(userId);
-          if (balanceResult.success) setWalletBalance(balanceResult.balance);
-        } else {
-          alert("Failed to unlock lead: " + result.error);
-        }
-      } else {
-        // Mock mode
-        setWalletBalance((prev) => prev - LEAD_COST);
-        setUnlockedLeads([...unlockedLeads, lead.id]);
-        if (onUnlock) onUnlock(lead);
-      }
-    } else {
-      // Open subscription modal
-      if (onOpenSubscription) onOpenSubscription();
+    if (walletBalance < currentCost) {
+      showConfirm(
+        `Insufficient credits. You need ${currentCost} credits for this ${isExclusive ? 'exclusive buyout' : 'unlock'}. Top up now?`,
+        () => { if (onOpenSubscription) onOpenSubscription(); }
+      );
+      return;
     }
+
+    const confirmMsg = isExclusive
+      ? `Buy exclusive access to this lead for ${currentCost} credits? This will hide it from all other agents.`
+      : `Unlock this lead for ${currentCost} credits? (${(lead.claimed_slots || 0) + 1}/3 slots)`;
+
+    showConfirm(confirmMsg, async () => {
+      const result = await unlockLead(userId, lead.id, isExclusive);
+      if (result.success) {
+        // Increment views even if they unlock directly (Unique only)
+        incrementLeadViews(lead.id, userId);
+
+        setWalletBalance((prev) => prev - (result.cost || currentCost));
+        setUnlockedLeads([...unlockedLeads, lead.id]);
+        if (onUnlockLead) onUnlockLead(lead);
+
+        // Refresh balance to be sure
+        const balanceResult = await getWalletBalance(userId);
+        if (balanceResult.success) setWalletBalance(balanceResult.balance);
+
+        toast.success(isExclusive ? "Exclusive access granted!" : "Lead unlocked successfully!");
+      } else {
+        toast.error("Failed to unlock lead: " + result.error);
+      }
+    });
   };
 
-  const isLeadUnlocked = (leadId) => {
-    const unlocked = unlockedLeads.includes(leadId);
-    console.log(`isLeadUnlocked(${leadId}):`, unlocked, 'unlockedLeads:', unlockedLeads);
-    return unlocked;
-  };
+  // Memoize the unlocked leads check to prevent unnecessary re-renders
+  const isLeadUnlocked = useCallback((leadId) => {
+    return unlockedLeads.includes(leadId);
+  }, [unlockedLeads]);
 
   // Debug function to reset contact history (development only)
   const handleResetContactHistory = async () => {
@@ -321,27 +373,33 @@ export const AgentDashboard = ({
 
   const renderContent = () => {
     if (activeTab === "referrals") {
-      const shareUrl = `${window.location.origin}/signup?ref=${referralCode || "GEN123"}`;
+      // Share URL - root path with ref query parameter
+      const shareUrl = `${window.location.origin}/?ref=${referralCode}`;
 
       const handleCopy = () => {
-        navigator.clipboard.writeText(referralCode || "GEN123");
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
+        if (referralCode) {
+          navigator.clipboard.writeText(referralCode);
+          setCopySuccess(true);
+          setTimeout(() => setCopySuccess(false), 2000);
+        }
       };
 
       const handleShare = async () => {
-        if (navigator.share) {
+        if (navigator.share && referralCode) {
           try {
             await navigator.share({
-              title: 'Join RentConnect',
-              text: `Use my referral code ${referralCode || "GEN123"} to get 2 free credits!`,
+              title: 'Join Yoombaa',
+              text: `Join Yoombaa and get 2 free credits! Use my referral code: ${referralCode}`,
               url: shareUrl,
             });
           } catch (err) {
             console.error('Share failed', err);
           }
         } else {
-          handleCopy();
+          // Fallback: copy the full referral link
+          navigator.clipboard.writeText(shareUrl);
+          setCopySuccess(true);
+          setTimeout(() => setCopySuccess(false), 2000);
         }
       };
 
@@ -410,7 +468,7 @@ export const AgentDashboard = ({
                     <div className="flex flex-col sm:flex-row gap-3">
                       <div className="flex-1 bg-gray-50 border-2 border-gray-100 rounded-2xl px-6 py-4 flex items-center justify-between group cursor-pointer hover:border-[#FE9200]/20 transition-all" onClick={handleCopy}>
                         <span className="font-mono text-2xl font-black tracking-widest text-gray-900 uppercase">
-                          {referralCode || "GEN123"}
+                          {referralCode || <span className="text-gray-400 text-lg">Loading...</span>}
                         </span>
                         {copySuccess ? (
                           <div className="flex items-center gap-1.5 text-green-600 animate-in fade-in slide-in-from-right-2">
@@ -474,11 +532,64 @@ export const AgentDashboard = ({
                   </div>
                   <div>
                     <h4 className="font-bold text-gray-900 text-sm mb-1">Get Rewarded</h4>
-                    <p className="text-xs text-gray-500 font-medium">5 credits added to your wallet automatically.</p>
+                    <p className="text-xs text-gray-500 font-medium">5 credits added to your wallet instantly.</p>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Your Referrals List */}
+          <div className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">Your Referrals</h3>
+              <p className="text-sm text-gray-500">Agents who signed up using your code</p>
+            </div>
+
+            {referredAgents.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {referredAgents.map((agent, index) => (
+                  <div key={agent.id || index} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FE9200] to-[#E58300] flex items-center justify-center text-white font-bold text-sm">
+                        {agent.name?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">{agent.name}</p>
+                        <p className="text-xs text-gray-500">
+                          Joined {new Date(agent.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${agent.status === 'completed'
+                        ? 'bg-green-50 text-green-600'
+                        : 'bg-amber-50 text-amber-600'
+                        }`}>
+                        {agent.status === 'completed' ? (
+                          <>
+                            <Coins className="w-3 h-3" />
+                            +{agent.creditsEarned} earned
+                          </>
+                        ) : (
+                          'Pending'
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-8 h-8 text-gray-300" />
+                </div>
+                <h4 className="font-bold text-gray-900 mb-1">No referrals yet</h4>
+                <p className="text-sm text-gray-500 max-w-xs mx-auto">
+                  Share your code with other agents to start earning credits!
+                </p>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -569,11 +680,18 @@ export const AgentDashboard = ({
                         <div className="p-3 flex flex-col h-full">
                           {/* Top Row: Contact Count Badge + Budget */}
                           <div className="flex items-center justify-between mb-2 gap-1">
-                            <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1 rounded-full">
-                              <Users size={10} className="text-[#2E7D32]" />
-                              <span className="text-[10px] font-semibold text-[#2E7D32]">
-                                {connection.lead?.contacts || 0}
-                              </span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1 rounded-full">
+                                <Users size={10} className="text-[#2E7D32]" />
+                                <span className="text-[10px] font-semibold text-[#2E7D32]">
+                                  {connection.lead?.contacts || 0}
+                                </span>
+                              </div>
+                              {connection.lead?.status === 'paused' && (
+                                <div className="bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">
+                                  <span className="text-[9px] font-bold text-amber-600 uppercase">Paused</span>
+                                </div>
+                              )}
                             </div>
                             <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
                               {formatBudget(budget)}
@@ -773,9 +891,12 @@ export const AgentDashboard = ({
 
     // Leads Tab (Default)
     // Use filteredLeads for display, which updates via AJAX filtering
-    const displayLeads = filteredLeads.length > 0 || Object.keys(activeFilters).some(k => activeFilters[k])
+    // Filter out non-active leads from the general dashboard
+    const allAvailableLeads = filteredLeads.length > 0 || Object.keys(activeFilters).some(k => activeFilters[k])
       ? filteredLeads
       : leads;
+
+    const displayLeads = allAvailableLeads.filter(l => l.status === 'active' || !l.status);
 
     return (
       <div className="space-y-4 md:space-y-6">
@@ -807,152 +928,312 @@ export const AgentDashboard = ({
             showBudget={true}
             className="w-full"
           />
+
+          {/* Live Activity Ticker - Social Proof */}
+          <LiveActivityTicker className="w-full" />
         </div>
 
         {/* Leads Grid - 4 columns on desktop, 2-3 on tablet, 2 on mobile */}
-        <div className="grid gap-2 md:gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {displayLeads.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                <Inbox className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">
-                {Object.keys(activeFilters).some(k => activeFilters[k])
-                  ? 'No leads match your filters'
-                  : 'No leads found yet'}
-              </h3>
-              <p className="text-gray-500 text-sm mb-6 text-center max-w-sm">
-                {Object.keys(activeFilters).some(k => activeFilters[k])
-                  ? 'Try adjusting your filters to see more leads.'
-                  : 'Once potential tenants match your criteria, they will appear here.'}
-              </p>
-              {Object.keys(activeFilters).some(k => activeFilters[k]) ? (
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2"
-                  onClick={() => {
-                    setFilteredLeads(leads);
-                    setActiveFilters({});
-                  }}
-                >
-                  <Filter className="w-4 h-4" />
-                  Clear Filters
-                </Button>
-              ) : (
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
-                  Update Criteria
-                </Button>
-              )}
+        {displayLeads.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-200 border-dashed">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+              <Inbox className="w-8 h-8 text-gray-400" />
             </div>
-          ) : (
-            displayLeads.map((lead) => {
-              // property_type is the main field where the type is stored (e.g., "1 Bedroom", "2 Bedroom", etc.)
-              const propertyType = lead.property_type || lead.requirements?.property_type || lead.type || 'Property';
+            <h3 className="text-lg font-medium text-gray-900 mb-1">
+              {Object.keys(activeFilters).some(k => activeFilters[k])
+                ? 'No leads match your filters'
+                : 'No leads found yet'}
+            </h3>
+            <p className="text-gray-500 text-sm mb-6 text-center max-w-sm">
+              {Object.keys(activeFilters).some(k => activeFilters[k])
+                ? 'Try adjusting your filters to see more leads.'
+                : 'Once potential tenants match your criteria, they will appear here.'}
+            </p>
+            {Object.keys(activeFilters).some(k => activeFilters[k]) ? (
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => {
+                  setFilteredLeads(leads);
+                  setActiveFilters({});
+                }}
+              >
+                <Filter className="w-4 h-4" />
+                Clear Filters
+              </Button>
+            ) : (
+              <Button variant="outline" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Update Criteria
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {displayLeads.map((lead) => {
+              const formatPropertyType = (type) => {
+                if (!type) return 'Property';
+                return type.toString()
+                  .replace(/\bBed\b/gi, 'Bedroom')
+                  .replace(/\bBHK\b/gi, 'Bedroom')
+                  .replace(/\bApt\b/gi, 'Apartment')
+                  .replace(/\bRes\b/gi, 'Residential');
+              };
+
+              const propertyType = formatPropertyType(lead.property_type || lead.requirements?.property_type || lead.type);
               const location = lead.location || lead.requirements?.location || 'Location';
               const budget = lead.budget || lead.requirements?.budget || '0';
-              const contactCount = lead.contacts || 0;
+              const contactCount = lead.claimed_slots || 0;
+              const maxSlots = lead.max_slots || 3;
               const tenantName = String(lead.tenant_info?.name || lead.tenant_name || lead.name || "User");
+              const isUnlocked = isLeadUnlocked(lead.id);
+
+              const basePrice = lead.base_price || 250;
+              const multipliers = [1.0, 1.5, 2.5];
+              const currentCost = Math.round(basePrice * (multipliers[contactCount] || 2.5));
+              const timeLeft = getRemainingTime(lead.created_at);
+              const isExpired = timeLeft === "EXPIRED";
 
               return (
                 <div
                   key={lead.id}
-                  onClick={() => setSelectedLeadForDetail(lead)}
-                  className="bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-[#FE9200]/30 transition-all duration-200 cursor-pointer group"
+                  onClick={() => handleOpenLeadDetails(lead)}
+                  className={`
+                    relative flex flex-col bg-white rounded-xl border border-gray-100 
+                    hover:shadow-md hover:border-gray-200 transition-all duration-300 cursor-pointer 
+                    group
+                    ${isExpired ? 'opacity-60' : ''}
+                  `}
                 >
-                  <div className="p-3 flex flex-col h-full">
-                    {/* Top Row: Contact Count Badge + Budget */}
-                    <div className="flex items-center justify-between mb-2 gap-1">
-                      <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1 rounded-full">
-                        <Users size={10} className="text-[#2E7D32]" />
-                        <span className="text-[10px] font-semibold text-[#2E7D32]">
-                          {contactCount}
-                        </span>
-                      </div>
-                      <span className="bg-[#FE9200] text-white px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
-                        {formatBudget(budget)}
-                      </span>
+                  {/* Top Row - Views count & Budget Badge */}
+                  <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+                    {/* Stats Indicator - Agents & Views */}
+                    <div className="flex items-center gap-3 bg-gray-50/50 px-2.5 py-1.5 rounded-lg border border-gray-100/50 shadow-sm">
+                      <Tooltip content="Agents who unlocked">
+                        <div className="flex items-center gap-1.5">
+                          <Users size={12} className="text-gray-400" />
+                          <span className="text-[10px] font-bold text-gray-500">{lead.contacts || 0}</span>
+                        </div>
+                      </Tooltip>
+                      <div className="w-[1px] h-3 bg-gray-200/80" />
+                      <Tooltip content="Total views">
+                        <div className="flex items-center gap-1.5">
+                          <Eye size={12} className="text-gray-400" />
+                          <span className="text-[10px] font-bold text-gray-500">{lead.views || 0}</span>
+                        </div>
+                      </Tooltip>
                     </div>
 
-                    {/* Title - Looking for [Property Type] */}
-                    <h3 className="text-sm font-bold text-gray-900 mb-1 line-clamp-2">
+                    {/* Budget Badge - Premium but clean */}
+                    <Tooltip content="Lead Budget">
+                      <div
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${parseFloat(budget) >= 50000
+                          ? 'bg-[#FE9200]/10 text-[#FE9200] border border-[#FE9200]/20'
+                          : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                          }`}>
+                        <Coins size={12} className={parseFloat(budget) >= 50000 ? 'text-[#FE9200]' : 'text-emerald-500'} />
+                        {formatBudget(budget)}
+                      </div>
+                    </Tooltip>
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="px-5 pb-3">
+                    {/* Title */}
+                    <h3 className="text-[17px] font-bold text-gray-900 leading-tight mb-3 group-hover:text-[#FE9200] transition-colors">
                       Looking for {propertyType}
                     </h3>
 
-                    {/* Location with icon */}
-                    <div className="flex items-center gap-1 mb-2">
-                      <MapPin size={11} className="text-[#FE9200] flex-shrink-0" />
-                      <p className="text-xs text-gray-600 truncate max-w-[120px]">
-                        {formatLocation(location)}
-                      </p>
+                    {/* Badges Row - Location → Property Type → Date */}
+                    <div className="flex items-center gap-2 flex-wrap mb-4">
+                      {/* Location Badge */}
+                      <Tooltip content="Property Location">
+                        <div className="flex items-center gap-1.5 bg-gray-50/80 px-2 py-1 rounded-md border border-gray-100">
+                          <MapPin size={11} className="text-gray-400" />
+                          <span className="text-[11px] font-medium text-gray-500 truncate max-w-[90px]">{formatLocation(location)}</span>
+                        </div>
+                      </Tooltip>
+
+                      {/* Property Type Badge */}
+                      <Tooltip content="Preferred Configuration">
+                        <div className="flex items-center gap-1.5 bg-gray-50/80 px-2 py-1 rounded-md border border-gray-100">
+                          <Home size={11} className="text-gray-400" />
+                          <span className="text-[11px] font-medium text-gray-500">
+                            {propertyType}
+                          </span>
+                        </div>
+                      </Tooltip>
+
+                      {/* Date Badge */}
+                      <Tooltip content="Posted Date">
+                        <div className="flex items-center gap-1.5 bg-gray-50/80 px-2 py-1 rounded-md border border-gray-100">
+                          <Calendar size={11} className="text-gray-400" />
+                          <span className="text-[11px] font-medium text-gray-500">
+                            {new Date(lead.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
+                          </span>
+                        </div>
+                      </Tooltip>
+
+                      {isExpired && (
+                        <div className="flex items-center gap-1 bg-red-50/50 border border-red-100/50 px-2 py-1 rounded-md">
+                          <span className="text-[10px] font-bold text-red-400 uppercase">Expired</span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Requirement Badge - Shows exact property type */}
-                    <div className="mb-2">
-                      <div className="inline-flex items-center gap-1.5 bg-[#FFF5E6] border border-[#FE9200]/30 rounded-md px-2 py-1">
-                        <Home size={11} className="text-[#FE9200] flex-shrink-0" />
-                        <span className="text-[11px] text-[#E58300] font-semibold truncate">
-                          {propertyType}
+                    {/* Slots UI Section - Refined */}
+                    <div className="flex items-center justify-between bg-gray-50/30 rounded-xl px-4 py-2.5 mb-4 border border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Slots</span>
+                        <div className="flex gap-1.5">
+                          {[1, 2, 3].map((num) => (
+                            <Tooltip key={num} content={num <= contactCount ? `Slot ${num} occupied` : `Slot ${num} available`}>
+                              <div
+                                className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-extrabold border transition-all ${num <= contactCount
+                                  ? 'bg-[#FE9200] border-[#FE9200] text-white shadow-sm'
+                                  : 'bg-white border-gray-200 text-gray-300'
+                                  }`}
+                              >
+                                {num}
+                              </div>
+                            </Tooltip>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[11px] font-bold ${contactCount >= maxSlots
+                          ? 'text-red-500'
+                          : contactCount > 0
+                            ? 'text-amber-500'
+                            : 'text-emerald-500'
+                          }`}>
+                          {contactCount}/{maxSlots}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter ${contactCount >= maxSlots
+                          ? 'bg-red-50 text-red-500'
+                          : contactCount > 0
+                            ? 'bg-amber-50 text-amber-600'
+                            : 'bg-emerald-50 text-emerald-600'
+                          }`}>
+                          {contactCount >= maxSlots ? 'Sold Out' : contactCount > 0 ? 'Open' : 'Available'}
                         </span>
                       </div>
                     </div>
 
-                    {/* Tenant Info */}
-                    <div className="flex items-center gap-2 mb-2 p-2 bg-gray-50 rounded-lg">
-                      <div className="w-7 h-7 rounded-full bg-[#FFE4C4] flex items-center justify-center text-[#E58300] font-bold text-xs flex-shrink-0">
-                        {tenantName.charAt(0)}
+                    {/* Tenant Info Row - Improved hierarchy */}
+                    <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
+                      <Tooltip content="Prospective Tenant">
+                        <div
+                          className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 font-bold text-sm flex-shrink-0"
+                        >
+                          {tenantName.charAt(0).toUpperCase()}
+                        </div>
+                      </Tooltip>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-800 truncate">{tenantName}</p>
+                        <Tooltip content="Identity verified by Yoombaa">
+                          <p className="text-[11px] text-[#6B7280] font-medium cursor-help">Verified Renter</p>
+                        </Tooltip>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-gray-900 truncate">
-                          {tenantName}
-                        </p>
-                        <p className="text-[10px] text-gray-500">Looking for rent</p>
-                      </div>
+                      {isUnlocked && (
+                        <Tooltip content="You have unlocked this contact">
+                          <div className="flex items-center gap-1 bg-emerald-50/50 px-2 py-1 rounded-lg border border-emerald-100/50">
+                            <CheckCircle size={11} className="text-emerald-400" />
+                            <span className="text-[10px] font-bold text-emerald-500">Unlocked</span>
+                          </div>
+                        </Tooltip>
+                      )}
                     </div>
+                  </div>
 
-                    {/* Action Buttons */}
-                    {isLeadUnlocked(lead.id) ? (
-                      <div className="grid grid-cols-2 gap-2 mt-auto">
-                        <a
-                          href={`tel:${lead.tenant_info?.phone || lead.tenant_phone || lead.phone || lead.whatsapp}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center justify-center gap-1.5 px-2 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors text-xs"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                          Call
-                        </a>
-                        <a
-                          href={
-                            lead.tenant_info?.whatsapp_link ||
-                            `https://wa.me/${lead.tenant_info?.whatsapp || lead.tenant_phone || lead.whatsapp}`
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center justify-center gap-1.5 px-2 py-2 bg-[#FE9200] text-white rounded-lg hover:bg-[#E58300] font-medium transition-colors text-xs"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          Chat
-                        </a>
+                  {/* Action Buttons - Modern Weight & Hover Effects */}
+                  <div className="px-5 pb-5 pt-1">
+                    {isUnlocked ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <Tooltip content="Call tenant directly" position="bottom">
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`tel:${lead.phone || lead.whatsapp || ''}`, '_self');
+                            }}
+                            className="w-full h-10 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 hover:border-gray-300 font-medium text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
+                          >
+                            <Phone size={14} className="text-gray-400" />
+                            Call
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Start WhatsApp chat" position="bottom">
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`https://wa.me/${lead.phone || lead.whatsapp || ''}`, '_blank');
+                            }}
+                            className="w-full h-10 bg-[#FE9200] text-white rounded-xl hover:bg-[#E68200] font-medium text-sm transition-all flex items-center justify-center gap-2 border-0 shadow-sm hover:shadow-orange-200/50 hover:shadow-lg"
+                          >
+                            <MessageCircle size={14} />
+                            Chat
+                          </Button>
+                        </Tooltip>
                       </div>
                     ) : (
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleUnlockLead(lead);
-                        }}
-                        className="w-full mt-auto bg-gray-900 text-white hover:bg-black text-xs py-2"
-                      >
-                        <Lock className="w-3.5 h-3.5 mr-1.5" />
-                        Unlock (1 Credit)
-                      </Button>
+                      <div className="space-y-3">
+                        <Tooltip content={isExpired ? "Lead has expired" : contactCount >= maxSlots ? "No slots remaining" : `Unlock for ${currentCost} credits`} position="bottom">
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnlockLead(lead, false);
+                            }}
+                            disabled={contactCount >= maxSlots || isExpired}
+                            className={`
+                              w-full h-11 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2
+                              ${contactCount >= maxSlots || isExpired
+                                ? 'bg-gray-50 text-gray-300 cursor-not-allowed border border-gray-100 shadow-none'
+                                : 'bg-[#FE9200] text-white border-0 shadow-sm hover:shadow-orange-200/50 hover:shadow-lg translate-gpu'
+                              }
+                            `}
+                          >
+                            {isExpired ? (
+                              <>
+                                <Lock size={14} />
+                                Expired
+                              </>
+                            ) : contactCount >= maxSlots ? (
+                              <>
+                                <XCircle size={14} />
+                                Sold Out
+                              </>
+                            ) : (
+                              <>
+                                <Zap size={14} className="animate-pulse" />
+                                Unlock · {currentCost} Credits
+                              </>
+                            )}
+                          </Button>
+                        </Tooltip>
+
+                        {!isExpired && contactCount === 0 && !lead.is_exclusive && (
+                          <Tooltip content="Be the only agent with this lead" position="bottom">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUnlockLead(lead, true);
+                              }}
+                              className="w-full h-10 border border-[#FE9200]/20 text-[#FE9200] font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-2 hover:bg-[#FE9200] hover:text-white hover:border-[#FE9200] shadow-sm hover:shadow-md active:scale-95"
+                            >
+                              <Crown size={14} />
+                              Buy Exclusive Access
+                            </button>
+                          </Tooltip>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )
+        }
       </div>
     );
   };
@@ -1213,6 +1494,9 @@ export const AgentDashboard = ({
         <LeadDetailModal
           lead={selectedLeadForDetail}
           currentUser={currentUser}
+          walletBalance={walletBalance}
+          isVerified={isVerified}
+          onOpenSubscription={onOpenSubscription}
           onClose={() => setSelectedLeadForDetail(null)}
           onUnlock={(lead) => {
             setUnlockedLeads(prev => [...prev, lead.id]);
@@ -1224,6 +1508,9 @@ export const AgentDashboard = ({
           }}
         />
       )}
+
+      {/* Live Activity Popup - Corner FOMO Notifications */}
+      <LiveActivityPopup position="bottom-left" />
     </div>
   );
 };

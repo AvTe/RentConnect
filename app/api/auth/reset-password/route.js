@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Create a Supabase admin client with service role key for admin operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
 /**
  * Password Reset API using Supabase Auth
  * Uses Supabase's built-in email system for password reset
@@ -27,8 +21,27 @@ export async function POST(request) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
+    // Create Supabase client - use service role if available, otherwise anon key
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase credentials not configured');
+      return NextResponse.json({
+        success: false,
+        error: 'Server configuration error'
+      }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
     // Check if user exists in our database (for security logging only)
-    const { data: existingUser } = await supabaseAdmin
+    const { data: existingUser } = await supabase
       .from('users')
       .select('id, email')
       .eq('email', normalizedEmail)
@@ -46,18 +59,49 @@ export async function POST(request) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ||
-                    process.env.NEXT_PUBLIC_APP_URL ||
-                    'http://localhost:5000';
+      process.env.NEXT_PUBLIC_APP_URL ||
+      'http://localhost:5000';
 
     // Use Supabase's built-in password reset email
     console.log('Sending password reset via Supabase Auth to:', normalizedEmail);
 
-    const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(normalizedEmail, {
-      redirectTo: `${baseUrl}/auth/reset-password`
-    });
+    // For password reset, we need to use the admin API if service role is available
+    // Otherwise fall back to client-side method
+    let resetError = null;
+
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      // Use admin API with service role
+      const { error } = await supabase.auth.admin.generateLink({
+        type: 'recovery',
+        email: normalizedEmail,
+        options: {
+          redirectTo: `${baseUrl}/auth/reset-password`
+        }
+      });
+      resetError = error;
+
+      if (!error) {
+        console.log('Password reset link generated via admin API for:', normalizedEmail);
+      }
+    } else {
+      // Fallback: Use standard resetPasswordForEmail (works with anon key)
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo: `${baseUrl}/auth/reset-password`
+      });
+      resetError = error;
+    }
 
     if (resetError) {
       console.error('Supabase password reset error:', resetError);
+
+      // Check for specific error types
+      if (resetError.message?.includes('rate limit')) {
+        return NextResponse.json({
+          success: false,
+          error: 'Too many reset requests. Please wait a few minutes before trying again.'
+        }, { status: 429 });
+      }
+
       return NextResponse.json({
         success: false,
         error: 'Failed to send password reset email. Please try again.'

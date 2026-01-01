@@ -29,6 +29,7 @@ import confetti from "canvas-confetti";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { checkPhoneNumberExists } from "@/lib/database";
+import { useToast } from "@/context/ToastContext";
 
 // Enhanced property types with better icons and descriptions
 const PROPERTY_TYPES = [
@@ -83,6 +84,7 @@ export const TenantForm = ({
   currentUser,
   onUpdateUser,
 }) => {
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     // Location fields (structured)
@@ -96,6 +98,7 @@ export const TenantForm = ({
     pincode: "",
     // Property fields
     type: "",
+    bedrooms: 0,
     // Budget fields
     budget: "",
     budgetFormatted: "",
@@ -184,6 +187,13 @@ export const TenantForm = ({
       setFormData((prev) => ({
         ...prev,
         ...initialData,
+        // Map database fields to form fields if they differ
+        type: initialData.property_type || initialData.type || prev.type,
+        name: initialData.tenant_name || initialData.name || prev.name,
+        whatsapp: initialData.tenant_phone || initialData.whatsapp || prev.whatsapp,
+        email: initialData.tenant_email || initialData.email || prev.email,
+        // Keep the ID for updates
+        id: initialData.id
       }));
     }
   }, [initialData]);
@@ -229,6 +239,10 @@ export const TenantForm = ({
   const handleSendOtp = useCallback(async () => {
     if (!formData.whatsapp || !isValidPhoneNumber(formData.whatsapp)) {
       setVerificationError("Please enter a valid phone number.");
+      return;
+    }
+    if (!formData.type) {
+      toast.warning("Please select a property type to continue.");
       return;
     }
 
@@ -334,7 +348,7 @@ export const TenantForm = ({
       setIsSuccess(true);
       triggerConfetti();
     } else {
-      alert(result?.error || "Something went wrong. Please try again.");
+      toast.error(result?.error || "Something went wrong. Please try again.");
     }
   };
 
@@ -516,10 +530,13 @@ export const TenantForm = ({
               <button
                 key={type.id}
                 type="button"
-                onClick={() => setFormData({ ...formData, type: type.id })}
+                onClick={() => {
+                  const bedrooms = type.id.includes('Bedroom') ? parseInt(type.id) : (type.id === 'Studio' ? 0 : 1);
+                  setFormData({ ...formData, type: type.id, bedrooms });
+                }}
                 className={`group relative p-4 sm:p-5 rounded-2xl border-2 text-left transition-all duration-200 ${isSelected
-                    ? "border-[#FE9200] bg-gradient-to-br from-[#FFF5E6] to-[#FFE4C4] shadow-lg shadow-[#FFE4C4]/50 scale-[1.02]"
-                    : "border-gray-100 hover:border-[#FFD4A3] hover:bg-gray-50 hover:shadow-md"
+                  ? "border-[#FE9200] bg-gradient-to-br from-[#FFF5E6] to-[#FFE4C4] shadow-lg shadow-[#FFE4C4]/50 scale-[1.02]"
+                  : "border-gray-100 hover:border-[#FFD4A3] hover:bg-gray-50 hover:shadow-md"
                   }`}
               >
                 {/* Selection indicator */}
@@ -533,8 +550,8 @@ export const TenantForm = ({
 
                 {/* Icon with gradient background */}
                 <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3 transition-all ${isSelected
-                    ? `bg-gradient-to-br ${type.color} shadow-md`
-                    : 'bg-gray-100 group-hover:bg-gray-200'
+                  ? `bg-gradient-to-br ${type.color} shadow-md`
+                  : 'bg-gray-100 group-hover:bg-gray-200'
                   }`}>
                   <IconComponent className={`w-5 h-5 sm:w-6 sm:h-6 ${isSelected ? 'text-white' : 'text-gray-600'}`} />
                 </div>

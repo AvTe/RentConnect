@@ -46,6 +46,14 @@ export default function RentalLeadApp() {
   const handleNavigate = (newView, options = {}) => {
     setView(newView);
     setViewOptions(options);
+
+    // If initialData is provided, set it as prefilledData
+    if (options.initialData) {
+      setPrefilledData(options.initialData);
+    } else if (['landing', 'user-dashboard', 'agent-dashboard'].includes(newView)) {
+      // Clear prefilled data when navigating back to main views
+      setPrefilledData(null);
+    }
   };
 
   // Use custom hooks for data management
@@ -53,12 +61,23 @@ export default function RentalLeadApp() {
   const { leads } = useLeads({}, !!currentUser);
   const { isPremium } = useSubscription(currentUser?.id);
 
-  // Check for OAuth callback errors
+  // State for referral code from URL
+  const [prefilledReferralCode, setPrefilledReferralCode] = useState('');
+
+  // Check for OAuth callback errors and referral codes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const error = params.get('error');
       const viewParam = params.get('view');
+      const refCode = params.get('ref');
+
+      // Handle referral code from URL - redirect to agent registration with pre-filled code
+      if (refCode) {
+        setPrefilledReferralCode(refCode.toUpperCase());
+        setView('agent-registration');
+        // Keep the ref in URL so it persists if page refreshes
+      }
 
       // Handle view parameter from URL
       if (viewParam === 'email-confirmed') {
@@ -376,7 +395,11 @@ export default function RentalLeadApp() {
         location: formData.location,
         property_type: formData.type,
         budget: parseFloat(formData.budget) || 0,
-        bedrooms: parseInt(formData.bedrooms) || 1,
+        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : (
+          formData.type && formData.type.includes('Bedroom')
+            ? parseInt(formData.type)
+            : (formData.type === 'Studio' ? 0 : 1)
+        ),
         move_in_date: formData.moveInDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         requirements: {
           additional_requirements: formData.additionalRequirements || '',
@@ -385,23 +408,29 @@ export default function RentalLeadApp() {
         }
       };
 
-      const result = await createLead(leadData);
+      let result;
+      if (formData.id) {
+        // Update existing lead
+        result = await (await import('@/lib/database')).updateLead(formData.id, leadData);
+      } else {
+        // Create new lead
+        result = await createLead(leadData);
+      }
 
       if (result.success) {
-        // Send confirmation email to tenant
-        if (leadData.tenant_email) {
+        // Send confirmation email to tenant (only for new leads)
+        if (!formData.id && leadData.tenant_email) {
           try {
             const emailContent = EMAIL_TEMPLATES.TENANT_CONFIRMATION(leadData.tenant_name, leadData);
             await sendEmailNotification(leadData.tenant_email, 'Request Submitted - RentConnect', emailContent);
           } catch (emailError) {
             console.error('Error sending confirmation email:', emailError);
-            // Don't fail the submission if email fails
           }
         }
 
         return { success: true, data: result.data };
       }
-      return { success: false, error: 'Failed to create lead' };
+      return { success: false, error: result.error || 'Failed to submit request' };
     } catch (error) {
       console.error('Error submitting tenant form:', error);
       return { success: false, error: error.message || 'Failed to submit request' };
@@ -607,7 +636,7 @@ export default function RentalLeadApp() {
             />
           );
       case 'agent-registration':
-        return <AgentRegistration onNavigate={handleNavigate} onSubmit={handleAgentRegistration} />;
+        return <AgentRegistration onNavigate={handleNavigate} onSubmit={handleAgentRegistration} initialReferralCode={prefilledReferralCode} />;
       case 'agent-dashboard':
         return (
           <AgentDashboard

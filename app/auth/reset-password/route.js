@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 /**
  * Password Reset Route Handler
  * Handles password reset confirmation from email links
+ * Exchanges the recovery code for a session and redirects to update password page
  */
 export async function GET(request) {
   const requestUrl = new URL(request.url);
@@ -25,14 +26,14 @@ export async function GET(request) {
 
       if (error) {
         console.error('Error exchanging recovery code:', error);
-        return NextResponse.redirect(`${origin}/?error=invalid_token`);
+        return NextResponse.redirect(`${origin}/auth/update-password?error=invalid_token`);
       }
 
-      // Redirect to the main app - user can now update password
-      return NextResponse.redirect(`${origin}/?view=reset-password`);
+      // Redirect to update password page - user now has a valid session
+      return NextResponse.redirect(`${origin}/auth/update-password`);
     } catch (error) {
       console.error('Error processing recovery:', error);
-      return NextResponse.redirect(`${origin}/?error=invalid_token`);
+      return NextResponse.redirect(`${origin}/auth/update-password?error=invalid_token`);
     }
   }
 
@@ -49,17 +50,17 @@ export async function GET(request) {
 
       if (error) {
         console.error('Error verifying reset token:', error);
-        return NextResponse.redirect(`${origin}/?error=invalid_token`);
+        return NextResponse.redirect(`${origin}/auth/update-password?error=invalid_token`);
       }
 
-      // Redirect to main app where user can reset password
-      return NextResponse.redirect(`${origin}/?view=reset-password`);
+      // Redirect to update password page
+      return NextResponse.redirect(`${origin}/auth/update-password`);
     } catch (error) {
       console.error('Error processing recovery:', error);
-      return NextResponse.redirect(`${origin}/?error=invalid_token`);
+      return NextResponse.redirect(`${origin}/auth/update-password?error=invalid_token`);
     }
   }
 
-  // Invalid request, redirect to login
-  return NextResponse.redirect(`${origin}/`);
+  // No valid params - redirect to update password page with error
+  return NextResponse.redirect(`${origin}/auth/update-password?error=invalid_token`);
 }

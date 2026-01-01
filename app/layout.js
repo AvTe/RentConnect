@@ -3,6 +3,7 @@ import Script from 'next/script'
 import { DM_Sans } from 'next/font/google'
 import { Suspense } from 'react'
 import { SkeletonLoadingScreen } from '@/components/ui/SkeletonLoadingScreen'
+import { ToastProvider } from '@/context/ToastContext'
 import DebugPanel from '@/components/DebugPanel'
 
 const dmSans = DM_Sans({
@@ -45,18 +46,20 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://yydwhwkvrvgkqnmirbrr.supabase.co" />
-        
+
         {/* DNS Prefetch for performance */}
         <link rel="dns-prefetch" href="https://www.google.com" />
         <link rel="dns-prefetch" href="https://www.gstatic.com" />
-        
+
         {/* Optimize performance with link prefetch */}
         <link rel="prefetch" href="/yoombaa-logo.png" as="image" />
       </head>
       <body className={`${dmSans.className} font-sans`}>
-        <Suspense fallback={<SkeletonLoadingScreen />}>
-          {children}
-        </Suspense>
+        <ToastProvider>
+          <Suspense fallback={<SkeletonLoadingScreen />}>
+            {children}
+          </Suspense>
+        </ToastProvider>
 
         {/* Debug Panel - TEMPORARY for troubleshooting */}
         <DebugPanel />

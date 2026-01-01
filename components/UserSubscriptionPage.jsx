@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Check, Shield, Lock, Phone, Mail, MessageCircle } from 'lucide-react';
 import { Button } from './ui/Button';
+import { useToast } from '@/context/ToastContext';
 
 export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) => {
+  const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState('monthly');
 
   const plans = {
@@ -46,7 +48,7 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
 
   const handleSubscribe = async (planType) => {
     if (!currentUser) {
-      alert('Please login to subscribe');
+      toast.info('Please login to subscribe');
       onNavigate('login');
       return;
     }
@@ -63,8 +65,8 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <button 
-          onClick={() => onNavigate('agents-listing')} 
+        <button
+          onClick={() => onNavigate('agents-listing')}
           className="mb-8 flex items-center text-gray-500 hover:text-gray-700"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
@@ -119,20 +121,19 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
         {/* Pricing Plans */}
         <div className="grid md:grid-cols-3 gap-8 mb-12">
           {Object.entries(plans).map(([key, plan]) => (
-            <div 
+            <div
               key={key}
-              className={`bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all ${
-                plan.popular 
-                  ? 'border-[#FE9200] ring-4 ring-[#FFE4C4] transform scale-105' 
-                  : 'border-gray-200 hover:border-[#FFC482]'
-              }`}
+              className={`bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all ${plan.popular
+                ? 'border-[#FE9200] ring-4 ring-[#FFE4C4] transform scale-105'
+                : 'border-gray-200 hover:border-[#FFC482]'
+                }`}
             >
               {plan.popular && (
                 <div className="bg-[#FE9200] text-white text-center py-2 text-sm font-semibold">
                   MOST POPULAR
                 </div>
               )}
-              
+
               <div className="p-8">
                 <div className="text-center mb-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2 capitalize">
@@ -160,7 +161,7 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
                   ))}
                 </ul>
 
-                <Button 
+                <Button
                   onClick={() => handleSubscribe(key)}
                   className={`w-full py-3 ${plan.popular ? 'shadow-lg shadow-[#FFD4A3]' : ''}`}
                   variant={plan.popular ? 'default' : 'outline'}
@@ -179,7 +180,7 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
             Secure & Trusted
           </h3>
           <p className="text-gray-700 mb-4">
-            Your payment is secure with Pesapal, East Africa&apos;s trusted payment processor. 
+            Your payment is secure with Pesapal, East Africa&apos;s trusted payment processor.
             Pay easily with M-Pesa, cards, or mobile money. All agents are verified for your safety.
           </p>
           <div className="flex items-center justify-center gap-8 text-sm text-gray-600">

@@ -85,10 +85,10 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
       setError('Please enter your email address first.');
       return;
     }
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       const result = await resendConfirmationEmail(email.trim());
       if (result.success) {
@@ -113,14 +113,14 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
       // signInWithGoogle triggers OAuth popup and redirects to callback
       // Pass the selected userType so it can be stored and used after redirect
       const result = await signInWithGoogle(userType);
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Google sign-in failed');
       }
-      
+
       // The redirect happens automatically via Supabase
       // User will be brought back to the app after successful auth
-      
+
     } catch (err) {
       console.error('Google login error:', err);
       setError(err.message || 'Google sign-in failed. Please try again.');
@@ -148,7 +148,7 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
     try {
       console.log('Requesting password reset for:', trimmedEmail);
       const result = await resetPassword(trimmedEmail);
-      
+
       if (result.success) {
         setSuccessMessage(result.message || 'Password reset email sent! Check your inbox and spam folder.');
         setEmail(''); // Clear email field after successful request
@@ -206,7 +206,7 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
         // signUpWithEmail(email, password, name, metadata)
         const displayName = trimmedName || (userType === 'tenant' ? 'New Tenant' : 'New Agent');
         result = await signUpWithEmail(trimmedEmail, password, displayName, { type: userType });
-        
+
         if (!result.success) {
           throw new Error(result.error || 'Registration failed');
         }
@@ -219,7 +219,7 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
           setLoading(false);
           return;
         }
-        
+
         const user = result.user;
         const userData = {
           email: user.email,
@@ -234,7 +234,7 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
         onLogin({ ...userData, uid: user.id, id: user.id });
       } else {
         result = await signInWithEmail(trimmedEmail, password);
-        
+
         if (!result.success) {
           // Check if email not confirmed - show resend option
           if (result.errorCode === 'auth/email-not-confirmed') {
@@ -243,14 +243,14 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
             setLoading(false);
             return;
           }
-          
+
           // Use the error code if available, otherwise use the error message
-          const errorMsg = result.errorCode 
+          const errorMsg = result.errorCode
             ? getAuthErrorMessage(result.errorCode)
             : result.error;
           throw new Error(errorMsg);
         }
-        
+
         setShowResendConfirmation(false);
         const user = result.user;
         const userResult = await getUser(user.id);
@@ -282,7 +282,7 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
             className="cursor-pointer"
             onClick={() => onNavigate('landing')}
           >
-            <Image src="/yoombaa-logo.svg" alt="Yoombaa" width={120} height={40} className="h-8 sm:h-10 w-auto" priority />
+            <Image src="/yoombaa-logo.svg" alt="Yoombaa" width={120} height={40} className="h-8 sm:h-10 w-auto" />
           </div>
           <button
             onClick={() => onNavigate('landing')}
@@ -306,11 +306,10 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
             {/* User Type Toggle */}
             <div className="flex p-1 bg-gray-100 rounded-xl mb-6 w-fit">
               <button
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                  userType === 'tenant'
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${userType === 'tenant'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
-                }`}
+                  }`}
                 onClick={() => setUserType('tenant')}
                 type="button"
               >
@@ -318,11 +317,10 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
                 <span>Tenant</span>
               </button>
               <button
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${
-                  userType === 'agent'
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${userType === 'agent'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
-                }`}
+                  }`}
                 onClick={() => setUserType('agent')}
                 type="button"
               >
@@ -476,7 +474,7 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
         {/* Background Gradient/Image */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#7A00AA] to-slate-900 z-0"></div>
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80')] opacity-20 bg-cover bg-center mix-blend-overlay"></div>
-        
+
         <div className="relative z-10 max-w-lg">
           <h2 className="text-3xl lg:text-4xl font-bold mb-6 leading-tight">
             Find your perfect home with trusted agents.
@@ -493,7 +491,7 @@ export const Login = ({ onNavigate, onLogin, authError, initialTab }) => {
               </div>
             </div>
           </div>
-          
+
           {/* Logos at bottom */}
           <div className="mt-12 lg:mt-16 pt-6 lg:pt-8 border-t border-white/10 flex gap-6 lg:gap-8 opacity-40 grayscale">
             <div className="flex items-center gap-2">

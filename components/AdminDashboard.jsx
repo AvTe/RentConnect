@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Users, CreditCard, FileText, CheckCircle, XCircle,
   LogOut, Search, Bell, ShieldCheck, ShieldAlert, DollarSign, Activity, User, Settings as SettingsIcon, Shield, Mail, Zap,
-  Menu, X
+  Menu, X, Flag
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
@@ -23,7 +23,9 @@ import { Settings } from './admin/Settings';
 import { AdminManagement } from './admin/AdminManagement';
 import { NotificationTemplates } from './admin/NotificationTemplates';
 import { ExternalLeadsManagement } from './admin/ExternalLeadsManagement';
+import { BadLeadReportsManagement } from './admin/BadLeadReportsManagement';
 import { NotificationBell } from './NotificationBell';
+import { useToast } from '@/context/ToastContext';
 
 const SidebarItem = ({ icon: Icon, label, id, active, onClick }) => (
   <button
@@ -39,6 +41,7 @@ const SidebarItem = ({ icon: Icon, label, id, active, onClick }) => (
 );
 
 export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificationClick }) => {
+  const { toast, showConfirm, showPrompt } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [pendingAgents, setPendingAgents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -72,28 +75,31 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificati
   };
 
   const handleApproveAgent = async (agentId) => {
-    if (confirm('Are you sure you want to approve this agent?')) {
+    showConfirm('Are you sure you want to approve this agent?', async () => {
       const result = await approveAgent(agentId);
       if (result.success) {
         setPendingAgents(prev => prev.filter(a => a.id !== agentId));
-        alert('Agent approved successfully');
+        toast.success('Agent approved successfully');
       } else {
-        alert('Error approving agent: ' + result.error);
+        toast.error('Error approving agent: ' + result.error);
       }
-    }
+    });
   };
 
   const handleRejectAgent = async (agentId) => {
-    const reason = prompt('Please enter a reason for rejection:');
-    if (reason) {
-      const result = await rejectAgent(agentId, reason);
-      if (result.success) {
-        setPendingAgents(prev => prev.filter(a => a.id !== agentId));
-        alert('Agent rejected successfully');
+    showPrompt('Please enter a reason for rejection:', async (reason) => {
+      if (reason) {
+        const result = await rejectAgent(agentId, reason);
+        if (result.success) {
+          setPendingAgents(prev => prev.filter(a => a.id !== agentId));
+          toast.success('Agent rejected successfully');
+        } else {
+          toast.error('Error rejecting agent: ' + result.error);
+        }
       } else {
-        alert('Error rejecting agent: ' + result.error);
+        toast.warning('Rejection reason is required.');
       }
-    }
+    });
   };
 
   const renderContent = () => {
@@ -196,6 +202,10 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificati
       return <ExternalLeadsManagement />;
     }
 
+    if (activeTab === 'bad_leads') {
+      return <BadLeadReportsManagement currentUser={currentUser} />;
+    }
+
     return null;
   };
 
@@ -249,6 +259,7 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificati
             <SidebarItem icon={Activity} label="System Config" id="system_config" active={activeTab === 'system_config'} onClick={handleTabChange} />
             <SidebarItem icon={Mail} label="Notifications" id="notification_templates" active={activeTab === 'notification_templates'} onClick={handleTabChange} />
             <SidebarItem icon={Zap} label="External Leads" id="external_leads" active={activeTab === 'external_leads'} onClick={handleTabChange} />
+            <SidebarItem icon={Flag} label="Bad Lead Reports" id="bad_leads" active={activeTab === 'bad_leads'} onClick={handleTabChange} />
             <SidebarItem icon={FileText} label="All Leads" id="leads" active={activeTab === 'leads'} onClick={handleTabChange} />
             <SidebarItem icon={SettingsIcon} label="Settings" id="settings" active={activeTab === 'settings'} onClick={handleTabChange} />
           </div>
