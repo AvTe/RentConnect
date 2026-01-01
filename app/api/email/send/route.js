@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import {
-    sendEmail,
     sendWelcomeAgentEmail,
     sendWelcomeTenantEmail,
     sendNewLeadNotification,
@@ -19,6 +18,19 @@ import {
  */
 export async function POST(request) {
     try {
+        // Check if RESEND_API_KEY is configured
+        if (!process.env.RESEND_API_KEY) {
+            console.error('RESEND_API_KEY is not configured in environment variables');
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: 'Email service not configured. Please add RESEND_API_KEY to environment variables.',
+                    hint: 'Go to Vercel Dashboard > Project Settings > Environment Variables > Add RESEND_API_KEY'
+                },
+                { status: 503 }
+            );
+        }
+
         const body = await request.json();
         const { type, to, data } = body;
 
