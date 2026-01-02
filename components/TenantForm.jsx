@@ -6,6 +6,8 @@ import {
   User,
   Check,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Building2,
   Mail,
   Loader2,
@@ -133,6 +135,7 @@ export const TenantForm = ({
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
   const [aiSuccess, setAiSuccess] = useState(false);
+  const [showAiPanel, setShowAiPanel] = useState(false); // AI panel hidden by default
 
   // AI Auto-fill handler
   const handleAiParse = useCallback(async () => {
@@ -409,81 +412,7 @@ export const TenantForm = ({
 
   const renderStep1 = () => (
     <div className="space-y-5 sm:space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-      {/* AI Auto-Fill Section - Clean, minimal design */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-          <div className="w-9 h-9 bg-gradient-to-br from-[#FE9200] to-[#FF6B00] rounded-xl flex items-center justify-center shadow-sm animate-sparkle-glow">
-            <Sparkles className="w-4 h-4 text-white animate-sparkle" />
-          </div>
-          <div className="flex-1">
-            <h4 className="font-semibold text-gray-900 text-sm">AI Quick Fill</h4>
-            <p className="text-xs text-gray-500">Describe your needs in plain language</p>
-          </div>
-          <span className="text-[10px] font-medium text-[#FE9200] bg-[#FFF5E6] px-2 py-0.5 rounded-full">AI Powered</span>
-        </div>
-
-        {/* Content */}
-        <div className="p-4 space-y-3">
-          <div className="relative">
-            <textarea
-              value={aiInput}
-              onChange={(e) => {
-                setAiInput(e.target.value);
-                setAiError("");
-              }}
-              placeholder='e.g., "2 bedroom in Westlands, budget 50k, need parking"'
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all resize-none bg-white placeholder-gray-400"
-              rows={2}
-              disabled={aiLoading}
-            />
-          </div>
-
-          {/* AI Error Message */}
-          {aiError && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <p className="text-xs text-red-600">{aiError}</p>
-            </div>
-          )}
-
-          {/* AI Success Message */}
-          {aiSuccess && (
-            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-              <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
-              <p className="text-xs text-green-700">Form filled! Review and adjust below.</p>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={handleAiParse}
-            disabled={aiLoading || !aiInput.trim()}
-            className="w-full py-3 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#FE9200]"
-          >
-            {aiLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Analyzing...</span>
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-4 h-4" />
-                <span>Auto-Fill Form</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1 h-px bg-gray-200"></div>
-        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">or fill manually</span>
-        <div className="flex-1 h-px bg-gray-200"></div>
-      </div>
-
-      {/* Original Location Input */}
+      {/* Location Input - Primary Focus */}
       <div>
         <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
           Where do you want to live?
@@ -498,8 +427,102 @@ export const TenantForm = ({
           onLocationSelect={handleLocationSelect}
           placeholder="e.g., Westlands, Nairobi or Koramangala, Bangalore"
           defaultCountry={defaultCountry}
-          autoFocus={!aiInput}
+          autoFocus={true}
         />
+      </div>
+
+      {/* AI Quick Fill Toggle */}
+      <div className="relative">
+        {/* Toggle Button */}
+        <button
+          type="button"
+          onClick={() => setShowAiPanel(!showAiPanel)}
+          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all duration-300 group ${showAiPanel
+              ? 'border-[#FE9200] bg-gradient-to-r from-[#FFF5E6] to-white'
+              : 'border-gray-200 bg-white hover:border-[#FFD4A3] hover:bg-gray-50'
+            }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${showAiPanel
+                ? 'bg-gradient-to-br from-[#FE9200] to-[#FF6B00] shadow-md'
+                : 'bg-gray-100 group-hover:bg-[#FFE4C4]'
+              }`}>
+              <Sparkles className={`w-4 h-4 ${showAiPanel ? 'text-white' : 'text-gray-500 group-hover:text-[#FE9200]'
+                }`} />
+            </div>
+            <div className="text-left">
+              <p className={`font-semibold text-sm ${showAiPanel ? 'text-[#FE9200]' : 'text-gray-700'
+                }`}>AI Quick Fill</p>
+              <p className="text-xs text-gray-500">Describe your needs in plain language</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-medium text-[#FE9200] bg-[#FFF5E6] px-2 py-0.5 rounded-full">AI Powered</span>
+            {showAiPanel ? (
+              <ChevronUp className="w-5 h-5 text-[#FE9200]" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-400 group-hover:text-[#FE9200]" />
+            )}
+          </div>
+        </button>
+
+        {/* Collapsible AI Panel */}
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showAiPanel ? 'max-h-[400px] opacity-100 mt-3' : 'max-h-0 opacity-0'
+          }`}>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            {/* Content */}
+            <div className="p-4 space-y-3">
+              <div className="relative">
+                <textarea
+                  value={aiInput}
+                  onChange={(e) => {
+                    setAiInput(e.target.value);
+                    setAiError("");
+                  }}
+                  placeholder='e.g., "2 bedroom in Westlands, budget 50k, need parking"'
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 focus:border-[#FE9200] focus:ring-2 focus:ring-[#FFE4C4] outline-none transition-all resize-none bg-white placeholder-gray-400"
+                  rows={2}
+                  disabled={aiLoading}
+                />
+              </div>
+
+              {/* AI Error Message */}
+              {aiError && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                  <p className="text-xs text-red-600">{aiError}</p>
+                </div>
+              )}
+
+              {/* AI Success Message */}
+              {aiSuccess && (
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                  <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                  <p className="text-xs text-green-700">Form filled! Review and adjust below.</p>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleAiParse}
+                disabled={aiLoading || !aiInput.trim()}
+                className="w-full py-3 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl font-semibold text-sm shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#FE9200]"
+              >
+                {aiLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Analyzing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4" />
+                    <span>Auto-Fill Form</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Button
