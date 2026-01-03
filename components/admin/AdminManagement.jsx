@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import {
   Users,
@@ -98,7 +98,7 @@ const AdminAvatar = ({ name, avatar, size = 'md' }) => {
         alt={name}
         width={avatarSizes[size]}
         height={avatarSizes[size]}
-        className={`${sizeClasses[size]} rounded-full object-cover border-2 border-white shadow-sm`}
+        className={`${sizeClasses[size]} rounded-full object-cover border-2 border-white`}
         unoptimized
       />
     );
@@ -115,26 +115,39 @@ const AdminAvatar = ({ name, avatar, size = 'md' }) => {
   const colorIndex = name ? name.charCodeAt(0) % colors.length : 0;
 
   return (
-    <div className={`${sizeClasses[size]} ${colors[colorIndex]} rounded-full flex items-center justify-center text-white font-semibold shadow-sm`}>
+    <div className={`${sizeClasses[size]} ${colors[colorIndex]} rounded-full flex items-center justify-center text-white font-semibold`}>
       {initials}
     </div>
   );
 };
 
-// Dropdown menu component
+// Dropdown menu component - Fixed position to avoid overflow clipping
 const DropdownMenu = ({ admin, onView, onEdit, onResendInvite, onDeactivate, onReactivate, onDelete, currentAdminRole }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, right: 0 });
+  const buttonRef = useRef(null);
 
-  const canEdit = currentAdminRole === 'super_admin' || 
+  const canEdit = currentAdminRole === 'super_admin' ||
     (currentAdminRole === 'main_admin' && admin.role === 'sub_admin');
   const canDeactivate = canEdit && admin.status === 'active';
   const canReactivate = canEdit && ['inactive', 'suspended'].includes(admin.status);
   const canResendInvite = canEdit && admin.status === 'invited';
   const canDelete = currentAdminRole === 'super_admin';
 
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right
+      });
+    }
+  }, [isOpen]);
+
   return (
     <div className="relative">
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
       >
@@ -143,11 +156,14 @@ const DropdownMenu = ({ admin, onView, onEdit, onResendInvite, onDeactivate, onR
 
       {isOpen && (
         <>
-          <div 
-            className="fixed inset-0 z-10" 
+          <div
+            className="fixed inset-0 z-[100]"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+          <div
+            className="fixed w-48 bg-white rounded-xl border border-gray-200 py-1 z-[101]"
+            style={{ top: position.top, right: position.right }}
+          >
             <button
               onClick={() => { onView(admin); setIsOpen(false); }}
               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -155,7 +171,7 @@ const DropdownMenu = ({ admin, onView, onEdit, onResendInvite, onDeactivate, onR
               <Eye className="w-4 h-4" />
               View Details
             </button>
-            
+
             {canEdit && (
               <button
                 onClick={() => { onEdit(admin); setIsOpen(false); }}
@@ -221,14 +237,14 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText,
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+      <div className="bg-white rounded-2xl border border-gray-200 max-w-md w-full p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
         <p className="text-gray-600 mb-6">{message}</p>
         <div className="flex gap-3 justify-end">
           <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button 
+          <Button
             variant={confirmVariant}
             onClick={onConfirm}
             disabled={loading}
@@ -243,15 +259,17 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText,
   );
 };
 
-// Stats card component
-const StatsCard = ({ icon: Icon, label, value, color }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
-    <div className={`w-12 h-12 rounded-lg ${color} flex items-center justify-center`}>
-      <Icon className="w-6 h-6 text-white" />
+// Stats card component - matches AdminOverview style
+const StatsCard = ({ icon: Icon, label, value, bgColor, iconColor }) => (
+  <div className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-gray-300 transition-colors">
+    <div className="flex items-start justify-between mb-4">
+      <div className={`w-12 h-12 rounded-xl ${bgColor} flex items-center justify-center`}>
+        <Icon className={`w-6 h-6 ${iconColor}`} />
+      </div>
     </div>
     <div>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
+      <p className="text-2xl md:text-3xl font-black text-gray-900 mt-1">{value}</p>
     </div>
   </div>
 );
@@ -263,7 +281,7 @@ export const AdminManagement = ({ currentUser }) => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Filters and pagination
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -280,7 +298,7 @@ export const AdminManagement = ({ currentUser }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showBulkInviteModal, setShowBulkInviteModal] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
-  
+
   // Confirmation modals
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: '', admin: null });
 
@@ -411,7 +429,7 @@ export const AdminManagement = ({ currentUser }) => {
 
   const handleConfirmAction = async () => {
     const { type, admin } = confirmModal;
-    
+
     try {
       setActionLoading(true);
       let response;
@@ -453,7 +471,7 @@ export const AdminManagement = ({ currentUser }) => {
     try {
       const response = await fetch('/api/admins/export');
       if (!response.ok) throw new Error('Export failed');
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -485,7 +503,7 @@ export const AdminManagement = ({ currentUser }) => {
     }
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
-    
+
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
@@ -494,14 +512,14 @@ export const AdminManagement = ({ currentUser }) => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Management</h1>
-          <p className="text-gray-500 mt-1">Manage main admins, sub-admins, roles, and access.</p>
+          <h1 className="text-2xl font-black text-gray-900">Admin Management</h1>
+          <p className="text-sm text-gray-500 font-medium mt-1">Manage main admins, sub-admins, roles, and access.</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button
             variant="outline"
             onClick={() => setShowBulkInviteModal(true)}
-            className="gap-2"
+            className="gap-2 rounded-xl"
           >
             <Upload className="w-4 h-4" />
             Bulk Invite
@@ -509,14 +527,14 @@ export const AdminManagement = ({ currentUser }) => {
           <Button
             variant="outline"
             onClick={handleExport}
-            className="gap-2"
+            className="gap-2 rounded-xl"
           >
             <Download className="w-4 h-4" />
             Export
           </Button>
           <Button
             onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+            className="bg-[#FE9200] hover:bg-[#E58300] text-white gap-2 rounded-xl"
           >
             <UserPlus className="w-4 h-4" />
             Create Admin
@@ -526,14 +544,14 @@ export const AdminManagement = ({ currentUser }) => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard icon={Users} label="Total Admins" value={stats.total || 0} color="bg-blue-500" />
-        <StatsCard icon={CheckCircle} label="Active" value={stats.active || 0} color="bg-green-500" />
-        <StatsCard icon={Clock} label="Invited" value={stats.invited || 0} color="bg-amber-500" />
-        <StatsCard icon={XCircle} label="Inactive" value={stats.inactive || 0} color="bg-gray-500" />
+        <StatsCard icon={Users} label="Total Admins" value={stats.total || 0} bgColor="bg-blue-50" iconColor="text-blue-600" />
+        <StatsCard icon={CheckCircle} label="Active" value={stats.active || 0} bgColor="bg-emerald-50" iconColor="text-emerald-600" />
+        <StatsCard icon={Clock} label="Invited" value={stats.invited || 0} bgColor="bg-[#FFF2E5]" iconColor="text-[#FE9200]" />
+        <StatsCard icon={XCircle} label="Inactive" value={stats.inactive || 0} bgColor="bg-gray-100" iconColor="text-gray-500" />
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
@@ -543,7 +561,7 @@ export const AdminManagement = ({ currentUser }) => {
               placeholder="Search by name or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 placeholder-gray-400"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm"
             />
           </div>
 
@@ -552,7 +570,7 @@ export const AdminManagement = ({ currentUser }) => {
             <select
               value={roleFilter}
               onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-              className="appearance-none pl-4 pr-10 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 min-w-[160px]"
+              className="appearance-none pl-4 pr-10 py-2.5 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 min-w-[140px] text-sm font-medium"
             >
               <option value="">All Roles</option>
               <option value="super_admin">Super Admin</option>
@@ -567,7 +585,7 @@ export const AdminManagement = ({ currentUser }) => {
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="appearance-none pl-4 pr-10 py-2.5 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white text-gray-900 min-w-[160px]"
+              className="appearance-none pl-4 pr-10 py-2.5 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 min-w-[140px] text-sm font-medium"
             >
               <option value="">All Status</option>
               <option value="active">Active</option>
@@ -583,7 +601,7 @@ export const AdminManagement = ({ currentUser }) => {
             variant="outline"
             onClick={fetchAdmins}
             disabled={loading}
-            className="gap-2"
+            className="gap-2 rounded-xl border-[#FE9200] text-[#FE9200] hover:bg-[#FFF2E5]"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -637,10 +655,10 @@ export const AdminManagement = ({ currentUser }) => {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            <Loader2 className="w-8 h-8 text-[#FE9200] animate-spin" />
           </div>
         ) : admins.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-500">
