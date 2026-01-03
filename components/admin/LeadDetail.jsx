@@ -5,24 +5,36 @@ import {
   MapPin, Calendar, DollarSign, Eye, Phone, Trash2, XCircle, CheckCircle,
   ArrowLeft, Clock, Users, Home, MessageCircle, Flag, AlertCircle,
   Coins, FileText, Loader2, UserCheck, Lock, Unlock, RefreshCw, Crown,
-  PhoneOff, UserX, HelpCircle, Copy, ExternalLink, Mail, Edit
+  PhoneOff, UserX, HelpCircle, Copy, ExternalLink, Mail, Edit,
+  ToggleLeft, ToggleRight, Save, X, Settings, CreditCard
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { updateLead, deleteLead, getLeadConnections, getBadLeadReports } from '@/lib/database';
+import { useToast } from '@/context/ToastContext';
 
 export const LeadDetail = ({ lead, onBack, onUpdate }) => {
+  const { toast, showConfirm } = useToast();
   const [loading, setLoading] = useState(false);
   const [connections, setConnections] = useState([]);
   const [reports, setReports] = useState([]);
   const [loadingConnections, setLoadingConnections] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
   const [editForm, setEditForm] = useState({
     property_type: lead?.property_type || '',
     location: lead?.location || '',
     budget: lead?.budget || '',
-    status: lead?.status || 'active'
+    status: lead?.status || 'active',
+    tenant_name: lead?.tenant_name || '',
+    tenant_phone: lead?.tenant_phone || '',
+    tenant_email: lead?.tenant_email || '',
+    bedrooms: lead?.bedrooms || ''
+  });
+  const [pricingForm, setPricingForm] = useState({
+    base_price: lead?.base_price || 250,
+    max_slots: lead?.max_slots || 3
   });
 
   // Update current time every minute for remaining time calculation
@@ -86,37 +98,59 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
     fetchReports();
   }, [fetchConnections, fetchReports]);
 
-  const handleAction = async (action) => {
-    if (!confirm(`Are you sure you want to ${action} this lead?`)) return;
+  // Toggle lead status (Live/Unlive)
+  const handleToggleStatus = async () => {
+    const newStatus = lead.status === 'active' ? 'paused' : 'active';
+    const action = newStatus === 'active' ? 'make live' : 'pause';
 
     setLoading(true);
     try {
-      let result;
-      if (action === 'close') {
-        result = await updateLead(lead.id, { status: 'closed' });
-      } else if (action === 'activate') {
-        result = await updateLead(lead.id, { status: 'active' });
-      } else if (action === 'pause') {
-        result = await updateLead(lead.id, { status: 'paused' });
-      } else if (action === 'delete') {
-        result = await deleteLead(lead.id);
-      }
-
+      const result = await updateLead(lead.id, { status: newStatus });
       if (result.success) {
-        alert(`Lead ${action}d successfully`);
+        toast.success(`Lead ${newStatus === 'active' ? 'is now LIVE' : 'has been PAUSED'}`);
         onUpdate();
-        if (action === 'delete') {
-          onBack();
-        }
       } else {
-        alert(`Error: ${result.error}`);
+        toast.error(`Error: ${result.error}`);
       }
     } catch (error) {
       console.error(error);
-      alert('An error occurred');
+      toast.error('An error occurred');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAction = async (action) => {
+    showConfirm(`Are you sure you want to ${action} this lead?`, async () => {
+      setLoading(true);
+      try {
+        let result;
+        if (action === 'close') {
+          result = await updateLead(lead.id, { status: 'closed' });
+        } else if (action === 'activate') {
+          result = await updateLead(lead.id, { status: 'active' });
+        } else if (action === 'pause') {
+          result = await updateLead(lead.id, { status: 'paused' });
+        } else if (action === 'delete') {
+          result = await deleteLead(lead.id);
+        }
+
+        if (result.success) {
+          toast.success(`Lead ${action}d successfully`);
+          onUpdate();
+          if (action === 'delete') {
+            onBack();
+          }
+        } else {
+          toast.error(`Error: ${result.error}`);
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error('An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    });
   };
 
   const handleEditSubmit = async (e) => {
@@ -125,15 +159,38 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
     try {
       const result = await updateLead(lead.id, editForm);
       if (result.success) {
-        alert('Lead updated successfully');
+        toast.success('Lead updated successfully');
         setShowEditModal(false);
         onUpdate();
       } else {
-        alert('Error: ' + result.error);
+        toast.error('Error: ' + result.error);
       }
     } catch (error) {
       console.error(error);
-      alert('An error occurred');
+      toast.error('An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePricingSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const result = await updateLead(lead.id, {
+        base_price: parseInt(pricingForm.base_price),
+        max_slots: parseInt(pricingForm.max_slots)
+      });
+      if (result.success) {
+        toast.success('Pricing updated successfully');
+        setShowPricingModal(false);
+        onUpdate();
+      } else {
+        toast.error('Error: ' + result.error);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('An error occurred');
     } finally {
       setLoading(false);
     }
@@ -141,7 +198,7 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
+    toast.success('Copied to clipboard!');
   };
 
   // Calculate lead time status
@@ -197,6 +254,16 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
     .replace(/\bBed\b/gi, 'Bedroom')
     .replace(/\bBHK\b/gi, 'Bedroom');
 
+  // Calculate slot pricing
+  const basePrice = lead.base_price || 250;
+  const maxSlots = lead.max_slots || 3;
+  const claimedSlots = lead.claimed_slots || 0;
+  const slotPrices = [
+    { slot: 1, price: basePrice, multiplier: '1x' },
+    { slot: 2, price: Math.round(basePrice * 0.8), multiplier: '0.8x' },
+    { slot: 3, price: Math.round(basePrice * 0.6), multiplier: '0.6x' }
+  ];
+
   // Info Row Component matching LeadDetailModal style
   const InfoRow = ({ icon: Icon, label, value, valueColor = 'text-gray-900', action }) => (
     <div className="flex items-start gap-3 py-3">
@@ -223,6 +290,29 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Leads
         </Button>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          {/* Status Toggle Button */}
+          <Button
+            onClick={handleToggleStatus}
+            disabled={loading}
+            className={`flex-1 sm:flex-none ${lead.status === 'active'
+              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              : 'bg-gray-600 hover:bg-gray-700 text-white'
+              }`}
+            size="sm"
+          >
+            {lead.status === 'active' ? (
+              <>
+                <ToggleRight className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">LIVE</span>
+              </>
+            ) : (
+              <>
+                <ToggleLeft className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">PAUSED</span>
+              </>
+            )}
+          </Button>
+
           <Button
             onClick={() => setShowEditModal(true)}
             variant="outline"
@@ -232,37 +322,14 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
             <Edit className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Edit</span>
           </Button>
 
-          {lead.status === 'active' ? (
-            <>
-              <Button
-                onClick={() => handleAction('pause')}
-                variant="outline"
-                className="text-amber-600 border-amber-200 hover:bg-amber-50 flex-1 sm:flex-none"
-                disabled={loading}
-                size="sm"
-              >
-                <Clock className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Pause</span>
-              </Button>
-              <Button
-                onClick={() => handleAction('close')}
-                variant="outline"
-                className="text-orange-600 border-orange-200 hover:bg-orange-50 flex-1 sm:flex-none"
-                disabled={loading}
-                size="sm"
-              >
-                <XCircle className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Close</span>
-              </Button>
-            </>
-          ) : (
-            <Button
-              onClick={() => handleAction('activate')}
-              className="bg-[#16A34A] hover:bg-[#15803D] text-white flex-1 sm:flex-none"
-              disabled={loading}
-              size="sm"
-            >
-              <CheckCircle className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Reactivate</span>
-            </Button>
-          )}
+          <Button
+            onClick={() => setShowPricingModal(true)}
+            variant="outline"
+            className="text-purple-600 border-purple-200 hover:bg-purple-50 flex-1 sm:flex-none"
+            size="sm"
+          >
+            <Settings className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Pricing</span>
+          </Button>
 
           <Button
             onClick={() => handleAction('delete')}
@@ -276,6 +343,7 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
         </div>
       </div>
 
+      {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Info - Left Column */}
         <div className="lg:col-span-2 space-y-6">
@@ -286,12 +354,12 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
               {/* Status Badges Row */}
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${lead.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                    lead.status === 'paused' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                      'bg-gray-100 text-gray-500 border border-gray-200'
+                  lead.status === 'paused' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                    'bg-gray-100 text-gray-500 border border-gray-200'
                   }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${lead.status === 'active' ? 'bg-emerald-500 animate-pulse' :
-                      lead.status === 'paused' ? 'bg-amber-500' :
-                        'bg-gray-400'
+                    lead.status === 'paused' ? 'bg-amber-500' :
+                      'bg-gray-400'
                     }`} />
                   {lead.status?.toUpperCase()}
                 </span>
@@ -361,27 +429,66 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
                 </div>
               </div>
 
-              {/* Slots Indicator */}
-              <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 mb-6">
-                <div className="flex items-center gap-4">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Agent Slots</span>
+              {/* Slots Indicator with Pricing */}
+              <div className="p-4 bg-white rounded-2xl border border-gray-100 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Agent Slots & Pricing</span>
+                  <Button
+                    onClick={() => setShowPricingModal(true)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-purple-600 text-xs"
+                  >
+                    <Settings size={12} className="mr-1" /> Edit
+                  </Button>
+                </div>
+
+                {/* Slot Visual */}
+                <div className="flex items-center gap-4 mb-4">
                   <div className="flex items-center gap-2">
-                    {[1, 2, 3].map((i) => (
+                    {slotPrices.slice(0, maxSlots).map((sp) => (
                       <div
-                        key={i}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${i <= (lead.claimed_slots || 0)
-                            ? 'bg-[#FE9200] text-white shadow-lg shadow-orange-200/50'
-                            : 'bg-gray-100 text-gray-400'
+                        key={sp.slot}
+                        className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center transition-all ${sp.slot <= claimedSlots
+                          ? 'bg-[#FE9200] text-white shadow-lg shadow-orange-200/50'
+                          : 'bg-gray-100 text-gray-400'
                           }`}
                       >
-                        {i}
+                        <span className="text-xs font-bold">{sp.slot}</span>
+                        <span className="text-[8px]">{sp.price}</span>
                       </div>
                     ))}
                   </div>
+                  <div className="text-right flex-1">
+                    <span className="text-lg font-black text-emerald-600">{claimedSlots}/{maxSlots}</span>
+                    <span className="text-xs text-gray-400 ml-1">filled</span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-lg font-black text-emerald-600">{lead.claimed_slots || 0}/3</span>
-                  <span className="text-xs text-gray-400 ml-1">filled</span>
+
+                {/* Pricing Breakdown Table */}
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Slot Pricing</p>
+                  <div className="space-y-1.5">
+                    {slotPrices.slice(0, maxSlots).map((sp) => (
+                      <div key={sp.slot} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">
+                          Slot {sp.slot} <span className="text-gray-400">({sp.multiplier})</span>
+                        </span>
+                        <span className={`font-bold ${sp.slot <= claimedSlots ? 'text-emerald-600' : 'text-gray-900'}`}>
+                          {sp.price} credits
+                          {sp.slot <= claimedSlots && <span className="ml-1 text-[10px] text-emerald-500">✓ Sold</span>}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="border-t border-gray-200 pt-1.5 mt-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-bold text-gray-700">Total Revenue</span>
+                        <span className="font-black text-[#FE9200]">
+                          {slotPrices.slice(0, claimedSlots).reduce((sum, sp) => sum + sp.price, 0)} credits
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -454,14 +561,20 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
                           {getConnectionStatusBadge(connection.status || 'connected')}
                         </div>
                         <p className="text-xs text-gray-400">{connection.agent?.email || 'No email'}</p>
+                        {connection.agent?.phone && (
+                          <p className="text-xs text-gray-400">{connection.agent.phone}</p>
+                        )}
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-xs font-bold text-gray-500">
-                          {connection.credits_paid || 0} credits
+                        <p className="text-sm font-bold text-[#FE9200]">
+                          {connection.unlockCost || connection.credits_paid || 0} credits
                         </p>
                         <p className="text-[10px] text-gray-400">
                           {connection.created_at ? new Date(connection.created_at).toLocaleDateString() : 'N/A'}
                         </p>
+                        {connection.contact_type && (
+                          <p className="text-[9px] text-gray-300 uppercase">{connection.contact_type.replace('_', ' ')}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -537,7 +650,7 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
                     <Unlock size={14} />
                     <span className="text-[10px] font-bold uppercase tracking-widest">Unlocks</span>
                   </div>
-                  <p className="text-2xl font-black text-purple-600">{lead.contacts || 0}</p>
+                  <p className="text-2xl font-black text-purple-600">{lead.contacts || claimedSlots}</p>
                 </div>
               </div>
 
@@ -545,11 +658,11 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs text-gray-500 font-medium">Revenue Generated</span>
                   <span className="text-sm font-black text-[#FE9200]">
-                    {(lead.base_price || 250) * (lead.contacts || 0)} credits
+                    {slotPrices.slice(0, claimedSlots).reduce((sum, sp) => sum + sp.price, 0)} credits
                   </span>
                 </div>
                 <div className="text-[10px] text-gray-400">
-                  Base price: {lead.base_price || 250} credits
+                  Base price: {basePrice} credits | Max slots: {maxSlots}
                 </div>
               </div>
             </div>
@@ -650,104 +763,206 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
           </div>
 
           {/* Lead Metadata */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h3 className="font-bold text-gray-900 mb-4 text-sm">Lead Metadata</h3>
-            <div className="space-y-3 text-xs">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Lead ID</span>
-                <span className="font-mono text-gray-700 truncate max-w-[120px]">{lead.id}</span>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <FileText size={16} className="text-gray-400" />
+                Lead Metadata
+              </h3>
+            </div>
+            <div className="p-6 space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Lead ID</span>
+                <span className="text-gray-900 font-mono text-xs">{lead.id?.slice(0, 8) || 'N/A'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Source</span>
-                <span className="font-medium text-gray-700">{lead.source || 'Organic'}</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Source</span>
+                <span className="text-gray-900">{lead.source || 'Organic'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Base Price</span>
-                <span className="font-medium text-gray-700">{lead.base_price || 250} credits</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Base Price</span>
+                <span className="text-gray-900 font-bold">{basePrice} credits</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Created</span>
-                <span className="text-gray-700">
-                  {lead.created_at ? new Date(lead.created_at).toLocaleString() : 'N/A'}
-                </span>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Created</span>
+                <span className="text-gray-900">{lead.created_at ? new Date(lead.created_at).toLocaleDateString() : 'N/A'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Last Updated</span>
-                <span className="text-gray-700">
-                  {lead.updated_at ? new Date(lead.updated_at).toLocaleString() : 'N/A'}
-                </span>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Last Updated</span>
+                <span className="text-gray-900">{lead.updated_at ? new Date(lead.updated_at).toLocaleDateString() : 'N/A'}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Edit Modal */}
+      {/* Edit Lead Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-2xl">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-bold text-gray-900">Edit Lead</h3>
-              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-gray-100 rounded-full">
-                <XCircle size={18} className="text-gray-400" />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white">
+              <h3 className="text-lg font-black text-gray-900">Edit Lead</h3>
+              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-gray-100 rounded-xl">
+                <X size={20} className="text-gray-500" />
               </button>
             </div>
-
             <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Property Type</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Tenant Name</label>
+                <input
+                  type="text"
+                  value={editForm.tenant_name}
+                  onChange={(e) => setEditForm({ ...editForm, tenant_name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Property Type</label>
                 <input
                   type="text"
                   value={editForm.property_type}
                   onChange={(e) => setEditForm({ ...editForm, property_type: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none text-sm font-medium"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Location</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Location</label>
                 <input
                   type="text"
                   value={editForm.location}
                   onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none text-sm font-medium"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Budget (KSh)</label>
+                  <input
+                    type="number"
+                    value={editForm.budget}
+                    onChange={(e) => setEditForm({ ...editForm, budget: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Status</label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
+                  >
+                    <option value="active">Active (Live)</option>
+                    <option value="paused">Paused</option>
+                    <option value="closed">Closed</option>
+                    <option value="expired">Expired</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Phone</label>
+                  <input
+                    type="text"
+                    value={editForm.tenant_phone}
+                    onChange={(e) => setEditForm({ ...editForm, tenant_phone: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Email</label>
+                  <input
+                    type="email"
+                    value={editForm.tenant_email}
+                    onChange={(e) => setEditForm({ ...editForm, tenant_email: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={() => setShowEditModal(false)} className="flex-1 rounded-xl" disabled={loading}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl" disabled={loading}>
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Pricing Settings Modal */}
+      {showPricingModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-lg font-black text-gray-900">Slot Pricing Settings</h3>
+              <button onClick={() => setShowPricingModal(false)} className="p-2 hover:bg-gray-100 rounded-xl">
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+            <form onSubmit={handlePricingSubmit} className="p-6 space-y-4">
+              <div className="bg-purple-50 rounded-xl p-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <CreditCard className="w-8 h-8 text-purple-600" />
+                  <div>
+                    <p className="font-bold text-gray-900">Slot Pricing Model</p>
+                    <p className="text-xs text-gray-500">Slot 1: 100% | Slot 2: 80% | Slot 3: 60%</p>
+                  </div>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Budget (KSh)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Base Price (Credits)</label>
                 <input
                   type="number"
-                  value={editForm.budget}
-                  onChange={(e) => setEditForm({ ...editForm, budget: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none text-sm font-medium"
+                  min="0"
+                  value={pricingForm.base_price}
+                  onChange={(e) => setPricingForm({ ...pricingForm, base_price: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
+                  required
                 />
+                <p className="text-xs text-gray-400 mt-1">The base price for the first slot</p>
               </div>
+
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Status</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Max Slots</label>
                 <select
-                  value={editForm.status}
-                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none text-sm font-medium"
+                  value={pricingForm.max_slots}
+                  onChange={(e) => setPricingForm({ ...pricingForm, max_slots: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
                 >
-                  <option value="active">Active</option>
-                  <option value="paused">Paused</option>
-                  <option value="closed">Closed</option>
+                  <option value="1">1 Slot (Exclusive)</option>
+                  <option value="2">2 Slots</option>
+                  <option value="3">3 Slots (Standard)</option>
                 </select>
               </div>
 
+              {/* Preview */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Price Preview</p>
+                <div className="space-y-1">
+                  {[1, 2, 3].slice(0, parseInt(pricingForm.max_slots)).map(slot => {
+                    const multiplier = slot === 1 ? 1 : slot === 2 ? 0.8 : 0.6;
+                    const price = Math.round(parseInt(pricingForm.base_price || 0) * multiplier);
+                    return (
+                      <div key={slot} className="flex justify-between text-sm">
+                        <span className="text-gray-600">Slot {slot}</span>
+                        <span className="font-bold text-gray-900">{price} credits</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="flex-1 h-12 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 border-0"
-                >
+                <Button type="button" variant="outline" onClick={() => setShowPricingModal(false)} className="flex-1 rounded-xl" disabled={loading}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 h-12 bg-[#FE9200] text-white rounded-xl font-bold text-sm hover:bg-[#E58300] border-0 flex items-center justify-center gap-2"
-                >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+                <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white rounded-xl" disabled={loading}>
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                  Update Pricing
                 </Button>
               </div>
             </form>

@@ -7,10 +7,10 @@ import {
   Calendar, TrendingUp, Download, RefreshCw, ChevronDown,
   Mail, Phone, FileText, History, Ban, Play, Pause,
   DollarSign, CreditCard, Star, Loader2, AlertCircle,
-  Activity, MessageSquare, ShieldCheck
+  Activity, MessageSquare, ShieldCheck, ArrowLeft
 } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { getAllRenters, getFullRenterProfile } from '@/lib/database';
+import { getAllRenters, getFullRenterProfile, suspendUser, reactivateUser } from '@/lib/database';
 import { RenterDetail } from './RenterDetail';
 import { useToast } from '@/context/ToastContext';
 
@@ -102,7 +102,6 @@ const ActionsDropdown = ({ renter, onAction, isOpen, onToggle, buttonRef }) => {
       { id: 'suspend', label: 'Suspend Tenant', icon: Ban, color: 'text-red-600' },
     ]),
     { id: 'divider2' },
-    { id: 'viewPayments', label: 'View Payments', icon: CreditCard, color: 'text-gray-700' },
     { id: 'addNote', label: 'Add Admin Note', icon: MessageSquare, color: 'text-gray-700' },
     { id: 'viewLogs', label: 'Activity Logs', icon: History, color: 'text-gray-700' },
   ];
@@ -154,6 +153,213 @@ const ActionButton = ({ renter, isOpen, onToggle, onClose, onAction }) => {
         buttonRef={buttonRef}
       />
     </>
+  );
+};
+
+// Suspend Tenant Modal
+const SuspendModal = ({ isOpen, renter, onClose, onSubmit, loading }) => {
+  const [reason, setReason] = useState('');
+
+  if (!isOpen || !renter) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(renter.id, reason);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 max-w-md w-full p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-black text-gray-900">Suspend Tenant</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-gray-100">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="bg-red-50 rounded-xl p-4 flex items-center gap-3">
+            <Ban className="w-8 h-8 text-red-500" />
+            <div>
+              <p className="font-bold text-gray-900">Suspending: {renter?.name}</p>
+              <p className="text-xs text-gray-500">Their leads will be hidden from agents.</p>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Suspension Reason</label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Explain why this tenant is being suspended..."
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm resize-none"
+              rows={4}
+              required
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1 rounded-xl" disabled={loading}>
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 text-white" disabled={loading || !reason}>
+              {loading && <RefreshCw className="w-4 h-4 animate-spin mr-2" />}
+              Suspend Tenant
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+
+// Tenant Leads View (filtered leads for specific tenant)
+const TenantLeadsView = ({ renter, onBack }) => {
+  const [loading, setLoading] = useState(true);
+  const [leads, setLeads] = useState([]);
+
+  useEffect(() => {
+    const fetchLeads = async () => {
+      setLoading(true);
+      try {
+        const result = await getFullRenterProfile(renter.id);
+        if (result.success) {
+          setLeads(result.data.leads || []);
+        }
+      } catch (error) {
+        console.error('Error fetching leads:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeads();
+  }, [renter.id]);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={onBack}
+          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 border border-gray-200"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-500" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">Tenant Leads</h1>
+          <p className="text-sm text-gray-500 font-medium mt-1">
+            Viewing leads posted by <span className="text-[#FE9200] font-bold">{renter.name}</span>
+          </p>
+        </div>
+      </div>
+
+      {/* Tenant Info Card */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 font-black text-xl">
+            {renter.name?.charAt(0) || '?'}
+          </div>
+          <div className="flex-1">
+            <h3 className="font-black text-gray-900 text-lg">{renter.name}</h3>
+            <p className="text-sm text-gray-500">{renter.email}</p>
+            <div className="flex items-center gap-3 mt-2">
+              <StatusBadge status={renter.status || 'active'} />
+              <span className="text-xs text-gray-400">
+                {leads.length} lead{leads.length !== 1 ? 's' : ''} posted
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Lead Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard
+          icon={FileText}
+          label="Total Leads"
+          value={leads.length}
+          bgColor="bg-blue-50"
+          iconColor="text-blue-600"
+        />
+        <StatsCard
+          icon={CheckCircle}
+          label="Active"
+          value={leads.filter(l => l.status === 'active').length}
+          bgColor="bg-emerald-50"
+          iconColor="text-emerald-600"
+        />
+        <StatsCard
+          icon={Pause}
+          label="Paused"
+          value={leads.filter(l => l.status === 'paused').length}
+          bgColor="bg-amber-50"
+          iconColor="text-amber-600"
+        />
+        <StatsCard
+          icon={Clock}
+          label="Expired"
+          value={leads.filter(l => l.status === 'expired' || l.status === 'closed').length}
+          bgColor="bg-gray-50"
+          iconColor="text-gray-500"
+        />
+      </div>
+
+      {/* Leads Table */}
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h3 className="font-bold text-gray-900">Lead Requests</h3>
+        </div>
+
+        {loading ? (
+          <div className="p-8 text-center">
+            <Loader2 className="w-8 h-8 text-[#FE9200] animate-spin mx-auto" />
+          </div>
+        ) : leads.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="font-bold text-gray-900 mb-2">No leads found</h3>
+            <p className="text-gray-500 text-sm">This tenant hasn't posted any leads yet.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-widest">Property Type</th>
+                  <th className="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-widest">Location</th>
+                  <th className="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-widest">Budget</th>
+                  <th className="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                  <th className="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-widest">Created</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {leads.map((lead) => (
+                  <tr key={lead.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-bold text-gray-900">{lead.property_type || 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{lead.location || 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">KSh {lead.budget?.toLocaleString() || 'N/A'}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${lead.status === 'active' ? 'bg-emerald-50 text-emerald-600' :
+                        lead.status === 'paused' ? 'bg-amber-50 text-amber-600' :
+                          'bg-gray-100 text-gray-500'
+                        }`}>
+                        {lead.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {lead.created_at ? new Date(lead.created_at).toLocaleDateString() : 'N/A'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -228,15 +434,9 @@ const RenterDrawer = ({ renter, isOpen, onClose, onAction }) => {
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Last Active</span>
+                <span className="text-gray.500">Last Active</span>
                 <span className="text-gray-900 font-medium">
                   {renter.lastActive ? new Date(renter.lastActive).toLocaleDateString() : 'N/A'}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Subscription</span>
-                <span className="text-gray-900 font-medium">
-                  {renter.subscriptionPlan || 'Free'}
                 </span>
               </div>
             </div>
@@ -273,35 +473,33 @@ const RenterDrawer = ({ renter, isOpen, onClose, onAction }) => {
             >
               View Full Profile
             </Button>
-            <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={() => onAction('viewLeads', renter)}
+              variant="outline"
+              className="w-full rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              View All Leads
+            </Button>
+            {renter.status !== 'suspended' ? (
               <Button
-                onClick={() => onAction('viewLeads', renter)}
+                onClick={() => onAction('suspend', renter)}
                 variant="outline"
-                className="rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50"
+                className="w-full rounded-xl border-red-200 text-red-600 hover:bg-red-50"
               >
-                <Home className="w-4 h-4 mr-2" />
-                Leads
+                <Ban className="w-4 h-4 mr-2" />
+                Suspend Tenant
               </Button>
-              {renter.status !== 'suspended' ? (
-                <Button
-                  onClick={() => onAction('suspend', renter)}
-                  variant="outline"
-                  className="rounded-xl border-red-200 text-red-600 hover:bg-red-50"
-                >
-                  <Ban className="w-4 h-4 mr-2" />
-                  Suspend
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => onAction('activate', renter)}
-                  variant="outline"
-                  className="rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Activate
-                </Button>
-              )}
-            </div>
+            ) : (
+              <Button
+                onClick={() => onAction('activate', renter)}
+                variant="outline"
+                className="w-full rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Activate Tenant
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -317,6 +515,10 @@ export const RenterManagement = () => {
   const [selectedRenter, setSelectedRenter] = useState(null);
   const [fullViewRenter, setFullViewRenter] = useState(null);
 
+  // View states
+  const [currentView, setCurrentView] = useState('list'); // 'list', 'leads', 'payments'
+  const [viewRenter, setViewRenter] = useState(null);
+
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -329,6 +531,8 @@ export const RenterManagement = () => {
   // Modals
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [showSuspendModal, setShowSuspendModal] = useState(false);
+  const [suspendRenter, setSuspendRenter] = useState(null);
 
   useEffect(() => {
     fetchRenters();
@@ -378,27 +582,37 @@ export const RenterManagement = () => {
         setShowDrawer(false);
         break;
       case 'viewLeads':
-        toast.info('Redirecting to leads...');
-        // TODO: Navigate to leads filtered by tenant
+        setViewRenter(renter);
+        setCurrentView('leads');
+        setShowDrawer(false);
         break;
       case 'suspend':
-        showConfirm(`Suspend ${renter.name}? Their leads will be hidden.`, async () => {
-          setActionLoading(true);
-          // TODO: Add suspendRenter function
-          toast.warning('Suspend functionality coming soon');
-          setActionLoading(false);
-        });
+        setSuspendRenter(renter);
+        setShowSuspendModal(true);
+        setShowDrawer(false);
         break;
       case 'activate':
         showConfirm(`Activate ${renter.name}? Their leads will be visible again.`, async () => {
           setActionLoading(true);
-          // TODO: Add activateRenter function
-          toast.warning('Activate functionality coming soon');
-          setActionLoading(false);
+          try {
+            const result = await reactivateUser(renter.id);
+            if (result.success) {
+              toast.success(`${renter.name} has been activated successfully!`);
+              fetchRenters();
+            } else {
+              toast.error('Failed to activate tenant');
+            }
+          } catch (error) {
+            toast.error('Failed to activate tenant');
+          } finally {
+            setActionLoading(false);
+          }
         });
         break;
       case 'viewPayments':
-        toast.info('Payment history coming soon');
+        setViewRenter(renter);
+        setCurrentView('payments');
+        setShowDrawer(false);
         break;
       case 'addNote':
         toast.info('Admin notes coming soon');
@@ -406,6 +620,25 @@ export const RenterManagement = () => {
       case 'viewLogs':
         toast.info('Activity logs coming soon');
         break;
+    }
+  };
+
+  const handleSuspendSubmit = async (renterId, reason) => {
+    setActionLoading(true);
+    try {
+      const result = await suspendUser(renterId, reason);
+      if (result.success) {
+        toast.success('Tenant suspended successfully');
+        setShowSuspendModal(false);
+        setSuspendRenter(null);
+        fetchRenters();
+      } else {
+        toast.error('Failed to suspend tenant');
+      }
+    } catch (error) {
+      toast.error('Failed to suspend tenant');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -497,6 +730,26 @@ export const RenterManagement = () => {
           fetchRenters();
           handleViewRenter(fullViewRenter.id);
         }}
+      />
+    );
+  }
+
+  // If viewing tenant leads
+  if (currentView === 'leads' && viewRenter) {
+    return (
+      <TenantLeadsView
+        renter={viewRenter}
+        onBack={() => { setCurrentView('list'); setViewRenter(null); }}
+      />
+    );
+  }
+
+  // If viewing tenant payments
+  if (currentView === 'payments' && viewRenter) {
+    return (
+      <TenantPaymentsView
+        renter={viewRenter}
+        onBack={() => { setCurrentView('list'); setViewRenter(null); }}
       />
     );
   }
@@ -796,6 +1049,15 @@ export const RenterManagement = () => {
         isOpen={showDrawer}
         onClose={() => { setShowDrawer(false); setSelectedRenter(null); }}
         onAction={handleAction}
+      />
+
+      {/* Suspend Modal */}
+      <SuspendModal
+        isOpen={showSuspendModal}
+        renter={suspendRenter}
+        onClose={() => { setShowSuspendModal(false); setSuspendRenter(null); }}
+        onSubmit={handleSuspendSubmit}
+        loading={actionLoading}
       />
     </div>
   );

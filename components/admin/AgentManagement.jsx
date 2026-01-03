@@ -7,7 +7,8 @@ import {
   Users, Wallet, CheckCircle, Clock, AlertTriangle, MapPin,
   Calendar, TrendingUp, Download, RefreshCw, ChevronDown,
   Mail, Phone, Building, FileText, History, Key, Ban, Play,
-  Edit, Trash2, Star, Plus, Check, AlertCircle, Loader2
+  Edit, Trash2, Star, Plus, Check, AlertCircle, Loader2,
+  CreditCard, ArrowLeft, DollarSign
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import {
@@ -123,6 +124,7 @@ const ActionsDropdown = ({ agent, onAction, isOpen, onToggle, buttonRef }) => {
     ] : []),
     { id: 'divider2' },
     { id: 'addCredits', label: 'Add Credits', icon: Wallet, color: 'text-blue-600' },
+    { id: 'viewTransactions', label: 'View Transactions', icon: CreditCard, color: 'text-purple-600' },
     { id: 'resetPassword', label: 'Reset Password', icon: Key, color: 'text-gray-700' },
     { id: 'viewLogs', label: 'View Activity Logs', icon: History, color: 'text-gray-700' },
   ];
@@ -453,6 +455,159 @@ const RejectModal = ({ isOpen, agent, onClose, onSubmit, loading }) => {
   );
 };
 
+// Agent Transactions View
+const AgentTransactionsView = ({ agent, onBack }) => {
+  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState([]);
+  const [stats, setStats] = useState({ totalCredits: 0, totalSpent: 0, currentBalance: 0 });
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoading(true);
+      try {
+        const result = await getFullAgentProfile(agent.id);
+        if (result.success) {
+          const txs = result.data.transactions || [];
+          setTransactions(txs);
+
+          // Calculate stats
+          const credits = txs.filter(t => t.type === 'credit').reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+          const debits = txs.filter(t => t.type === 'debit').reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+          setStats({
+            totalCredits: credits,
+            totalSpent: debits,
+            currentBalance: result.data.walletBalance || 0
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, [agent.id]);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={onBack}
+          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 border border-gray-200"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-500" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-black text-gray-900">Credit Transactions</h1>
+          <p className="text-sm text-gray-500 font-medium mt-1">
+            Viewing transactions for <span className="text-[#FE9200] font-bold">{agent.name}</span>
+          </p>
+        </div>
+      </div>
+
+      {/* Agent Info Card */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 font-black text-xl">
+            {agent.name?.charAt(0) || '?'}
+          </div>
+          <div className="flex-1">
+            <h3 className="font-black text-gray-900 text-lg">{agent.name}</h3>
+            <p className="text-sm text-gray-500">{agent.email}</p>
+            <div className="flex items-center gap-3 mt-2">
+              <StatusBadge status={agent.status} verificationStatus={agent.verificationStatus} />
+              <span className="text-xs text-gray-400">
+                Wallet: <span className="font-bold text-emerald-600">KSh {stats.currentBalance.toLocaleString()}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Transaction Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <StatsCard
+          icon={CreditCard}
+          label="Total Credits Added"
+          value={`KSh ${stats.totalCredits.toLocaleString()}`}
+          bgColor="bg-emerald-50"
+          iconColor="text-emerald-600"
+        />
+        <StatsCard
+          icon={DollarSign}
+          label="Total Spent"
+          value={`KSh ${stats.totalSpent.toLocaleString()}`}
+          bgColor="bg-red-50"
+          iconColor="text-red-600"
+        />
+        <StatsCard
+          icon={Wallet}
+          label="Current Balance"
+          value={`KSh ${stats.currentBalance.toLocaleString()}`}
+          bgColor="bg-blue-50"
+          iconColor="text-blue-600"
+        />
+      </div>
+
+      {/* Transactions Table */}
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h3 className="font-bold text-gray-900">Transaction History</h3>
+        </div>
+
+        {loading ? (
+          <div className="p-8 text-center">
+            <Loader2 className="w-8 h-8 text-[#FE9200] animate-spin mx-auto" />
+          </div>
+        ) : transactions.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <CreditCard className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="font-bold text-gray-900 mb-2">No transactions found</h3>
+            <p className="text-gray-500 text-sm">This agent hasn't made any transactions yet.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-widest">Date</th>
+                  <th className="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-widest">Type</th>
+                  <th className="text-left px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-widest">Description</th>
+                  <th className="text-right px-6 py-3 text-xs font-bold text-gray-400 uppercase tracking-widest">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {transactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {tx.created_at ? new Date(tx.created_at).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${tx.type === 'credit' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                        }`}>
+                        {tx.type === 'credit' ? '+ Credit' : '- Debit'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{tx.reason || 'No description'}</td>
+                    <td className={`px-6 py-4 text-sm font-bold text-right ${tx.type === 'credit' ? 'text-emerald-600' : 'text-red-600'
+                      }`}>
+                      {tx.type === 'credit' ? '+' : '-'}KSh {parseFloat(tx.amount || 0).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const AgentManagement = () => {
   const { toast, showConfirm } = useToast();
   const [agents, setAgents] = useState([]);
@@ -478,6 +633,10 @@ export const AgentManagement = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [creditsAgent, setCreditsAgent] = useState(null);
   const [rejectAgent, setRejectAgentModal] = useState(null);
+
+  // Views
+  const [currentView, setCurrentView] = useState('list');
+  const [transactionsAgent, setTransactionsAgent] = useState(null);
 
   useEffect(() => {
     fetchAgents();
@@ -564,6 +723,11 @@ export const AgentManagement = () => {
       case 'addCredits':
         setCreditsAgent(agent);
         setShowCreditsModal(true);
+        break;
+      case 'viewTransactions':
+        setTransactionsAgent(agent);
+        setCurrentView('transactions');
+        setShowDrawer(false);
         break;
       case 'resetPassword':
         toast.info('Password reset email sent to agent');
@@ -686,6 +850,16 @@ export const AgentManagement = () => {
   }, [filteredAgents, page]);
 
   const totalPages = Math.ceil(filteredAgents.length / perPage);
+
+  // If viewing agent transactions
+  if (currentView === 'transactions' && transactionsAgent) {
+    return (
+      <AgentTransactionsView
+        agent={transactionsAgent}
+        onBack={() => { setCurrentView('list'); setTransactionsAgent(null); }}
+      />
+    );
+  }
 
   // If viewing full agent profile
   if (fullViewAgent) {
