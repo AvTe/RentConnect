@@ -4,18 +4,26 @@ import React, { useState, useEffect } from 'react';
 import {
   CreditCard, Users, Plus, Trash2, Edit, RefreshCw, CheckCircle, XCircle,
   Star, Crown, Zap, Clock, Calendar, DollarSign, Check, X, UserCheck,
-  TrendingUp, Package, AlertCircle, Search, ChevronDown, MoreVertical, Eye
+  TrendingUp, Package, AlertCircle, Search, ChevronDown, MoreVertical, Eye, Coins,
+  ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import {
-  getAllSubscriptionPlans,
+  getAllSubscriptionPlansAdmin,
   createSubscriptionPlan,
   updateSubscriptionPlan,
   deleteSubscriptionPlan,
+  getAllCreditBundlesAdmin,
+  createCreditBundle,
+  updateCreditBundle,
+  deleteCreditBundle,
   getAllSubscriptions
 } from '@/lib/database';
 
-// Stats Card Component - Matches global design
+const MAX_ACTIVE_BUNDLES = 4;
+const MAX_ACTIVE_PLANS = 4;
+
+// Stats Card Component
 const StatsCard = ({ icon: Icon, label, value, bgColor, iconColor, subtext }) => (
   <div className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-gray-300 transition-colors">
     <div className="flex items-start justify-between mb-4">
@@ -31,35 +39,60 @@ const StatsCard = ({ icon: Icon, label, value, bgColor, iconColor, subtext }) =>
   </div>
 );
 
-// Plan Card Component
-const PlanCard = ({ plan, onEdit, onDelete, isPopular }) => {
-  const features = Array.isArray(plan.features) ? plan.features :
-    (plan.features ? plan.features.split(',').map(f => f.trim()) : []);
+// Unified Item Card (Plan or Bundle)
+const ItemCard = ({ item, type, onEdit, onDelete, onToggleActive, activeCount, maxActive }) => {
+  const features = Array.isArray(item.features) ? item.features :
+    (item.features ? item.features.split(',').map(f => f.trim()) : []);
+
+  // Use 'tag' or fall back to 'popular' boolean for display
+  const displayTag = item.tag || (item.popular ? 'Most Popular' : null);
+  const isActive = item.is_active !== false; // Default to true if undefined
+
+  // Check if we can activate (limit check)
+  const canActivate = activeCount < maxActive;
 
   return (
-    <div className={`relative bg-white rounded-2xl border ${isPopular ? 'border-[#FE9200]' : 'border-gray-200'} p-6 hover:border-gray-300 transition-all`}>
-      {isPopular && (
+    <div className={`relative bg-white rounded-2xl border ${!isActive ? 'border-gray-300 bg-gray-50 opacity-75' : (displayTag ? 'border-[#FE9200]' : 'border-gray-200')} p-6 hover:border-gray-300 transition-all flex flex-col h-full`}>
+      {/* Sort Order Badge - Top Left */}
+      <div className="absolute -top-3 left-4">
+        <span className="bg-gray-700 text-white text-[9px] font-bold px-2 py-1 rounded-full">
+          #{item.sort_order !== undefined && item.sort_order !== null ? item.sort_order : '?'}
+        </span>
+      </div>
+
+      {/* Active/Inactive Status Badge - Top Right */}
+      <div className="absolute -top-3 right-4">
+        <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded-full ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500'}`}>
+          {isActive ? 'ACTIVE' : 'INACTIVE'}
+        </span>
+      </div>
+
+      {displayTag && isActive && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="bg-[#FE9200] text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full">
-            Most Popular
+          <span className="bg-[#FE9200] text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full shadow-sm">
+            {displayTag}
           </span>
         </div>
       )}
 
-      <div className="mb-6">
-        <h3 className="font-black text-gray-900 text-lg">{plan.name}</h3>
+      <div className="mb-6 mt-2">
+        <h3 className={`font-black text-lg ${isActive ? 'text-gray-900' : 'text-gray-500'}`}>{item.name}</h3>
         <div className="flex items-baseline gap-1 mt-2">
-          <span className="text-3xl font-black text-[#FE9200]">KSh {parseInt(plan.price || 0).toLocaleString()}</span>
-          <span className="text-sm text-gray-400 font-medium">/{plan.interval || 'monthly'}</span>
+          <span className={`text-3xl font-black ${isActive ? 'text-[#FE9200]' : 'text-gray-400'}`}>KSh {parseInt(item.price || 0).toLocaleString()}</span>
+          {type === 'plan' ? (
+            <span className="text-sm text-gray-400 font-medium">/{item.interval || 'monthly'}</span>
+          ) : (
+            <span className="text-sm text-gray-400 font-medium whitespace-nowrap">for {item.credits} credits</span>
+          )}
         </div>
-        <p className="text-sm text-gray-500 mt-2">{plan.description || 'No description'}</p>
+        <p className="text-sm text-gray-500 mt-2">{item.description || item.per_lead || 'No description'}</p>
       </div>
 
-      <div className="space-y-3 mb-6">
+      <div className="space-y-3 mb-6 flex-1">
         {features.map((feature, idx) => (
           <div key={idx} className="flex items-start gap-2">
-            <Check className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-            <span className="text-sm text-gray-600">{feature}</span>
+            <Check className={`w-4 h-4 ${isActive ? 'text-emerald-500' : 'text-gray-400'} mt-0.5 flex-shrink-0`} />
+            <span className={`text-sm ${isActive ? 'text-gray-600' : 'text-gray-400'}`}>{feature}</span>
           </div>
         ))}
         {features.length === 0 && (
@@ -67,12 +100,30 @@ const PlanCard = ({ plan, onEdit, onDelete, isPopular }) => {
         )}
       </div>
 
-      <div className="flex gap-2 pt-4 border-t border-gray-100">
+      <div className="flex gap-2 pt-4 border-t border-gray-100 mt-auto">
+        {/* Toggle Active Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className={`flex-1 rounded-xl ${isActive
+            ? 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+            : 'border-gray-200 text-gray-500 hover:bg-gray-100'
+            }`}
+          onClick={() => onToggleActive(item.id, !isActive)}
+          disabled={!isActive && !canActivate}
+          title={!isActive && !canActivate ? `Maximum ${maxActive} active items allowed` : ''}
+        >
+          {isActive ? (
+            <ToggleRight className="w-4 h-4" />
+          ) : (
+            <ToggleLeft className="w-4 h-4" />
+          )}
+        </Button>
         <Button
           variant="outline"
           size="sm"
           className="flex-1 rounded-xl border-gray-200 hover:bg-gray-50"
-          onClick={() => onEdit(plan)}
+          onClick={() => onEdit(item)}
         >
           <Edit className="w-4 h-4" />
         </Button>
@@ -80,7 +131,7 @@ const PlanCard = ({ plan, onEdit, onDelete, isPopular }) => {
           variant="outline"
           size="sm"
           className="flex-1 rounded-xl border-red-200 text-red-600 hover:bg-red-50"
-          onClick={() => onDelete(plan.id)}
+          onClick={() => onDelete(item.id)}
         >
           <Trash2 className="w-4 h-4" />
         </Button>
@@ -89,34 +140,44 @@ const PlanCard = ({ plan, onEdit, onDelete, isPopular }) => {
   );
 };
 
-// Plan Form Modal with dynamic feature fields
-const PlanFormModal = ({ isOpen, onClose, plan, onSave, loading }) => {
+// Item Form Modal
+const ItemFormModal = ({ isOpen, onClose, item, type, onSave, loading }) => {
   const [form, setForm] = useState({
     name: '',
     price: '',
     interval: 'monthly',
-    description: ''
+    credits: '',
+    per_lead: '',
+    description: '',
+    tag: '',
+    sort_order: ''
   });
   const [features, setFeatures] = useState(['']);
 
   useEffect(() => {
-    if (plan) {
+    if (item) {
       setForm({
-        name: plan.name || '',
-        price: plan.price || '',
-        interval: plan.interval || 'monthly',
-        description: plan.description || ''
+        name: item.name || '',
+        price: item.price || '',
+        interval: item.interval || 'monthly',
+        credits: item.credits || '',
+        per_lead: item.per_lead || item.perLead || '',
+        description: item.description || '',
+        tag: item.tag || (item.popular ? 'Most Popular' : ''),
+        sort_order: item.sort_order !== undefined ? item.sort_order : ''
       });
-      // Parse features array
-      const planFeatures = Array.isArray(plan.features)
-        ? plan.features
-        : (plan.features ? plan.features.split(',').map(f => f.trim()) : []);
-      setFeatures(planFeatures.length > 0 ? planFeatures : ['']);
+      const itemFeatures = Array.isArray(item.features)
+        ? item.features
+        : (item.features ? item.features.toString().split(',').map(f => f.trim()) : []);
+      setFeatures(itemFeatures.length > 0 ? itemFeatures : ['']);
     } else {
-      setForm({ name: '', price: '', interval: 'monthly', description: '' });
+      setForm({
+        name: '', price: '', interval: 'monthly', credits: '',
+        per_lead: '', description: '', tag: '', sort_order: ''
+      });
       setFeatures(['']);
     }
-  }, [plan, isOpen]);
+  }, [item, isOpen]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -127,19 +188,14 @@ const PlanFormModal = ({ isOpen, onClose, plan, onSave, loading }) => {
     });
   };
 
-  const addFeature = () => {
-    setFeatures([...features, '']);
-  };
-
+  const addFeature = () => setFeatures([...features, '']);
   const removeFeature = (index) => {
     if (features.length === 1) {
       setFeatures(['']);
       return;
     }
-    const newFeatures = features.filter((_, i) => i !== index);
-    setFeatures(newFeatures);
+    setFeatures(features.filter((_, i) => i !== index));
   };
-
   const updateFeature = (index, value) => {
     const newFeatures = [...features];
     newFeatures[index] = value;
@@ -153,7 +209,7 @@ const PlanFormModal = ({ isOpen, onClose, plan, onSave, loading }) => {
       <div className="bg-white rounded-2xl border border-gray-200 max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-black text-gray-900">
-            {plan ? 'Edit Plan' : 'Create New Plan'}
+            {item ? `Edit ${type === 'plan' ? 'Plan' : 'Bundle'}` : `Create New ${type === 'plan' ? 'Plan' : 'Bundle'}`}
           </h3>
           <button
             onClick={onClose}
@@ -165,12 +221,12 @@ const PlanFormModal = ({ isOpen, onClose, plan, onSave, loading }) => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Plan Name</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Name</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="e.g., Premium Plan"
+              placeholder={type === 'plan' ? "e.g., Premium Plan" : "e.g., Starter Pack"}
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
               required
             />
@@ -188,34 +244,85 @@ const PlanFormModal = ({ isOpen, onClose, plan, onSave, loading }) => {
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1.5">Billing Interval</label>
-              <div className="relative">
-                <select
-                  value={form.interval}
-                  onChange={(e) => setForm({ ...form, interval: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm appearance-none bg-white"
-                >
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+
+            {type === 'plan' ? (
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Billing Interval</label>
+                <div className="relative">
+                  <select
+                    value={form.interval}
+                    onChange={(e) => setForm({ ...form, interval: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm appearance-none bg-white"
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Credits Included</label>
+                <input
+                  type="number"
+                  value={form.credits}
+                  onChange={(e) => setForm({ ...form, credits: e.target.value })}
+                  placeholder="e.g., 50"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
+                  required
+                />
+              </div>
+            )}
           </div>
 
+          {type === 'plan' ? (
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">Description</label>
+              <input
+                type="text"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Brief description of this plan"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">Subtitle / Per Lead Text</label>
+              <input
+                type="text"
+                value={form.per_lead}
+                onChange={(e) => setForm({ ...form, per_lead: e.target.value })}
+                placeholder="e.g., KSh 35/lead"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
+              />
+            </div>
+          )}
+
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">Description</label>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Tag (Optional)</label>
             <input
               type="text"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Brief description of this plan"
+              value={form.tag}
+              onChange={(e) => setForm({ ...form, tag: e.target.value })}
+              placeholder="e.g., Best Value, 50% OFF"
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
             />
           </div>
 
-          {/* Dynamic Feature Fields */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1.5">Display Order</label>
+            <input
+              type="number"
+              value={form.sort_order}
+              onChange={(e) => setForm({ ...form, sort_order: e.target.value })}
+              placeholder="1, 2, 3... (lower = first)"
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
+              min="0"
+            />
+            <p className="text-xs text-gray-400 mt-1">Lower numbers appear first. Leave empty for auto-order by price.</p>
+          </div>
+
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Features</label>
             <div className="space-y-2">
@@ -271,7 +378,7 @@ const PlanFormModal = ({ isOpen, onClose, plan, onSave, loading }) => {
               {loading ? (
                 <RefreshCw className="w-4 h-4 animate-spin mr-2" />
               ) : null}
-              {plan ? 'Save Changes' : 'Create Plan'}
+              {item ? 'Save Changes' : 'Create'}
             </Button>
           </div>
         </form>
@@ -302,28 +409,44 @@ const StatusBadge = ({ status }) => {
 };
 
 export const SubscriptionManagement = () => {
-  const [activeTab, setActiveTab] = useState('plans');
+  const [activeTab, setActiveTab] = useState('bundles'); // 'plans', 'bundles', 'subscribers'
   const [plans, setPlans] = useState([]);
+  const [bundles, setBundles] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showPlanModal, setShowPlanModal] = useState(false);
-  const [currentPlan, setCurrentPlan] = useState(null);
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [currentItem, setCurrentItem] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     if (activeTab === 'plans') fetchPlans();
+    if (activeTab === 'bundles') fetchBundles();
     if (activeTab === 'subscribers') fetchSubscriptions();
   }, [activeTab]);
 
   const fetchPlans = async () => {
     setLoading(true);
     try {
-      const result = await getAllSubscriptionPlans();
+      // Use Admin function to get ALL plans (active + inactive)
+      const result = await getAllSubscriptionPlansAdmin();
       if (result.success) setPlans(result.data || []);
     } catch (error) {
       console.error('Error fetching plans:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchBundles = async () => {
+    setLoading(true);
+    try {
+      // Use Admin function to get ALL bundles (active + inactive)
+      const result = await getAllCreditBundlesAdmin();
+      if (result.success) setBundles(result.data || []);
+    } catch (error) {
+      console.error('Error fetching bundles:', error);
     } finally {
       setLoading(false);
     }
@@ -341,49 +464,95 @@ export const SubscriptionManagement = () => {
     }
   };
 
-  const handleSavePlan = async (data) => {
+  const handleSaveItem = async (data) => {
     setSaving(true);
     try {
-      if (currentPlan) {
-        await updateSubscriptionPlan(currentPlan.id, data);
-      } else {
-        await createSubscriptionPlan(data);
+      if (activeTab === 'plans') {
+        if (currentItem) await updateSubscriptionPlan(currentItem.id, data);
+        else await createSubscriptionPlan(data);
+        fetchPlans();
+      } else if (activeTab === 'bundles') {
+        const bundleData = {
+          ...data,
+          popular: !!data.tag // If tag exists, treat as popular for compatibility, or just rely on tag
+        };
+        if (currentItem) await updateCreditBundle(currentItem.id, bundleData);
+        else await createCreditBundle(bundleData);
+        fetchBundles();
       }
-      setShowPlanModal(false);
-      setCurrentPlan(null);
-      fetchPlans();
+      setShowItemModal(false);
+      setCurrentItem(null);
     } catch (error) {
-      console.error('Error saving plan:', error);
-      alert('Error saving plan');
+      console.error('Error saving item:', error);
+      alert('Error saving item');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeletePlan = async (id) => {
-    if (!confirm('Are you sure you want to delete this plan? This action cannot be undone.')) return;
+  const handleDeleteItem = async (id) => {
+    if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) return;
     try {
-      await deleteSubscriptionPlan(id);
-      fetchPlans();
+      if (activeTab === 'plans') {
+        await deleteSubscriptionPlan(id);
+        fetchPlans();
+      } else if (activeTab === 'bundles') {
+        await deleteCreditBundle(id);
+        fetchBundles();
+      }
     } catch (error) {
-      console.error('Error deleting plan:', error);
-      alert('Error deleting plan');
+      console.error('Error deleting item:', error);
+      alert('Error deleting item');
     }
   };
 
-  const handleEditPlan = (plan) => {
-    setCurrentPlan(plan);
-    setShowPlanModal(true);
+  const handleToggleActive = async (id, newActiveState) => {
+    try {
+      // Calculate current active count
+      const currentActiveCount = activeTab === 'bundles'
+        ? bundles.filter(b => b.is_active !== false).length
+        : plans.filter(p => p.is_active !== false).length;
+
+      const maxActive = activeTab === 'bundles' ? MAX_ACTIVE_BUNDLES : MAX_ACTIVE_PLANS;
+
+      // Check if we're trying to activate and already at limit
+      if (newActiveState && currentActiveCount >= maxActive) {
+        alert(`Maximum ${maxActive} active ${activeTab === 'bundles' ? 'bundles' : 'plans'} allowed. Please deactivate one first.`);
+        return;
+      }
+
+      if (activeTab === 'bundles') {
+        await updateCreditBundle(id, { is_active: newActiveState });
+        fetchBundles();
+      } else if (activeTab === 'plans') {
+        await updateSubscriptionPlan(id, { is_active: newActiveState });
+        fetchPlans();
+      }
+    } catch (error) {
+      console.error('Error toggling active status:', error);
+      alert('Error updating status');
+    }
   };
 
-  const handleAddPlan = () => {
-    setCurrentPlan(null);
-    setShowPlanModal(true);
+  const handleEditItem = (item) => {
+    setCurrentItem(item);
+    setShowItemModal(true);
+  };
+
+  const handleAddItem = () => {
+    setCurrentItem(null);
+    setShowItemModal(true);
   };
 
   // Calculate stats
+  const activeBundles = bundles.filter(b => b.is_active !== false).length;
+  const activePlans = plans.filter(p => p.is_active !== false).length;
+
   const stats = {
     totalPlans: plans.length,
+    totalBundles: bundles.length,
+    activeBundles,
+    activePlans,
     totalSubscribers: subscriptions.length,
     activeSubscribers: subscriptions.filter(s => s.status === 'active').length,
     monthlyRevenue: subscriptions
@@ -411,23 +580,32 @@ export const SubscriptionManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Subscription Management</h1>
-          <p className="text-sm text-gray-500 font-medium mt-1">Manage plans, subscribers, and billing</p>
+          <h1 className="text-2xl font-black text-gray-900">Subscription & Credits</h1>
+          <p className="text-sm text-gray-500 font-medium mt-1">Manage plans, credit bundles, and subscribers</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
-          <div className="flex bg-gray-100 rounded-xl p-1">
+          <div className="flex bg-gray-100 rounded-xl p-1 overflow-x-auto">
             <button
               onClick={() => setActiveTab('plans')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'plans'
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'plans'
                 ? 'bg-[#FE9200] text-white'
                 : 'text-gray-600 hover:text-gray-900'
                 }`}
             >
-              Plans
+              Recurring Plans
+            </button>
+            <button
+              onClick={() => setActiveTab('bundles')}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'bundles'
+                ? 'bg-[#FE9200] text-white'
+                : 'text-gray-600 hover:text-gray-900'
+                }`}
+            >
+              Credit Bundles
             </button>
             <button
               onClick={() => setActiveTab('subscribers')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'subscribers'
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'subscribers'
                 ? 'bg-[#FE9200] text-white'
                 : 'text-gray-600 hover:text-gray-900'
                 }`}
@@ -435,13 +613,13 @@ export const SubscriptionManagement = () => {
               Subscribers
             </button>
           </div>
-          {activeTab === 'plans' && (
+          {(activeTab === 'plans' || activeTab === 'bundles') && (
             <Button
-              onClick={handleAddPlan}
-              className="bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl gap-2"
+              onClick={handleAddItem}
+              className="bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl gap-2 whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
-              Add New Plan
+              Add {activeTab === 'plans' ? 'Plan' : 'Bundle'}
             </Button>
           )}
         </div>
@@ -451,10 +629,11 @@ export const SubscriptionManagement = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           icon={Package}
-          label="Total Plans"
-          value={stats.totalPlans}
+          label="Active Bundles"
+          value={`${stats.activeBundles}/${MAX_ACTIVE_BUNDLES}`}
           bgColor="bg-blue-50"
           iconColor="text-blue-600"
+          subtext={`${stats.totalBundles} total bundles`}
         />
         <StatsCard
           icon={Users}
@@ -472,44 +651,58 @@ export const SubscriptionManagement = () => {
         />
         <StatsCard
           icon={DollarSign}
-          label="Monthly Revenue"
+          label="Sub Revenue"
           value={`KSh ${stats.monthlyRevenue.toLocaleString()}`}
           bgColor="bg-[#FFF2E5]"
           iconColor="text-[#FE9200]"
         />
       </div>
 
-      {/* Plans Tab */}
-      {activeTab === 'plans' && (
+      {/* Active Limit Warning */}
+      {activeTab === 'bundles' && stats.activeBundles >= MAX_ACTIVE_BUNDLES && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-amber-800">Maximum Active Bundles Reached</p>
+            <p className="text-sm text-amber-700">You have {MAX_ACTIVE_BUNDLES} active bundles. Deactivate one to activate another. Only active bundles are shown to agents.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Plans or Bundles Tab */}
+      {(activeTab === 'plans' || activeTab === 'bundles') && (
         <div>
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <RefreshCw className="w-8 h-8 text-[#FE9200] animate-spin" />
             </div>
-          ) : plans.length === 0 ? (
+          ) : (activeTab === 'plans' ? plans : bundles).length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Package className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="font-bold text-gray-900 mb-2">No plans yet</h3>
-              <p className="text-gray-500 text-sm mb-4">Create your first subscription plan to get started</p>
+              <h3 className="font-bold text-gray-900 mb-2">No {activeTab} yet</h3>
+              <p className="text-gray-500 text-sm mb-4">Create your first {activeTab === 'plans' ? 'subscription plan' : 'credit bundle'} to get started</p>
               <Button
-                onClick={handleAddPlan}
+                onClick={handleAddItem}
                 className="bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl gap-2"
               >
                 <Plus className="w-4 h-4" />
-                Create First Plan
+                Create {activeTab === 'plans' ? 'Plan' : 'Bundle'}
               </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {plans.map((plan, idx) => (
-                <PlanCard
-                  key={plan.id}
-                  plan={plan}
-                  onEdit={handleEditPlan}
-                  onDelete={handleDeletePlan}
-                  isPopular={idx === 1 && plans.length > 1}
+              {(activeTab === 'plans' ? plans : bundles).map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  type={activeTab === 'plans' ? 'plan' : 'bundle'}
+                  onEdit={handleEditItem}
+                  onDelete={handleDeleteItem}
+                  onToggleActive={handleToggleActive}
+                  activeCount={activeTab === 'bundles' ? stats.activeBundles : stats.activePlans}
+                  maxActive={activeTab === 'bundles' ? MAX_ACTIVE_BUNDLES : MAX_ACTIVE_PLANS}
                 />
               ))}
             </div>
@@ -665,12 +858,13 @@ export const SubscriptionManagement = () => {
         </div>
       )}
 
-      {/* Plan Form Modal */}
-      <PlanFormModal
-        isOpen={showPlanModal}
-        onClose={() => { setShowPlanModal(false); setCurrentPlan(null); }}
-        plan={currentPlan}
-        onSave={handleSavePlan}
+      {/* Item Form Modal */}
+      <ItemFormModal
+        isOpen={showItemModal}
+        onClose={() => { setShowItemModal(false); setCurrentItem(null); }}
+        item={currentItem}
+        type={activeTab === 'plans' ? 'plan' : 'bundle'}
+        onSave={handleSaveItem}
         loading={saving}
       />
     </div>

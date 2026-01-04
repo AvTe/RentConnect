@@ -50,8 +50,8 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        <button 
-          onClick={() => onNavigate('agent-dashboard')} 
+        <button
+          onClick={() => onNavigate('agent-dashboard')}
           className="mb-8 flex items-center text-gray-500 hover:text-gray-700"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
@@ -71,46 +71,50 @@ export const SubscriptionPage = ({ onNavigate, onBuyCredits }) => {
           <div className="text-center py-12">Loading bundles...</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {bundles.map((bundle) => (
-              <div key={bundle.id} className={`bg-white rounded-2xl shadow-xl overflow-hidden border ${bundle.popular ? 'border-[#FE9200] ring-2 ring-[#FE9200] ring-opacity-50' : 'border-gray-200'} relative flex flex-col`}>
-                {bundle.popular && (
-                  <div className="absolute top-0 right-0 bg-[#FE9200] text-white text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wide">
-                    Most Popular
+            {bundles.map((bundle) => {
+              const displayTag = bundle.tag || (bundle.popular ? 'Most Popular' : null);
+
+              return (
+                <div key={bundle.id} className={`bg-white rounded-2xl shadow-xl overflow-hidden border ${displayTag ? 'border-[#FE9200] ring-2 ring-[#FE9200] ring-opacity-50' : 'border-gray-200'} relative flex flex-col`}>
+                  {displayTag && (
+                    <div className="absolute top-0 right-0 bg-[#FE9200] text-white text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wide">
+                      {displayTag}
+                    </div>
+                  )}
+
+                  <div className="p-8 text-center border-b border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{bundle.name}</h3>
+                    <div className="flex justify-center items-baseline mb-1">
+                      <span className="text-4xl font-extrabold text-gray-900">KSh {parseInt(bundle.price).toLocaleString()}</span>
+                    </div>
+                    <p className="text-[#FE9200] font-medium text-sm mb-4">{bundle.credits} Credits</p>
+                    <div className="inline-block bg-gray-100 rounded-full px-3 py-1 text-xs text-gray-500 font-medium">
+                      {bundle.perLead || 'Best Value'}
+                    </div>
                   </div>
-                )}
-                
-                <div className="p-8 text-center border-b border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{bundle.name}</h3>
-                  <div className="flex justify-center items-baseline mb-1">
-                    <span className="text-4xl font-extrabold text-gray-900">KSh {parseInt(bundle.price).toLocaleString()}</span>
-                  </div>
-                  <p className="text-[#FE9200] font-medium text-sm mb-4">{bundle.credits} Credits</p>
-                  <div className="inline-block bg-gray-100 rounded-full px-3 py-1 text-xs text-gray-500 font-medium">
-                    {bundle.perLead || 'Best Value'}
+
+                  <div className="p-8 flex-1 flex flex-col">
+                    <ul className="space-y-4 mb-8 flex-1">
+                      {(Array.isArray(bundle.features) ? bundle.features : []).map((feature, index) => (
+                        <li key={index} className="flex items-start">
+                          <div className="flex-shrink-0">
+                            <Check className="w-5 h-5 text-[#FE9200]" />
+                          </div>
+                          <p className="ml-3 text-gray-600 text-sm">{feature}</p>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Button
+                      onClick={() => onBuyCredits(bundle)}
+                      className={`w-full py-3 text-lg shadow-lg ${bundle.popular ? 'bg-[#FE9200] hover:bg-[#E58300] shadow-[#FFD4A3]' : 'bg-gray-900 hover:bg-gray-800'}`}
+                    >
+                      Buy {bundle.credits} Credits
+                    </Button>
                   </div>
                 </div>
-
-                <div className="p-8 flex-1 flex flex-col">
-                  <ul className="space-y-4 mb-8 flex-1">
-                    {(Array.isArray(bundle.features) ? bundle.features : []).map((feature, index) => (
-                      <li key={index} className="flex items-start">
-                        <div className="flex-shrink-0">
-                          <Check className="w-5 h-5 text-[#FE9200]" />
-                        </div>
-                        <p className="ml-3 text-gray-600 text-sm">{feature}</p>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Button 
-                    onClick={() => onBuyCredits(bundle)}
-                    className={`w-full py-3 text-lg shadow-lg ${bundle.popular ? 'bg-[#FE9200] hover:bg-[#E58300] shadow-[#FFD4A3]' : 'bg-gray-900 hover:bg-gray-800'}`}
-                  >
-                    Buy {bundle.credits} Credits
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

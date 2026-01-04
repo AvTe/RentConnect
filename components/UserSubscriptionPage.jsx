@@ -1,65 +1,63 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Check, Shield, Lock, Phone, Mail, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Check, Shield, Phone, Mail, MessageCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { useToast } from '@/context/ToastContext';
+import { getAllSubscriptionPlans } from '@/lib/database';
 
 export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) => {
   const { toast } = useToast();
-  const [selectedPlan, setSelectedPlan] = useState('monthly');
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const plans = {
-    monthly: {
-      price: 500,
-      period: 'month',
-      features: [
-        'View all agent contact details',
-        'Unlimited agent messaging',
-        'Direct phone & email access',
-        'Priority customer support',
-        'Cancel anytime'
-      ]
-    },
-    quarterly: {
-      price: 1200,
-      period: '3 months',
-      savings: '20% off',
-      features: [
-        'All monthly features',
-        'Save KSh 300',
-        'Extended support access',
-        'Priority listings notifications',
-        'Cancel anytime'
-      ]
-    },
-    yearly: {
-      price: 4000,
-      period: 'year',
-      savings: '33% off',
-      popular: true,
-      features: [
-        'All quarterly features',
-        'Save KSh 2,000',
-        'Dedicated account manager',
-        'Early access to new features',
-        'Exclusive agent network'
-      ]
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const fetchPlans = async () => {
+    try {
+      const result = await getAllSubscriptionPlans();
+      if (result.success) {
+        // Sort by sort_order first, then by price as fallback
+        const sortedPlans = (result.data || []).sort((a, b) => {
+          const aOrder = a.sort_order !== undefined && a.sort_order !== null ? a.sort_order : 9999;
+          const bOrder = b.sort_order !== undefined && b.sort_order !== null ? b.sort_order : 9999;
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          return parseInt(a.price || 0) - parseInt(b.price || 0);
+        });
+        setPlans(sortedPlans);
+      } else {
+        console.error('Failed to fetch plans:', result.error);
+        toast.error('Failed to load subscription plans');
+      }
+    } catch (error) {
+      console.error('Error fetching plans:', error);
+      toast.error('Error loading plans');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubscribe = async (planType) => {
+  const handleSubscribe = async (plan) => {
     if (!currentUser) {
       toast.info('Please login to subscribe');
       onNavigate('login');
       return;
     }
 
-    const plan = plans[planType];
     await onSubscribe({
       userId: currentUser.uid,
-      planType,
-      amount: plan.price,
-      period: plan.period
+      planId: plan.id,
+      planName: plan.name,
+      amount: parseInt(plan.price),
+      period: plan.interval,
+      planType: plan.name
     });
+  };
+
+  const getFeaturesArray = (plan) => {
+    if (Array.isArray(plan.features)) return plan.features;
+    if (typeof plan.features === 'string') return plan.features.split(',').map(f => f.trim()).filter(f => f);
+    return [];
   };
 
   return (
@@ -119,59 +117,69 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
         </div>
 
         {/* Pricing Plans */}
-        <div className="grid md:grid-cols-3 gap-8 mb-12">
-          {Object.entries(plans).map(([key, plan]) => (
-            <div
-              key={key}
-              className={`bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all ${plan.popular
-                ? 'border-[#FE9200] ring-4 ring-[#FFE4C4] transform scale-105'
-                : 'border-gray-200 hover:border-[#FFC482]'
-                }`}
-            >
-              {plan.popular && (
-                <div className="bg-[#FE9200] text-white text-center py-2 text-sm font-semibold">
-                  MOST POPULAR
-                </div>
-              )}
-
-              <div className="p-8">
-                <div className="text-center mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 capitalize">
-                    {key} Plan
-                  </h3>
-                  {plan.savings && (
-                    <span className="inline-block bg-[#FFE4C4] text-[#E58300] text-xs font-semibold px-3 py-1 rounded-full mb-3">
-                      {plan.savings}
-                    </span>
-                  )}
-                  <div className="flex justify-center items-baseline mb-2">
-                    <span className="text-4xl font-bold text-gray-900">
-                      KSh {plan.price.toLocaleString()}
-                    </span>
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="w-8 h-8 text-[#FE9200] animate-spin" />
+          </div>
+        ) : plans.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-2xl border border-gray-200 text-gray-500">
+            <AlertCircle className="w-8 h-8 mx-auto mb-4 text-[#FE9200]" />
+            <p className="text-lg">No subscription plans available at the moment.</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            {plans.map((plan) => (
+              <div
+                key={plan.id}
+                className={`bg-white rounded-2xl shadow-lg overflow-hidden border-2 transition-all hover:border-[#FFC482] flex flex-col ${plan.tag
+                  ? 'border-[#FE9200] ring-4 ring-[#FFE4C4] transform scale-105 z-10'
+                  : 'border-gray-200'
+                  }`}
+              >
+                {plan.tag && (
+                  <div className="bg-[#FE9200] text-white text-center py-2 text-sm font-semibold uppercase tracking-wide">
+                    {plan.tag}
                   </div>
-                  <span className="text-gray-500">per {plan.period}</span>
+                )}
+
+                <div className="p-8 flex-1 flex flex-col">
+                  <div className="text-center mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 capitalize">
+                      {plan.name}
+                    </h3>
+                    <div className="flex justify-center items-baseline mb-2">
+                      <span className="text-4xl font-bold text-gray-900">
+                        KSh {parseInt(plan.price).toLocaleString()}
+                      </span>
+                    </div>
+                    <span className="text-gray-500">per {plan.interval}</span>
+                  </div>
+
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {getFeaturesArray(plan).map((feature, index) => (
+                      <li key={index} className="flex items-start">
+                        <Check className="w-5 h-5 text-[#FE9200] mr-2 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-600 text-sm">{feature}</span>
+                      </li>
+                    ))}
+                    {getFeaturesArray(plan).length === 0 && (
+                      <li className="text-gray-400 text-sm italic text-center">Standard features included</li>
+                    )}
+                  </ul>
+
+                  <Button
+                    onClick={() => handleSubscribe(plan)}
+                    className={`w-full py-3 ${plan.tag ? 'shadow-lg shadow-[#FFD4A3]' : ''
+                      }`}
+                    variant={plan.tag ? 'default' : 'outline'}
+                  >
+                    Get Started
+                  </Button>
                 </div>
-
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <Check className="w-5 h-5 text-[#FE9200] mr-2 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-600 text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Button
-                  onClick={() => handleSubscribe(key)}
-                  className={`w-full py-3 ${plan.popular ? 'shadow-lg shadow-[#FFD4A3]' : ''}`}
-                  variant={plan.popular ? 'default' : 'outline'}
-                >
-                  Get Started
-                </Button>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Security & Trust */}
         <div className="bg-gradient-to-r from-blue-50 to-[#FFF5E6] rounded-2xl p-8 text-center max-w-4xl mx-auto">

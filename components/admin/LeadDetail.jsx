@@ -6,7 +6,7 @@ import {
   ArrowLeft, Clock, Users, Home, MessageCircle, Flag, AlertCircle,
   Coins, FileText, Loader2, UserCheck, Lock, Unlock, RefreshCw, Crown,
   PhoneOff, UserX, HelpCircle, Copy, ExternalLink, Mail, Edit,
-  ToggleLeft, ToggleRight, Save, X, Settings, CreditCard
+  ToggleLeft, ToggleRight, Save, X, Settings, CreditCard, Timer, EyeOff, RotateCcw, Play, Pause
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -36,6 +36,9 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
     base_price: lead?.base_price || 250,
     max_slots: lead?.max_slots || 3
   });
+  const [showLifecycleModal, setShowLifecycleModal] = useState(false);
+  const [lifecycleAction, setLifecycleAction] = useState(null); // 'reactivate', 'expire', 'hide', 'duration'
+  const [durationHours, setDurationHours] = useState(48);
 
   // Update current time every minute for remaining time calculation
   useEffect(() => {
@@ -43,10 +46,12 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
     return () => clearInterval(timer);
   }, []);
 
-  // Calculate remaining time for lead (48 hours from creation)
-  const getRemainingTime = (createdAt) => {
-    if (!createdAt) return "N/A";
-    const expiry = new Date(createdAt).getTime() + (48 * 60 * 60 * 1000);
+  // Calculate remaining time for lead (uses expires_at if available, else 48 hours from creation)
+  const getRemainingTime = (createdAt, expiresAt) => {
+    if (!createdAt && !expiresAt) return "N/A";
+    const expiry = expiresAt
+      ? new Date(expiresAt).getTime()
+      : new Date(createdAt).getTime() + (48 * 60 * 60 * 1000);
     const diff = expiry - currentTime.getTime();
     if (diff <= 0) return "EXPIRED";
     const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -196,14 +201,71 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
     }
   };
 
+  // Handle lifecycle actions (reactivate, expire, hide, duration change)
+  const handleLifecycleAction = async (action, hours = 48) => {
+    setLoading(true);
+    try {
+      let updates = {};
+      let successMessage = '';
+
+      switch (action) {
+        case 'reactivate':
+          updates = {
+            status: 'active',
+            expires_at: new Date(Date.now() + hours * 60 * 60 * 1000).toISOString(),
+            is_hidden: false,
+            reactivated_at: new Date().toISOString()
+          };
+          successMessage = `Lead reactivated for ${hours} hours`;
+          break;
+        case 'expire':
+          updates = {
+            status: 'closed',
+            expires_at: new Date().toISOString() // Set to now (expired)
+          };
+          successMessage = 'Lead manually expired';
+          break;
+        case 'hide':
+          updates = {
+            is_hidden: !lead.is_hidden
+          };
+          successMessage = lead.is_hidden ? 'Lead is now visible to agents' : 'Lead hidden from agents';
+          break;
+        case 'duration':
+          updates = {
+            expires_at: new Date(Date.now() + hours * 60 * 60 * 1000).toISOString()
+          };
+          successMessage = `Lead active duration updated to ${hours} hours`;
+          break;
+        default:
+          break;
+      }
+
+      const result = await updateLead(lead.id, updates);
+      if (result.success) {
+        toast.success(successMessage);
+        setShowLifecycleModal(false);
+        setLifecycleAction(null);
+        onUpdate();
+      } else {
+        toast.error(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     toast.success('Copied to clipboard!');
   };
 
   // Calculate lead time status
-  const timeLeft = getRemainingTime(lead.created_at);
-  const isExpired = timeLeft === "EXPIRED";
+  const timeLeft = getRemainingTime(lead.created_at, lead.expires_at);
+  const isExpired = timeLeft === "EXPIRED" || lead.status === 'expired' || lead.status === 'closed';
 
   // Get connection status badge
   const getConnectionStatusBadge = (status) => {
@@ -329,6 +391,15 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
             size="sm"
           >
             <Settings className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Pricing</span>
+          </Button>
+
+          <Button
+            onClick={() => setShowLifecycleModal(true)}
+            variant="outline"
+            className="text-orange-600 border-orange-200 hover:bg-orange-50 flex-1 sm:flex-none"
+            size="sm"
+          >
+            <Timer className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Lifecycle</span>
           </Button>
 
           <Button
@@ -966,6 +1037,290 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lead Lifecycle Modal */}
+      {showLifecycleModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <h3 className="text-lg font-black text-gray-900">Lead Lifecycle Control</h3>
+              <button onClick={() => { setShowLifecycleModal(false); setLifecycleAction(null); }} className="p-2 hover:bg-gray-100 rounded-xl">
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Current Status Info */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <Timer className="w-8 h-8 text-orange-600" />
+                  <div>
+                    <p className="font-bold text-gray-900">Current Status</p>
+                    <p className="text-xs text-gray-500">Manage lead visibility and duration</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Status</p>
+                    <p className={`font-bold ${lead.status === 'active' ? 'text-emerald-600' : lead.status === 'paused' ? 'text-amber-600' : 'text-gray-500'}`}>
+                      {lead.status?.toUpperCase() || 'Unknown'}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Time Left</p>
+                    <p className={`font-bold ${isExpired ? 'text-red-600' : 'text-orange-600'}`}>{timeLeft}</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Visibility</p>
+                    <p className={`font-bold ${lead.is_hidden ? 'text-gray-500' : 'text-blue-600'}`}>
+                      {lead.is_hidden ? 'Hidden' : 'Visible'}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Slots</p>
+                    <p className="font-bold text-gray-900">{lead.claimed_slots || 0}/{lead.max_slots || 3}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              {!lifecycleAction && (
+                <div className="space-y-3">
+                  <p className="text-sm font-bold text-gray-700">Quick Actions</p>
+
+                  {/* Reactivate (only show if expired or closed) */}
+                  {(isExpired || lead.status === 'closed' || lead.status === 'expired') && (
+                    <button
+                      onClick={() => setLifecycleAction('reactivate')}
+                      className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-emerald-300 hover:bg-emerald-50 transition-all text-left group"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+                        <RotateCcw className="w-6 h-6 text-emerald-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-gray-900">Reactivate Lead</p>
+                        <p className="text-xs text-gray-500">Bring this expired lead back to life</p>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* Adjust Duration (only show if active) */}
+                  {lead.status === 'active' && !isExpired && (
+                    <button
+                      onClick={() => setLifecycleAction('duration')}
+                      className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition-all text-left group"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                        <Clock className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-gray-900">Adjust Duration</p>
+                        <p className="text-xs text-gray-500">Extend or reduce active time</p>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* Hide/Unhide Lead */}
+                  <button
+                    onClick={() => handleLifecycleAction('hide')}
+                    disabled={loading}
+                    className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-purple-300 hover:bg-purple-50 transition-all text-left group"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                      {lead.is_hidden ? <Eye className="w-6 h-6 text-purple-600" /> : <EyeOff className="w-6 h-6 text-purple-600" />}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-gray-900">{lead.is_hidden ? 'Show Lead' : 'Hide Lead'}</p>
+                      <p className="text-xs text-gray-500">{lead.is_hidden ? 'Make visible to agents again' : 'Hide from agents without deleting'}</p>
+                    </div>
+                    {loading && <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />}
+                  </button>
+
+                  {/* Manually Expire (only show if active) */}
+                  {lead.status === 'active' && (
+                    <button
+                      onClick={() => setLifecycleAction('expire')}
+                      className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-100 hover:border-red-300 hover:bg-red-50 transition-all text-left group"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                        <XCircle className="w-6 h-6 text-red-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-gray-900">Manually Expire</p>
+                        <p className="text-xs text-gray-500">Close this lead immediately</p>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Reactivate Form */}
+              {lifecycleAction === 'reactivate' && (
+                <div className="space-y-4">
+                  <button onClick={() => setLifecycleAction(null)} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+                    <ArrowLeft size={16} /> Back to actions
+                  </button>
+
+                  <div className="bg-emerald-50 rounded-xl p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <RotateCcw className="w-6 h-6 text-emerald-600" />
+                      <p className="font-bold text-emerald-900">Reactivate Lead</p>
+                    </div>
+                    <p className="text-sm text-emerald-700">Select how long this lead should stay active:</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    {[
+                      { hours: 24, label: '24 Hours' },
+                      { hours: 48, label: '48 Hours (Default)' },
+                      { hours: 72, label: '72 Hours' },
+                      { hours: 168, label: '1 Week' }
+                    ].map((option) => (
+                      <button
+                        key={option.hours}
+                        onClick={() => setDurationHours(option.hours)}
+                        className={`w-full p-3 rounded-xl border-2 text-left transition-all ${durationHours === option.hours
+                          ? 'border-emerald-500 bg-emerald-50'
+                          : 'border-gray-100 hover:border-gray-200'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-gray-900">{option.label}</span>
+                          {durationHours === option.hours && <CheckCircle className="w-5 h-5 text-emerald-600" />}
+                        </div>
+                      </button>
+                    ))}
+
+                    {/* Custom Duration */}
+                    <div className="p-3 rounded-xl border-2 border-gray-100">
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Custom Duration (hours)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="720"
+                        value={durationHours}
+                        onChange={(e) => setDurationHours(parseInt(e.target.value) || 48)}
+                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-emerald-500 outline-none text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setLifecycleAction(null)} className="flex-1 rounded-xl" disabled={loading}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => handleLifecycleAction('reactivate', durationHours)}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
+                      disabled={loading}
+                    >
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+                      Reactivate for {durationHours}h
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Adjust Duration Form */}
+              {lifecycleAction === 'duration' && (
+                <div className="space-y-4">
+                  <button onClick={() => setLifecycleAction(null)} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+                    <ArrowLeft size={16} /> Back to actions
+                  </button>
+
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Clock className="w-6 h-6 text-blue-600" />
+                      <p className="font-bold text-blue-900">Adjust Duration</p>
+                    </div>
+                    <p className="text-sm text-blue-700">Set new active duration from now:</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    {[
+                      { hours: 12, label: '12 Hours' },
+                      { hours: 24, label: '24 Hours' },
+                      { hours: 48, label: '48 Hours' },
+                      { hours: 72, label: '72 Hours' },
+                      { hours: 168, label: '1 Week' }
+                    ].map((option) => (
+                      <button
+                        key={option.hours}
+                        onClick={() => setDurationHours(option.hours)}
+                        className={`w-full p-3 rounded-xl border-2 text-left transition-all ${durationHours === option.hours
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-100 hover:border-gray-200'}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-gray-900">{option.label}</span>
+                          {durationHours === option.hours && <CheckCircle className="w-5 h-5 text-blue-600" />}
+                        </div>
+                      </button>
+                    ))}
+
+                    {/* Custom Duration */}
+                    <div className="p-3 rounded-xl border-2 border-gray-100">
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Custom Duration (hours)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="720"
+                        value={durationHours}
+                        onChange={(e) => setDurationHours(parseInt(e.target.value) || 48)}
+                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 outline-none text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setLifecycleAction(null)} className="flex-1 rounded-xl" disabled={loading}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => handleLifecycleAction('duration', durationHours)}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+                      disabled={loading}
+                    >
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Clock className="w-4 h-4 mr-2" />}
+                      Set {durationHours}h Duration
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Expire Confirmation */}
+              {lifecycleAction === 'expire' && (
+                <div className="space-y-4">
+                  <button onClick={() => setLifecycleAction(null)} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+                    <ArrowLeft size={16} /> Back to actions
+                  </button>
+
+                  <div className="bg-red-50 rounded-xl p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <AlertCircle className="w-6 h-6 text-red-600" />
+                      <p className="font-bold text-red-900">Expire Lead Now?</p>
+                    </div>
+                    <p className="text-sm text-red-700">This will close the lead immediately. Agents will no longer be able to claim slots.</p>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setLifecycleAction(null)} className="flex-1 rounded-xl" disabled={loading}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => handleLifecycleAction('expire')}
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                      disabled={loading}
+                    >
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <XCircle className="w-4 h-4 mr-2" />}
+                      Expire Now
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

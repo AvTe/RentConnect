@@ -80,8 +80,12 @@ export const LeadDetailModal = ({ lead, onClose, currentUser, onUnlock, walletBa
         return () => clearInterval(timer);
     }, []);
 
-    const getRemainingTime = (createdAt) => {
-        const expiry = new Date(createdAt).getTime() + (48 * 60 * 60 * 1000);
+    // Calculate remaining time for lead (uses expires_at if available, else 48 hours from creation)
+    const getRemainingTime = (createdAt, expiresAt) => {
+        // Use expires_at if available, otherwise calculate from created_at
+        const expiry = expiresAt
+            ? new Date(expiresAt).getTime()
+            : new Date(createdAt).getTime() + (48 * 60 * 60 * 1000);
         const diff = expiry - currentTime.getTime();
         if (diff <= 0) return "EXPIRED";
         const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -160,7 +164,7 @@ export const LeadDetailModal = ({ lead, onClose, currentUser, onUnlock, walletBa
 
     if (!lead) return null;
 
-    const timeLeft = getRemainingTime(lead.created_at);
+    const timeLeft = getRemainingTime(lead.created_at, lead.expires_at);
     const isExpired = timeLeft === "EXPIRED";
     const basePrice = lead.base_price || 250;
     const multipliers = [1.0, 1.5, 2.5];

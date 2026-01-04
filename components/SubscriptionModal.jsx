@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, Zap, Shield, Coins, Star, Lock, Smartphone, ArrowRight, Loader2, ShieldCheck, Globe, CreditCard } from 'lucide-react';
 import { Button } from './ui/Button';
-import { CREDIT_PACKAGES } from '@/lib/pesapal';
+import { getAllCreditBundles } from '@/lib/database';
 
 const ACCEPTED_LOGOS = [
     { name: 'M-Pesa', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/256px-M-PESA_LOGO-01.svg.png', h: 'h-5 sm:h-6' },
@@ -12,17 +12,52 @@ const ACCEPTED_LOGOS = [
 
 export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }) => {
     const [step, setStep] = useState('selection'); // 'selection' | 'processing'
-    const [selectedPlan, setSelectedPlan] = useState(CREDIT_PACKAGES[2]); // Default to Premium
+    const [selectedPlan, setSelectedPlan] = useState(null);
+    const [bundles, setBundles] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
             setMounted(true);
             setStep('selection');
+            fetchBundles();
         } else {
             setMounted(false);
         }
     }, [isOpen]);
+
+    const fetchBundles = async () => {
+        setLoading(true);
+        try {
+            const result = await getAllCreditBundles();
+            if (result.success && result.data.length > 0) {
+                // Parse features if they are strings
+                const parsedBundles = result.data.map(b => ({
+                    ...b,
+                    features: Array.isArray(b.features) ? b.features : (b.features ? b.features.split(',') : [])
+                }));
+                // Sort by sort_order first, then by price as fallback
+                const sorted = parsedBundles.sort((a, b) => {
+                    // If both have sort_order, compare by sort_order
+                    const aOrder = a.sort_order !== undefined && a.sort_order !== null ? a.sort_order : 9999;
+                    const bOrder = b.sort_order !== undefined && b.sort_order !== null ? b.sort_order : 9999;
+                    if (aOrder !== bOrder) return aOrder - bOrder;
+                    // Fallback to price ascending
+                    return parseInt(a.price || 0) - parseInt(b.price || 0);
+                });
+
+                setBundles(sorted);
+                // Default to first 'popular' plan or the middle one
+                const defaultPlan = sorted.find(b => b.popular) || sorted[Math.min(1, sorted.length - 1)];
+                setSelectedPlan(defaultPlan);
+            }
+        } catch (error) {
+            console.error('Error loading bundles:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -31,6 +66,7 @@ export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }
     };
 
     const handleContinue = () => {
+        if (!selectedPlan) return;
         setStep('processing');
         setTimeout(() => {
             onBuyCredits(selectedPlan);
@@ -111,48 +147,59 @@ export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }
                         <p className="text-slate-400 text-[11px] font-bold uppercase tracking-[0.2em]">Select a bundle to top up your wallet</p>
                     </div>
 
-                    <div className="grid gap-2.5 max-w-3xl mx-auto">
-                        {CREDIT_PACKAGES.map((bundle, i) => (
-                            <div
-                                key={bundle.id}
-                                onClick={() => handlePlanSelect(bundle)}
-                                className={`group relative p-4 rounded-2xl border transition-all duration-300 cursor-pointer flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 overflow-hidden ${selectedPlan.id === bundle.id
-                                    ? 'border-[#FE9200] bg-white ring-4 ring-[#FE9200]/5 z-10 shadow-lg shadow-[#FE9200]/10'
-                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
-                                    }`}
-                                style={{ animationDelay: `${(i + 2) * 100}ms` }}
-                            >
-                                {selectedPlan.id === bundle.id && (
-                                    <div className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-[#FE9200]/5 rounded-full pointer-events-none"></div>
-                                )}
+                    {loading ? (
+                        <div className="flex items-center justify-center py-20">
+                            <Loader2 className="w-10 h-10 text-[#FE9200] animate-spin" />
+                        </div>
+                    ) : (
+                        <div className="grid gap-2.5 max-w-3xl mx-auto">
+                            {bundles.map((bundle, i) => {
+                                const isSelected = selectedPlan && selectedPlan.id === bundle.id;
+                                const displayTag = bundle.tag || (bundle.popular ? 'Popular' : null);
 
-                                <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedPlan.id === bundle.id
-                                    ? 'border-[#FE9200] bg-[#FE9200]'
-                                    : 'border-slate-200 group-hover:border-slate-300'
-                                    }`}>
-                                    {selectedPlan.id === bundle.id && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
-                                </div>
-
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                                        <h4 className="font-extrabold text-slate-900 text-[15px] sm:text-[17px] tracking-tight">{bundle.name}</h4>
-                                        {(bundle.popular || bundle.isMain) && (
-                                            <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${bundle.popular ? 'bg-[#FE9200] text-white' : 'bg-slate-900 text-white'
-                                                }`}>
-                                                {bundle.popular ? 'Popular' : 'Best Scaling'}
-                                            </span>
+                                return (
+                                    <div
+                                        key={bundle.id}
+                                        onClick={() => handlePlanSelect(bundle)}
+                                        className={`group relative p-4 rounded-2xl border transition-all duration-300 cursor-pointer flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 overflow-hidden ${isSelected
+                                            ? 'border-[#FE9200] bg-white ring-4 ring-[#FE9200]/5 z-10 shadow-lg shadow-[#FE9200]/10'
+                                            : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+                                            }`}
+                                        style={{ animationDelay: `${(i + 1) * 100}ms` }}
+                                    >
+                                        {isSelected && (
+                                            <div className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-[#FE9200]/5 rounded-full pointer-events-none"></div>
                                         )}
-                                    </div>
-                                    <p className="text-slate-500 text-[12px] font-medium leading-none">{bundle.credits} lead unlocks • No expiry</p>
-                                </div>
 
-                                <div className="text-right flex-shrink-0">
-                                    <div className="text-[17px] sm:text-[20px] font-black text-slate-900 tracking-tighter leading-none mb-0.5">KSh {bundle.price.toLocaleString()}</div>
-                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Instant Top-up</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                                        <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isSelected
+                                            ? 'border-[#FE9200] bg-[#FE9200]'
+                                            : 'border-slate-200 group-hover:border-slate-300'
+                                            }`}>
+                                            {isSelected && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                                                <h4 className="font-extrabold text-slate-900 text-[15px] sm:text-[17px] tracking-tight">{bundle.name}</h4>
+                                                {displayTag && (
+                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${displayTag === 'Popular' || bundle.popular ? 'bg-[#FE9200] text-white' : 'bg-slate-900 text-white'
+                                                        }`}>
+                                                        {displayTag}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-slate-500 text-[12px] font-medium leading-none">{bundle.credits} lead unlocks • No expiry</p>
+                                        </div>
+
+                                        <div className="text-right flex-shrink-0">
+                                            <div className="text-[17px] sm:text-[20px] font-black text-slate-900 tracking-tighter leading-none mb-0.5">KSh {parseInt(bundle.price).toLocaleString()}</div>
+                                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">{bundle.per_lead || 'Top-up'}</div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer Section: Trust & CTA - Sticky on Mobile */}
@@ -173,7 +220,8 @@ export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }
 
                         <Button
                             onClick={handleContinue}
-                            className="w-full lg:w-auto h-14 min-w-[240px] px-10 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-2xl font-black text-lg shadow-xl shadow-[#FE9200]/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            disabled={!selectedPlan || loading}
+                            className="w-full lg:w-auto h-14 min-w-[240px] px-10 bg-[#FE9200] hover:bg-[#E58300] text-white rounded-2xl font-black text-lg shadow-xl shadow-[#FE9200]/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Complete Purchase
                             <ArrowRight className="w-5 h-5" />
@@ -224,7 +272,7 @@ export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }
                             </li>
                             <li className="flex gap-3 items-center text-[#FE9200]">
                                 <span className="w-5 h-5 bg-[#FE9200] text-white rounded-md flex items-center justify-center flex-shrink-0 text-[10px] font-black">3</span>
-                                KSh {selectedPlan.price.toLocaleString()} will be charged
+                                KSh {selectedPlan ? parseInt(selectedPlan.price).toLocaleString() : '0'} will be charged
                             </li>
                         </ol>
                     </div>

@@ -115,8 +115,12 @@ export const AgentDashboard = ({
     return () => clearInterval(timer);
   }, []);
 
-  const getRemainingTime = (createdAt) => {
-    const expiry = new Date(createdAt).getTime() + (48 * 60 * 60 * 1000);
+  // Calculate remaining time for lead (uses expires_at if available, else 48 hours from creation)
+  const getRemainingTime = (createdAt, expiresAt) => {
+    // Use expires_at if available, otherwise calculate from created_at
+    const expiry = expiresAt
+      ? new Date(expiresAt).getTime()
+      : new Date(createdAt).getTime() + (48 * 60 * 60 * 1000);
     const diff = expiry - currentTime.getTime();
     if (diff <= 0) return "EXPIRED";
     const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -257,12 +261,19 @@ export const AgentDashboard = ({
         incrementLeadViews(lead.id, userId);
 
         setWalletBalance((prev) => prev - (result.cost || currentCost));
-        setUnlockedLeads([...unlockedLeads, lead.id]);
+        setUnlockedLeads((prev) => [...prev, lead.id]);
         if (onUnlockLead) onUnlockLead(lead);
 
-        // Refresh balance to be sure
-        const balanceResult = await getWalletBalance(userId);
+        // Refresh all data to ensure consistency
+        const [balanceResult, unlockedResult, connectedResult] = await Promise.all([
+          getWalletBalance(userId),
+          getUnlockedLeads(userId),
+          getAgentConnectedLeads(userId)
+        ]);
+
         if (balanceResult.success) setWalletBalance(balanceResult.balance);
+        if (unlockedResult.success) setUnlockedLeads(unlockedResult.data || []);
+        if (connectedResult.success) setConnectedLeads(connectedResult.data || []);
 
         toast.success(isExclusive ? "Exclusive access granted!" : "Lead unlocked successfully!");
       } else {
@@ -991,8 +1002,9 @@ export const AgentDashboard = ({
               const basePrice = lead.base_price || 250;
               const multipliers = [1.0, 1.5, 2.5];
               const currentCost = Math.round(basePrice * (multipliers[contactCount] || 2.5));
-              const timeLeft = getRemainingTime(lead.created_at);
+              const timeLeft = getRemainingTime(lead.created_at, lead.expires_at);
               const isExpired = timeLeft === "EXPIRED";
+              const isSoldOut = lead.status === 'sold_out' || contactCount >= maxSlots;
 
               return (
                 <div
@@ -1001,10 +1013,26 @@ export const AgentDashboard = ({
                   className={`
                     relative flex flex-col bg-white rounded-xl border border-gray-100 
                     hover:shadow-md hover:border-gray-200 transition-all duration-300 cursor-pointer 
-                    group
-                    ${isExpired ? 'opacity-60' : ''}
+                    group overflow-hidden
+                    ${isExpired || isSoldOut ? 'opacity-75' : ''}
                   `}
                 >
+                  {/* SOLD OUT / EXPIRED Diagonal Banner Overlay */}
+                  {(isSoldOut || isExpired) && (
+                    <div className="absolute inset-0 z-20 pointer-events-none">
+                      {/* Diagonal Banner */}
+                      <div className={`absolute top-[40px] -right-[60px] w-[200px] text-center py-2 transform rotate-45 shadow-lg ${isSoldOut
+                        ? 'bg-gradient-to-r from-red-600 to-red-500'
+                        : 'bg-gradient-to-r from-gray-600 to-gray-500'
+                        }`}>
+                        <span className="text-white font-black text-xs uppercase tracking-wider drop-shadow-sm">
+                          {isSoldOut ? 'SOLD OUT' : 'EXPIRED'}
+                        </span>
+                      </div>
+                      {/* Subtle overlay */}
+                      <div className={`absolute inset-0 ${isSoldOut ? 'bg-red-50/20' : 'bg-gray-100/30'}`} />
+                    </div>
+                  )}
                   {/* Top Row - Views count & Budget Badge */}
                   <div className="px-5 pt-5 pb-3 flex items-center justify-between">
                     {/* Stats Indicator - Agents & Views */}
@@ -1064,12 +1092,12 @@ export const AgentDashboard = ({
                         </div>
                       </Tooltip>
 
-                      {/* Date Badge */}
+                      {/* Date Badge - DD/MM/YYYY format */}
                       <Tooltip content="Posted Date">
                         <div className="flex items-center gap-1.5 bg-gray-50/80 px-2 py-1 rounded-md border border-gray-100">
                           <Calendar size={11} className="text-gray-400" />
                           <span className="text-[11px] font-medium text-gray-500">
-                            {new Date(lead.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
+                            {new Date(lead.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                           </span>
                         </div>
                       </Tooltip>
@@ -1177,30 +1205,35 @@ export const AgentDashboard = ({
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <Tooltip content={isExpired ? "Lead has expired" : contactCount >= maxSlots ? "No slots remaining" : `Unlock for ${currentCost} credits`} position="bottom">
+                        {/* Main action button - shows EXPIRED, SOLD OUT, or UNLOCK */}
+                        <Tooltip content={isExpired ? "This lead has expired" : isSoldOut ? "All slots are taken" : `Unlock for ${currentCost} credits`} position="bottom">
                           <Button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleUnlockLead(lead, false);
+                              if (!isExpired && !isSoldOut) {
+                                handleUnlockLead(lead, false);
+                              }
                             }}
-                            disabled={contactCount >= maxSlots || isExpired}
+                            disabled={isExpired || isSoldOut}
                             className={`
-                              w-full h-11 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2
-                              ${contactCount >= maxSlots || isExpired
-                                ? 'bg-gray-50 text-gray-300 cursor-not-allowed border border-gray-100 shadow-none'
-                                : 'bg-[#FE9200] text-white border-0 shadow-sm hover:shadow-orange-200/50 hover:shadow-lg translate-gpu'
+                              w-full h-11 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2
+                              ${isExpired
+                                ? 'bg-gray-200 text-gray-600 cursor-not-allowed border border-gray-300'
+                                : isSoldOut
+                                  ? 'bg-red-100 text-red-600 cursor-not-allowed border border-red-300'
+                                  : 'bg-[#FE9200] text-white border-0 shadow-sm hover:shadow-orange-200/50 hover:shadow-lg translate-gpu hover:bg-[#E68200]'
                               }
                             `}
                           >
                             {isExpired ? (
                               <>
-                                <Lock size={14} />
-                                Expired
+                                <Clock size={16} />
+                                <span className="uppercase tracking-wider font-black">EXPIRED</span>
                               </>
-                            ) : contactCount >= maxSlots ? (
+                            ) : isSoldOut ? (
                               <>
-                                <XCircle size={14} />
-                                Sold Out
+                                <XCircle size={16} />
+                                <span className="uppercase tracking-wider font-black">SOLD OUT</span>
                               </>
                             ) : (
                               <>
@@ -1211,7 +1244,7 @@ export const AgentDashboard = ({
                           </Button>
                         </Tooltip>
 
-                        {!isExpired && contactCount === 0 && !lead.is_exclusive && (
+                        {!isExpired && !isSoldOut && contactCount === 0 && !lead.is_exclusive && (
                           <Tooltip content="Be the only agent with this lead" position="bottom">
                             <button
                               onClick={(e) => {

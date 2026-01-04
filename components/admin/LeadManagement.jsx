@@ -34,10 +34,15 @@ export const LeadManagement = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Calculate remaining time for lead (48 hours from creation)
-  const getRemainingTime = (createdAt) => {
-    if (!createdAt) return { text: "N/A", isExpired: false, isUrgent: false };
-    const expiry = new Date(createdAt).getTime() + (48 * 60 * 60 * 1000);
+  // Calculate remaining time for lead (uses expires_at if available, else 48 hours from creation)
+  const getRemainingTime = (createdAt, expiresAt) => {
+    if (!createdAt && !expiresAt) return { text: "N/A", isExpired: false, isUrgent: false };
+
+    // Use expires_at if available, otherwise calculate from created_at
+    const expiry = expiresAt
+      ? new Date(expiresAt).getTime()
+      : new Date(createdAt).getTime() + (48 * 60 * 60 * 1000);
+
     const diff = expiry - currentTime.getTime();
     if (diff <= 0) return { text: "EXPIRED", isExpired: true, isUrgent: false };
     const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -69,6 +74,7 @@ export const LeadManagement = () => {
       active: leadsData.filter(l => l.status === 'active').length,
       closed: leadsData.filter(l => l.status === 'closed').length,
       paused: leadsData.filter(l => l.status === 'paused').length,
+      hidden: leadsData.filter(l => l.is_hidden === true).length,
       totalViews: leadsData.reduce((sum, l) => sum + (l.views || 0), 0),
       totalUnlocks: leadsData.reduce((sum, l) => sum + (l.contacts || 0), 0)
     });
@@ -80,7 +86,8 @@ export const LeadManagement = () => {
       setLoading(true);
       const status = statusFilter === 'all' ? 'all' : statusFilter;
 
-      const result = await getAllLeads({ status, limit: 200 });
+      // Admin view: include hidden leads
+      const result = await getAllLeads({ status, limit: 200, includeHidden: true });
       if (result.success) {
         setLeads(result.data);
         setFilteredLeads(result.data);
@@ -95,7 +102,8 @@ export const LeadManagement = () => {
   const fetchLeads = async () => {
     setLoading(true);
     const status = statusFilter === 'all' ? 'all' : statusFilter;
-    const result = await getAllLeads({ status, limit: 200 });
+    // Admin view: include hidden leads
+    const result = await getAllLeads({ status, limit: 200, includeHidden: true });
     if (result.success) {
       setLeads(result.data);
       setFilteredLeads(result.data);
@@ -305,7 +313,7 @@ export const LeadManagement = () => {
           </div>
         ) : (
           displayLeads.map((lead) => {
-            const timeInfo = getRemainingTime(lead.created_at);
+            const timeInfo = getRemainingTime(lead.created_at, lead.expires_at);
             return (
               <div
                 key={lead.id}
@@ -414,7 +422,7 @@ export const LeadManagement = () => {
                 </tr>
               ) : (
                 displayLeads.map((lead) => {
-                  const timeInfo = getRemainingTime(lead.created_at);
+                  const timeInfo = getRemainingTime(lead.created_at, lead.expires_at);
                   return (
                     <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
@@ -446,18 +454,25 @@ export const LeadManagement = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${lead.status === 'active'
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                          : lead.status === 'paused'
-                            ? 'bg-amber-50 text-amber-600 border border-amber-100'
-                            : 'bg-gray-100 text-gray-500 border border-gray-200'
-                          }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${lead.status === 'active' ? 'bg-emerald-500 animate-pulse' :
-                            lead.status === 'paused' ? 'bg-amber-500' :
-                              'bg-gray-400'
-                            }`} />
-                          {lead.status}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${lead.status === 'active'
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                            : lead.status === 'paused'
+                              ? 'bg-amber-50 text-amber-600 border border-amber-100'
+                              : 'bg-gray-100 text-gray-500 border border-gray-200'
+                            }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${lead.status === 'active' ? 'bg-emerald-500 animate-pulse' :
+                              lead.status === 'paused' ? 'bg-amber-500' :
+                                'bg-gray-400'
+                              }`} />
+                            {lead.status}
+                          </span>
+                          {lead.is_hidden && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-purple-50 text-purple-600 border border-purple-100">
+                              HIDDEN
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         {timeInfo.isExpired ? (
