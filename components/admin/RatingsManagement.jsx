@@ -198,7 +198,7 @@ export const RatingsManagement = () => {
                             <div>
                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Review</p>
                                 <div className="p-4 bg-gray-50 rounded-xl">
-                                    <p className="text-gray-700 leading-relaxed">"{selectedRating.review}"</p>
+                                    <p className="text-gray-700 leading-relaxed">&quot;{selectedRating.review}&quot;</p>
                                 </div>
                             </div>
                         )}
@@ -208,8 +208,8 @@ export const RatingsManagement = () => {
                             <div className="p-4 bg-gray-50 rounded-xl">
                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</p>
                                 <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${selectedRating.status === 'active' ? 'bg-emerald-50 text-emerald-600' :
-                                        selectedRating.status === 'flagged' ? 'bg-red-50 text-red-600' :
-                                            'bg-gray-100 text-gray-600'
+                                    selectedRating.status === 'flagged' ? 'bg-red-50 text-red-600' :
+                                        'bg-gray-100 text-gray-600'
                                     }`}>
                                     {selectedRating.status?.toUpperCase()}
                                 </span>
@@ -341,10 +341,10 @@ export const RatingsManagement = () => {
                                 <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full rounded-full transition-all ${star === 5 ? 'bg-emerald-500' :
-                                                star === 4 ? 'bg-lime-500' :
-                                                    star === 3 ? 'bg-amber-400' :
-                                                        star === 2 ? 'bg-orange-500' :
-                                                            'bg-red-500'
+                                            star === 4 ? 'bg-lime-500' :
+                                                star === 3 ? 'bg-amber-400' :
+                                                    star === 2 ? 'bg-orange-500' :
+                                                        'bg-red-500'
                                             }`}
                                         style={{ width: `${percentage}%` }}
                                     />
@@ -380,8 +380,8 @@ export const RatingsManagement = () => {
                                 key={status.key}
                                 onClick={() => setStatusFilter(status.key)}
                                 className={`px-4 h-12 rounded-xl font-bold text-xs uppercase tracking-widest whitespace-nowrap transition-all ${statusFilter === status.key
-                                        ? 'bg-gray-900 text-white'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-gray-900 text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
                                 {status.label}
@@ -448,8 +448,8 @@ export const RatingsManagement = () => {
                                                         Review for {rating.agent?.name || 'Agent'}
                                                     </p>
                                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${rating.status === 'active' ? 'bg-emerald-50 text-emerald-600' :
-                                                            rating.status === 'flagged' ? 'bg-red-50 text-red-600' :
-                                                                'bg-gray-100 text-gray-500'
+                                                        rating.status === 'flagged' ? 'bg-red-50 text-red-600' :
+                                                            'bg-gray-100 text-gray-500'
                                                         }`}>
                                                         {rating.status?.toUpperCase()}
                                                     </span>
@@ -461,7 +461,7 @@ export const RatingsManagement = () => {
                                         </div>
 
                                         {rating.review && (
-                                            <p className="text-sm text-gray-600 line-clamp-2 mb-3">"{rating.review}"</p>
+                                            <p className="text-sm text-gray-600 line-clamp-2 mb-3">&quot;{rating.review}&quot;</p>
                                         )}
 
                                         {rating.flag_reason && (

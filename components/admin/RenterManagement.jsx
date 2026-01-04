@@ -156,6 +156,27 @@ const ActionButton = ({ renter, isOpen, onToggle, onClose, onAction }) => {
   );
 };
 
+// Tenant Payments View (Placeholder - to be implemented)
+const TenantPaymentsView = ({ renter, onBack }) => {
+  return (
+    <div className="space-y-6">
+      <Button variant="ghost" onClick={onBack} className="text-gray-600 hover:bg-gray-100" size="sm">
+        <ArrowLeft className="w-4 h-4 mr-2" /> Back to Tenants
+      </Button>
+
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <CreditCard className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="font-bold text-gray-900 mb-2">Payment History for {renter?.name || 'Tenant'}</h3>
+          <p className="text-gray-500 text-sm">Payment tracking for tenants coming soon.</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Suspend Tenant Modal
 const SuspendModal = ({ isOpen, renter, onClose, onSubmit, loading }) => {
   const [reason, setReason] = useState('');
@@ -321,7 +342,7 @@ const TenantLeadsView = ({ renter, onBack }) => {
               <FileText className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="font-bold text-gray-900 mb-2">No leads found</h3>
-            <p className="text-gray-500 text-sm">This tenant hasn't posted any leads yet.</p>
+            <p className="text-gray-500 text-sm">This tenant hasn&apos;t posted any leads yet.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

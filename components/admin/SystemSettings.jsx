@@ -171,8 +171,8 @@ export const SystemSettings = () => {
                     <button
                         onClick={() => updateField(field.key, !value)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${value
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-gray-100 text-gray-500'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-gray-100 text-gray-500'
                             }`}
                     >
                         {value ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
@@ -245,8 +245,8 @@ export const SystemSettings = () => {
                         onClick={handleSave}
                         disabled={!hasChanges || saving}
                         className={`flex items-center gap-2 ${hasChanges
-                                ? 'bg-[#FE9200] hover:bg-[#E58300] text-white'
-                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            ? 'bg-[#FE9200] hover:bg-[#E58300] text-white'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                             }`}
                         size="sm"
                     >
@@ -267,7 +267,7 @@ export const SystemSettings = () => {
                 <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
                     <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
                     <p className="text-sm text-amber-700">
-                        You have unsaved changes. Don't forget to save before leaving.
+                        You have unsaved changes. Don&apos;t forget to save before leaving.
                     </p>
                 </div>
             )}

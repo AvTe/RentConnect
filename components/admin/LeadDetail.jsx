@@ -571,7 +571,7 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
                     <div>
                       <p className="text-[10px] font-bold text-[#E58300] uppercase tracking-widest mb-2">Additional Notes</p>
                       <p className="text-sm text-gray-700 leading-relaxed">
-                        "{lead.requirements?.additional_requirements || lead.additional_requirements}"
+                        &quot;{lead.requirements?.additional_requirements || lead.additional_requirements}&quot;
                       </p>
                     </div>
                   </div>
@@ -688,7 +688,7 @@ export const LeadDetail = ({ lead, onBack, onUpdate }) => {
                       <span className="text-xs text-gray-400">• {report.credits_paid || 0} credits at stake</span>
                     </div>
                     {report.details && (
-                      <p className="text-xs text-gray-500 italic">"{report.details}"</p>
+                      <p className="text-xs text-gray-500 italic">&quot;{report.details}&quot;</p>
                     )}
                   </div>
                 ))}

@@ -781,7 +781,7 @@ export const AgentDetail = ({ agent, onBack, onUpdate }) => {
                         </span>
                       </div>
                       {review.review && (
-                        <p className="text-sm text-gray-600 italic">"{review.review}"</p>
+                        <p className="text-sm text-gray-600 italic">&quot;{review.review}&quot;</p>
                       )}
                     </div>
                   ))}

@@ -1,304 +1,113 @@
-# Yoombaa - Resend Email Integration
+# Resend Email Service Setup Guide for Yoombaa
 
-## Overview
+## ✅ Your Domain is Verified: yoombaa.com
 
-This document describes the Resend email integration for the Yoombaa platform. Resend is used for all transactional and notification emails, while Supabase Auth handles authentication-related emails (password reset, email verification, etc.).
+Your Resend domain is verified and ready to send emails.
 
----
+## Required Environment Variables
 
-## Configuration
+Add these to your `.env.local` file:
 
-### Environment Variables
-
-Add the following to your `.env.local`:
-
-```bash
-# Resend API Key (required)
-RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxx
-
-# Custom sender emails (optional - defaults to onboarding@resend.dev for testing)
+```env
+# Resend Email Service
+RESEND_API_KEY=re_YOUR_API_KEY_HERE
 RESEND_FROM_EMAIL=Yoombaa <noreply@yoombaa.com>
 RESEND_SUPPORT_EMAIL=Yoombaa Support <support@yoombaa.com>
 ```
 
-### Getting Your API Key
+### Getting Your API Key:
+1. Go to [Resend Dashboard](https://resend.com/api-keys)
+2. Click "Create API Key"
+3. Name it "Yoombaa Production"
+4. Set permissions to "Sending access" → "Full access"
+5. Copy the key (starts with `re_`)
+6. Paste it in your `.env.local` file
 
-1. Go to [resend.com](https://resend.com) and create an account
-2. Navigate to **API Keys** section
-3. Click **Create API Key**
-4. Copy the key and add it to your `.env.local`
+## Available Email Types
 
-### Domain Verification (Production)
+The following email notifications are configured:
 
-For production, you need to verify your domain:
+| Email Type | Trigger | Recipient |
+|------------|---------|-----------|
+| `welcome_agent` | Agent registration | New agent |
+| `welcome_tenant` | Tenant submits lead | Tenant |
+| `new_lead` | New lead created | Agents in area |
+| `lead_unlocked` | Agent unlocks a lead | Agent |
+| `verification_approved` | Admin approves agent | Agent |
+| `verification_rejected` | Admin rejects agent | Agent |
+| `credits_purchased` | Agent buys credits | Agent |
+| `low_credits` | Agent balance low | Agent |
+| `agent_interested` | Agent unlocks lead | Tenant |
 
-1. Go to **Domains** in Resend dashboard
-2. Add your domain (e.g., `yoombaa.com`)
-3. Add the DNS records provided (TXT and MX records)
-4. Wait for verification (usually takes a few minutes)
-5. Update `RESEND_FROM_EMAIL` to use your verified domain
+## Testing the Email Service
 
----
-
-## Architecture
-
-### Email Flow
-
+### Test via API:
+```bash
+curl -X POST http://localhost:5000/api/email/send \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "welcome_agent",
+    "to": "your-test-email@gmail.com",
+    "data": { "name": "Test Agent" }
+  }'
 ```
-User Action (e.g., lead unlock)
-         ↓
-Database Operation (database.js)
-         ↓
-Unified Notification Service (notification-service.js)
-         ↓
-    ┌────────────────────────────┐
-    │                            │
-    ↓                            ↓
-In-App Notification        Email via Resend
-(notifications table)      (resend-email.js)
-```
 
-### Files
-
-| File | Purpose |
-|------|---------|
-| `lib/resend-email.js` | Email templates and send functions |
-| `lib/notification-service.js` | Unified service (in-app + email) |
-| `lib/notifications.js` | Legacy notifications (in-app only) |
-| `app/api/email/send/route.js` | API endpoint for sending emails |
-| `app/api/email/test/route.js` | Testing endpoint |
-
----
-
-## Automatic Notifications
-
-The following notifications are sent automatically:
-
-### Agent Notifications
-
-| Event | In-App | Email | Trigger |
-|-------|--------|-------|---------|
-| Welcome | ✅ | ✅ | Account creation |
-| Verification Approved | ✅ | ✅ | Admin approves verification |
-| Verification Rejected | ✅ | ✅ | Admin rejects verification |
-| New Lead Available | ✅ | ✅ | New lead in agent's area |
-| Lead Unlocked | ✅ | ✅ | Agent unlocks a lead |
-| Credits Purchased | ✅ | ✅ | Successful payment |
-| Low Credits Warning | ✅ | ✅ | Balance drops to 5 or below |
-
-### Tenant Notifications
-
-| Event | In-App | Email | Trigger |
-|-------|--------|-------|---------|
-| Welcome | ✅ | ✅ | Account/lead creation |
-| Lead Submitted | ✅ | ✅ | Lead request submitted |
-| Agent Interested | ✅ | ✅ | Agent unlocks their lead |
-
----
-
-## Duplicate Prevention
-
-The notification service includes built-in duplicate prevention:
-
-- **1-minute window**: Prevents same notification from being sent twice within 60 seconds
-- **Daily limit**: Low credits warning is sent max once per day
-- **Hash-based detection**: Uses notification type + user ID + data hash
-
----
-
-## API Usage
-
-### Send Email via API
-
+### Test via Browser Console:
 ```javascript
-// POST /api/email/send
-const response = await fetch('/api/email/send', {
+fetch('/api/email/send', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     type: 'welcome_agent',
-    to: 'agent@example.com',
-    data: { name: 'John Doe' }
+    to: 'your-test-email@gmail.com',
+    data: { name: 'Test Agent' }
   })
-});
+}).then(r => r.json()).then(console.log)
 ```
 
-### Available Email Types
+## Email Templates Location
 
-| Type | Required Data |
-|------|---------------|
-| `welcome_agent` | `name` |
-| `welcome_tenant` | `name` |
-| `new_lead` | `agentName`, `leadData` (location, budget, bedrooms, propertyType, urgency) |
-| `lead_unlocked` | `agentName`, `leadData`, `tenantContact` (name, phone, email) |
-| `verification_approved` | `name` |
-| `verification_rejected` | `name`, `reason` |
-| `credits_purchased` | `name`, `credits`, `amount`, `newBalance` |
-| `low_credits` | `name`, `balance` |
-| `agent_interested` | `tenantName`, `agentName`, `agentPhone` |
-| `custom` | `subject`, `content` |
+All email templates are in: `lib/resend-email.js`
 
-### Direct Import
+To customize templates, edit the HTML in each template function:
+- `welcomeAgentEmail()`
+- `welcomeTenantEmail()`
+- `newLeadNotificationEmail()`
+- `leadUnlockedEmail()`
+- `verificationApprovedEmail()`
+- `verificationRejectedEmail()`
+- `creditsPurchasedEmail()`
+- `lowCreditsWarningEmail()`
+- `agentInterestedEmail()`
 
-```javascript
-import {
-  sendWelcomeAgentEmail,
-  sendNewLeadNotification,
-  sendLeadUnlockedEmail
-} from '@/lib/resend-email';
+## Notification Flow
 
-// Send welcome email
-await sendWelcomeAgentEmail('agent@example.com', 'John Doe');
-
-// Send new lead notification
-await sendNewLeadNotification('agent@example.com', 'John', {
-  location: 'Kilimani',
-  budget: 50000,
-  bedrooms: 2,
-  propertyType: 'Apartment'
-});
-```
-
----
-
-## Testing
-
-### Test All Email Types
-
-Visit the test endpoint:
-
-```
-GET /api/email/test?email=your@email.com&type=all
-```
-
-Test a specific type:
-
-```
-GET /api/email/test?email=your@email.com&type=welcome_agent
-```
-
-### Response Format
-
-```json
-{
-  "success": true,
-  "summary": {
-    "total": 10,
-    "successful": 10,
-    "failed": 0,
-    "testEmail": "your@email.com"
-  },
-  "results": [
-    {
-      "type": "welcome_agent",
-      "success": true,
-      "data": { "id": "email-id-from-resend" }
-    }
-  ]
-}
-```
-
----
-
-## Email Templates
-
-All emails use consistent Yoombaa branding:
-
-- **Brand Color**: `#fe9200` (Orange)
-- **Text Color**: `#18181b` (Dark gray)
-- **Font**: DM Sans (with Arial fallback)
-- **Layout**: Centered, max-width 520px
-- **Footer**: © 2025 Yoombaa. All rights reserved.
-
-### Template Structure
-
-```html
-┌─────────────────────────────┐
-│          Yoombaa            │ ← Brand logo in #fe9200
-├─────────────────────────────┤
-│                             │
-│     [Title]                 │
-│                             │
-│     [Body Content]          │
-│                             │
-│     ┌───────────────┐       │
-│     │    Button     │       │ ← #fe9200 background
-│     └───────────────┘       │
-│                             │
-│     [Footer text]           │
-│                             │
-├─────────────────────────────┤
-│  © 2025 Yoombaa...          │
-└─────────────────────────────┘
-```
-
----
-
-## Monitoring
-
-### Resend Dashboard
-
-View email delivery status at [resend.com/emails](https://resend.com/emails):
-
-- **Delivered**: Email reached inbox
-- **Bounced**: Invalid email address
-- **Complained**: Marked as spam
-- **Opened**: Email was opened (if tracking enabled)
-- **Clicked**: Link in email was clicked
-
-### Console Logs
-
-All email sends are logged:
-
-```
-Email sent successfully: <resend-email-id>
-```
-
-Errors are logged with details:
-
-```
-Resend error: <error-message>
-```
-
----
-
-## Best Practices
-
-1. **Always send both in-app and email**: Use `notification-service.js` functions
-2. **Never duplicate manually**: The service handles duplicate prevention
-3. **Test before production**: Use the test endpoint with your email
-4. **Monitor deliverability**: Check Resend dashboard for bounce rates
-5. **Verify domain**: Required for production to avoid spam filters
-
----
+1. **Action occurs** (e.g., lead unlocked)
+2. **Notification service** (`lib/notification-service.js`) is called
+3. **In-app notification** created in database
+4. **Email sent** via `/api/email/send` endpoint
+5. **Resend API** delivers the email from `noreply@yoombaa.com`
 
 ## Troubleshooting
 
-### Emails Not Sending
+### "RESEND_API_KEY is not configured"
+- Make sure `RESEND_API_KEY` is set in `.env.local`
+- Restart your dev server after changing env vars
 
-1. Check `RESEND_API_KEY` is set in `.env.local`
-2. Verify API key is valid at resend.com
-3. Check server logs for errors
-4. Ensure email address is valid
+### "Invalid From Address"
+- Ensure your domain is verified in Resend dashboard
+- Use the format: `Name <email@yoombaa.com>`
 
-### Emails Going to Spam
+### Email not received
+1. Check Resend dashboard for delivery logs
+2. Check spam folder
+3. Verify the `to` email address is correct
+4. Check browser console for API errors
 
-1. Verify your domain in Resend
-2. Use consistent sender email
-3. Avoid spam trigger words
-4. Include unsubscribe link (for marketing emails)
+## Production Checklist
 
-### Rate Limiting
-
-Resend has rate limits. If you hit them:
-
-1. Batch similar notifications
-2. Add delays between bulk sends
-3. Upgrade Resend plan if needed
-
----
-
-## Support
-
-- **Resend Documentation**: [resend.com/docs](https://resend.com/docs)
-- **Yoombaa Support**: support@yoombaa.com
+- [x] Domain verified in Resend (yoombaa.com)
+- [ ] API key added to `.env.local`
+- [ ] API key added to production environment (Vercel/etc)
+- [ ] Test emails work in development
+- [ ] Test emails work in production

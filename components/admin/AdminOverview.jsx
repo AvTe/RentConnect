@@ -106,7 +106,7 @@ export const AdminOverview = () => {
           <h1 className="text-2xl md:text-3xl font-black text-gray-900">
             Good {currentTime.getHours() < 12 ? 'Morning' : currentTime.getHours() < 18 ? 'Afternoon' : 'Evening'}! 👋
           </h1>
-          <p className="text-gray-500 font-medium mt-1">Here's what's happening with your platform today.</p>
+          <p className="text-gray-500 font-medium mt-1">Here&apos;s what&apos;s happening with your platform today.</p>
         </div>
         <button
           onClick={fetchData}
