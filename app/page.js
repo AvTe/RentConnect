@@ -422,7 +422,7 @@ export default function RentalLeadApp() {
         if (!formData.id && leadData.tenant_email) {
           try {
             const emailContent = EMAIL_TEMPLATES.TENANT_CONFIRMATION(leadData.tenant_name, leadData);
-            await sendEmailNotification(leadData.tenant_email, 'Request Submitted - RentConnect', emailContent);
+            await sendEmailNotification(leadData.tenant_email, 'Request Submitted - Yoombaa', emailContent);
           } catch (emailError) {
             console.error('Error sending confirmation email:', emailError);
           }

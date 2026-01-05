@@ -36,7 +36,7 @@ function logSection(title) {
 
 async function testTwilioConfig() {
   logSection('📋 TWILIO CONFIGURATION CHECK');
-  
+
   const config = {
     accountSid: process.env.TWILIO_ACCOUNT_SID,
     authToken: process.env.TWILIO_AUTH_TOKEN,
@@ -48,7 +48,7 @@ async function testTwilioConfig() {
 
   for (const [key, value] of Object.entries(config)) {
     if (value) {
-      const masked = key === 'authToken' 
+      const masked = key === 'authToken'
         ? value.substring(0, 4) + '****' + value.substring(value.length - 4)
         : value;
       log(`  ✅ ${key}: ${masked}`, 'green');
@@ -63,20 +63,20 @@ async function testTwilioConfig() {
 
 async function testSMS(client, fromNumber, toNumber) {
   logSection('📱 SMS TEST');
-  
+
   try {
     log(`Sending test SMS to ${toNumber}...`, 'yellow');
-    
+
     const message = await client.messages.create({
       from: fromNumber,
       to: toNumber,
-      body: `[RentConnect Test] SMS test successful at ${new Date().toLocaleTimeString()}. Twilio integration is working!`,
+      body: `[Yoombaa Test] SMS test successful at ${new Date().toLocaleTimeString()}. Twilio integration is working!`,
     });
 
     log(`  ✅ SMS sent successfully!`, 'green');
     log(`  📧 Message SID: ${message.sid}`, 'blue');
     log(`  📊 Status: ${message.status}`, 'blue');
-    
+
     return true;
   } catch (error) {
     log(`  ❌ SMS failed: ${error.message}`, 'red');
@@ -89,7 +89,7 @@ async function testSMS(client, fromNumber, toNumber) {
 
 async function testWhatsApp(client, fromNumber, toNumber) {
   logSection('💬 WHATSAPP TEST');
-  
+
   if (!fromNumber) {
     log('  ⚠️ WhatsApp number not configured, skipping...', 'yellow');
     return null;
@@ -98,19 +98,19 @@ async function testWhatsApp(client, fromNumber, toNumber) {
   try {
     const whatsappFrom = fromNumber.startsWith('whatsapp:') ? fromNumber : `whatsapp:${fromNumber}`;
     const whatsappTo = `whatsapp:${toNumber}`;
-    
+
     log(`Sending test WhatsApp to ${toNumber}...`, 'yellow');
-    
+
     const message = await client.messages.create({
       from: whatsappFrom,
       to: whatsappTo,
-      body: `[RentConnect Test] WhatsApp test successful at ${new Date().toLocaleTimeString()}. Twilio integration is working!`,
+      body: `[Yoombaa Test] WhatsApp test successful at ${new Date().toLocaleTimeString()}. Twilio integration is working!`,
     });
 
     log(`  ✅ WhatsApp sent successfully!`, 'green');
     log(`  📧 Message SID: ${message.sid}`, 'blue');
     log(`  📊 Status: ${message.status}`, 'blue');
-    
+
     return true;
   } catch (error) {
     log(`  ❌ WhatsApp failed: ${error.message}`, 'red');
@@ -133,7 +133,7 @@ async function main() {
 
   // Check configuration
   const config = await testTwilioConfig();
-  
+
   if (!config) {
     log('\n❌ Twilio is not properly configured. Please check your .env.local file.', 'red');
     process.exit(1);
@@ -151,9 +151,9 @@ async function main() {
   // Summary
   logSection('📊 TEST SUMMARY');
   log(`  SMS:      ${smsResult ? '✅ PASSED' : '❌ FAILED'}`, smsResult ? 'green' : 'red');
-  log(`  WhatsApp: ${whatsappResult === null ? '⚠️ SKIPPED' : (whatsappResult ? '✅ PASSED' : '❌ FAILED')}`, 
+  log(`  WhatsApp: ${whatsappResult === null ? '⚠️ SKIPPED' : (whatsappResult ? '✅ PASSED' : '❌ FAILED')}`,
     whatsappResult === null ? 'yellow' : (whatsappResult ? 'green' : 'red'));
-  
+
   console.log('\n');
 }
 

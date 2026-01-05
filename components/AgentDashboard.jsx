@@ -34,6 +34,7 @@ import {
   X,
   Wallet,
   Users,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
@@ -59,6 +60,7 @@ import { LeadDetailModal } from "./LeadDetailModal";
 import { LiveActivityTicker, LiveActivityPopup } from "./LiveActivityTicker";
 import { Tooltip } from "./ui/Tooltip";
 import { initializePayment } from "@/lib/pesapal";
+import { AgentAssets } from "./AgentAssets";
 import { checkAndNotifySubscriptionExpiry } from "@/lib/notifications";
 
 export const AgentDashboard = ({
@@ -614,6 +616,10 @@ export const AgentDashboard = ({
           onCancel={() => setActiveTab("leads")}
         />
       );
+    }
+
+    if (activeTab === "assets") {
+      return <AgentAssets currentUser={currentUser} />;
     }
 
     if (activeTab === "properties") {
@@ -1275,6 +1281,7 @@ export const AgentDashboard = ({
   const bottomNavItems = [
     { id: 'leads', label: 'Leads', icon: LayoutGrid },
     { id: 'properties', label: 'Properties', icon: Home },
+    { id: 'assets', label: 'Assets', icon: FolderOpen },
     { id: 'referrals', label: 'Refer', icon: Share2 },
     { id: 'profile', label: 'Profile', icon: User },
   ];
@@ -1337,6 +1344,12 @@ export const AgentDashboard = ({
               label="My Properties"
               id="properties"
               active={activeTab === "properties"}
+            />
+            <SidebarItem
+              icon={FolderOpen}
+              label="My Assets"
+              id="assets"
+              active={activeTab === "assets"}
             />
             <SidebarItem
               icon={Share2}

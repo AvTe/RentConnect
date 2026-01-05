@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { 
-  Shield, 
-  Loader2, 
-  CheckCircle, 
-  XCircle, 
-  Eye, 
+import {
+  Shield,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  Eye,
   EyeOff,
   Lock,
   AlertCircle
@@ -185,7 +185,7 @@ export default function AcceptInvitePage() {
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Welcome to RentConnect</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">Welcome to Yoombaa</h1>
           <p className="text-blue-100">Complete your admin account setup</p>
         </div>
 
@@ -245,7 +245,7 @@ export default function AcceptInvitePage() {
                 )}
               </button>
             </div>
-            
+
             {/* Password requirements */}
             <div className="mt-3 space-y-1">
               {[
@@ -254,15 +254,14 @@ export default function AcceptInvitePage() {
                 { label: 'One lowercase letter', check: /[a-z]/.test(password) },
                 { label: 'One number', check: /[0-9]/.test(password) }
               ].map((req, index) => (
-                <div 
+                <div
                   key={index}
-                  className={`flex items-center gap-2 text-xs ${
-                    password 
-                      ? req.check 
-                        ? 'text-green-600' 
+                  className={`flex items-center gap-2 text-xs ${password
+                      ? req.check
+                        ? 'text-green-600'
                         : 'text-gray-400'
                       : 'text-gray-400'
-                  }`}
+                    }`}
                 >
                   {password && req.check ? (
                     <CheckCircle className="w-3.5 h-3.5" />
@@ -287,11 +286,10 @@ export default function AcceptInvitePage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm your password"
-                className={`w-full pl-10 pr-4 py-3 rounded-lg border focus:ring-2 outline-none transition-all ${
-                  confirmPassword && confirmPassword !== password
+                className={`w-full pl-10 pr-4 py-3 rounded-lg border focus:ring-2 outline-none transition-all ${confirmPassword && confirmPassword !== password
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-100'
                     : 'border-gray-200 focus:border-blue-500 focus:ring-blue-100'
-                }`}
+                  }`}
                 required
               />
             </div>

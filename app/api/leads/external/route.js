@@ -34,7 +34,7 @@ export async function POST(request) {
   try {
     // Validate API Key
     const apiKey = request.headers.get('x-api-key');
-    
+
     if (!apiKey || apiKey !== EXTERNAL_API_KEY) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized: Invalid API key' },
@@ -44,16 +44,16 @@ export async function POST(request) {
 
     // Parse request body
     const body = await request.json();
-    
+
     // Validate required fields
     const requiredFields = ['name', 'phone'];
     const missingFields = requiredFields.filter(field => !body[field]);
-    
+
     if (missingFields.length > 0) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: `Missing required fields: ${missingFields.join(', ')}` 
+        {
+          success: false,
+          error: `Missing required fields: ${missingFields.join(', ')}`
         },
         { status: 400 }
       );
@@ -65,21 +65,21 @@ export async function POST(request) {
       tenant_name: body.name?.trim(),
       tenant_email: body.email?.trim()?.toLowerCase() || null,
       tenant_phone: normalizePhone(body.phone),
-      
+
       // Property requirements
       location: body.location?.trim() || 'Not specified',
       property_type: normalizePropertyType(body.property_type),
       budget: parseFloat(body.budget) || 0,
       bedrooms: parseInt(body.bedrooms) || 1,
       move_in_date: body.move_in_date || getDefaultMoveInDate(),
-      
+
       // Additional requirements stored as JSON
       requirements: {
         additional_requirements: body.requirements || '',
         amenities: body.amenities || [],
         pincode: body.pincode || ''
       },
-      
+
       // External source tracking
       source: body.source || 'zapier',
       external_source: body.source || 'zapier',
@@ -87,11 +87,11 @@ export async function POST(request) {
       campaign_name: body.campaign_name || null,
       ad_id: body.ad_id || null,
       form_id: body.form_id || null,
-      
+
       // Status
       status: 'new',
       is_external: true,
-      
+
       // Timestamps
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -99,7 +99,7 @@ export async function POST(request) {
 
     // Create lead in database
     const supabase = await createClient();
-    
+
     const { data: lead, error: leadError } = await supabase
       .from('leads')
       .insert([leadData])
@@ -146,24 +146,24 @@ export async function POST(request) {
  */
 export async function GET(request) {
   return NextResponse.json({
-    name: 'RentConnect External Leads API',
+    name: 'Yoombaa External Leads API',
     version: '1.0',
     description: 'API endpoint for receiving leads from external sources like Google Ads and Facebook Ads via Zapier',
-    
+
     authentication: {
       type: 'API Key',
       header: 'x-api-key',
       description: 'Include your API key in the x-api-key header'
     },
-    
+
     endpoint: {
       method: 'POST',
       url: '/api/leads/external',
       content_type: 'application/json'
     },
-    
+
     required_fields: ['name', 'phone'],
-    
+
     optional_fields: [
       'email',
       'location',
@@ -178,11 +178,11 @@ export async function GET(request) {
       'ad_id',
       'form_id'
     ],
-    
+
     property_types: ['apartment', 'house', 'studio', 'commercial', 'land', 'office'],
-    
+
     sources: ['google_ads', 'facebook_ads', 'zapier', 'other'],
-    
+
     example_request: {
       name: 'John Doe',
       email: 'john@example.com',
@@ -197,7 +197,7 @@ export async function GET(request) {
       campaign_id: 'fb_campaign_123',
       campaign_name: 'Nairobi Rentals Q1'
     },
-    
+
     example_response: {
       success: true,
       message: 'Lead created successfully',

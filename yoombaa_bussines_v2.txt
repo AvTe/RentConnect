@@ -1,0 +1,554 @@
+To implement this, you need a system that connects your Landing Page, your Database, Infobip (WhatsApp), and M-Pesa.
+Here is the logic and the code structure to make this work.
+1. The Algorithm: Lead Routing & Pricing Logic
+This is the "brain" of your system. When a lead comes in, the algorithm performs three checks:
+ * Categorization: Is this a Bronze, Silver, or Gold lead? (Based on rent).
+ * Surge Calculation: Is it a peak month (Jan/Sept) or a high-demand area?
+ * Agent Eligibility: * Pro Agents: Does the lead go to them first? (Priority).
+   * Starter Agents: Do they have enough M-Pesa credits to "unlock" this lead?
+Surge Pricing Formula (Conceptual):
+2. The Database Schema (The Foundation)
+You need to track which agent is on which plan.
+ * Agent_Table: ID, Name, Phone, Plan_Type (Starter/Pro), Credits_Balance, Leads_this_Month.
+ * Leads_Table: ID, Tenant_Name, Area, Budget, Status (New/Sold).
+3. The Integration Code (Node.js/JavaScript)
+This backend code handles the "Lead Capture" and "Infobip Notification" flow.
+Step A: Calculate the Price and Find the Agent
+// Function to calculate dynamic price
+function calculateLeadPrice(rentAmount, area) {
+    let base = rentAmount > 100000 ? 2500 : 800; // Gold vs Silver
+    let surge = 1.0;
+    
+    const highDemandAreas = ['Kilimani', 'Westlands', 'Ruaka'];
+    if (highDemandAreas.includes(area)) surge += 0.2; // 20% area surge
+    
+    const currentMonth = new Date().getMonth(); // 0 = Jan, 8 = Sept
+    if (currentMonth === 0 || currentMonth === 8) surge += 0.3; // 30% seasonal surge
+
+    return base * surge;
+}
+
+Step B: Send the Lead via Infobip WhatsApp API
+Once the system finds an eligible agent, it triggers this:
+const axios = require('axios');
+
+async function sendLeadToAgent(agentPhone, leadData, price) {
+    const INFOBIP_API_KEY = "your_api_key";
+    const BASE_URL = "your_infobip_base_url";
+
+    const message = {
+        from: "2547XXXXXXXX", // Your verified WhatsApp Sender
+        to: agentPhone,
+        content: {
+            text: `🔥 NEW LEAD: ${leadData.area}\n` +
+                  `Budget: KES ${leadData.budget}\n` +
+                  `Move-in: ${leadData.moveInDate}\n` +
+                  `Price to Unlock: KES ${price}\n` +
+                  `Reply 'YES' to claim.`
+        }
+    };
+
+    try {
+        await axios.post(`${BASE_URL}/whatsapp/1/message/template`, message, {
+            headers: { 'Authorization': `App ${INFOBIP_API_KEY}` }
+        });
+    } catch (error) {
+        console.error("WhatsApp failed", error);
+    }
+}
+
+4. M-Pesa Revenue Integration (Lipa Na M-Pesa STK Push)
+When a "Starter" agent wants to buy credits or a "Pro" agent pays their monthly 5k, trigger this:
+async function triggerMpesaPayment(phoneNumber, amount) {
+    // This calls the Safaricom Daraja API
+    const data = {
+        BusinessShortCode: "174379", // Your Paybill/Till
+        Password: "GENERATED_PASSWORD",
+        Timestamp: "20260104120000",
+        TransactionType: "CustomerPayBillOnline",
+        Amount: amount,
+        PartyA: phoneNumber, // Agent's phone
+        PartyB: "174379",
+        PhoneNumber: phoneNumber,
+        CallBackURL: "https://yourdomain.com/api/mpesa-callback",
+        AccountReference: "LeadSystem",
+        TransactionDesc: "Payment for Leads"
+    };
+    
+    // axios.post('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', data...)
+}
+
+5. How to Scale This
+To reach your 30 Million profit, you don't need to write more code; you need to automate the Credit System:
+ * The Wallet: Agents go to your landing page and "Top Up" their wallet via M-Pesa.
+ * The Auto-Deduct: Your algorithm checks: if (agent.balance >= leadPrice) { sendLead(); deductBalance(); }.
+ * The Notification: Infobip sends the lead immediately.
+Would you like me to help you design the "Agent Dashboard" UI where they can see their lead history and top up their wallet?
+
+
+
+To reach that 30 Million profit, your Agent Dashboard needs to be more than just a list of names; it has to be a conversion machine.
+Since we are in 2026, the design should be mobile-first (most Kenyan agents work from their phones while on-site) and minimalist, focusing on two key actions: Claiming Leads and Managing the Wallet.
+1. The Dashboard UI Structure
+I recommend a "Card-Based" layout. It’s clean, professional, and works perfectly on both a laptop and a smartphone.
+A. The "Stat Bar" (Top of Screen)
+This gives the agent instant feedback on their business health.
+ * Active Plan: PRO (with a green badge) or STARTER (with an "Upgrade" button).
+ * Wallet Balance: KES 12,450 (with a large "Top Up" button).
+ * Leads This Month: 14 / 20 (Progress bar for Pro agents to see their free lead quota).
+B. The "Live Feed" (Center Screen)
+A scrolling list of high-intent leads.
+ * Card Example:
+   > NEW: 2-Bedroom in Ruaka
+   >  * Budget: KES 45,000
+   >  * Quality Score: 95% (Verified phone & Move-in date)
+   >  * Price to Unlock: KES 850
+   >  * [Button: Unlock Now via Wallet]
+   > 
+2. The Code: Integrating the "Wallet" Logic
+This code snippet handles the logic of an agent clicking "Unlock." It checks their balance, deducts the fee, and reveals the lead.
+// Function to handle lead purchase
+async function unlockLead(agentId, leadId) {
+    // 1. Fetch Agent and Lead details from your DB
+    const agent = await db.query('SELECT * FROM agents WHERE id = ?', [agentId]);
+    const lead = await db.query('SELECT * FROM leads WHERE id = ?', [leadId]);
+
+    // 2. Calculate the Surge Price for this specific lead
+    const price = calculateLeadPrice(lead.rent_estimate, lead.area);
+
+    // 3. Check Eligibility
+    if (agent.plan === 'PRO' && agent.leads_consumed < 20) {
+        // PRO Benefit: It's free if under the 20-lead quota
+        await grantAccess(agentId, leadId);
+        await db.query('UPDATE agents SET leads_consumed = leads_consumed + 1 WHERE id = ?', [agentId]);
+    } 
+    else if (agent.wallet_balance >= price) {
+        // STARTER or PRO (over quota): Deduct from wallet
+        await db.query('UPDATE agents SET wallet_balance = wallet_balance - ? WHERE id = ?', [price, agentId]);
+        await grantAccess(agentId, leadId);
+    } 
+    else {
+        // Insufficient funds: Trigger M-Pesa STK Push
+        return { status: "INSUFFICIENT_FUNDS", triggerPayment: true, amountNeeded: price };
+    }
+}
+
+3. The "Top Up" Algorithm (M-Pesa Integration)
+When the agent clicks "Top Up," your system should trigger the STK Push immediately so they don't lose the lead to another agent.
+The Workflow:
+ * Agent enters amount (e.g., KES 2,000).
+ * Backend calls Safaricom API.
+ * Agent gets a popup on their phone: "Enter M-Pesa PIN to pay KES 2,000 to RENTAL_LEADS."
+ * Callback: Safaricom sends a "Success" signal to your CallBackURL.
+ * Instant Update: Your dashboard updates the wallet balance in real-time using WebSockets (Socket.io) so the agent doesn't even have to refresh the page.
+4. Reaching the 30M Profit: The "Network Effect"
+To scale this quickly:
+ * The Referral Loop: Add a button in the dashboard: "Refer an Agent, get KES 1,000 in your wallet."
+ * Performance Badges: As agents close more deals, give them "Top Rated" badges. This allows you to charge them more for the subscription because you are giving them higher-converting leads.
+ * The Invoicing Tool: Within the dashboard, give them a button: [Generate M-Pesa Invoice for Tenant]. You take a 1-2% processing fee on every rent payment made through your system. This is "passive" income that builds up as you scale.
+Next Step for You:
+To get this running, we need to finalize the Database Schema (how the tables look) or I can help you write the M-Pesa Callback Handler which is the most critical part of the payment flow.
+Which would you like to do first?
+
+
+
+Here is the architecture you need to bridge your landing page, the agent dashboard, and the M-Pesa revenue stream.
+1. The Database Schema (PostgreSQL/MySQL)
+This schema is designed to handle the Hybrid Model (Starter vs. Pro) and the Wallet System.
+-- 1. Agents Table: Stores plan types and wallet balances
+CREATE TABLE agents (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(15) UNIQUE NOT NULL, -- Format: 2547XXXXXXXX
+    email VARCHAR(255) UNIQUE,
+    plan_type ENUM('STARTER', 'PRO') DEFAULT 'STARTER',
+    wallet_balance DECIMAL(10, 2) DEFAULT 0.00,
+    leads_consumed_this_month INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Leads Table: Stores tenant inquiries from your landing page
+CREATE TABLE leads (
+    id SERIAL PRIMARY KEY,
+    tenant_name VARCHAR(255),
+    tenant_phone VARCHAR(15),
+    area VARCHAR(100), -- e.g., 'Kilimani'
+    property_type VARCHAR(50), -- e.g., '2-Bedroom'
+    budget DECIMAL(10, 2),
+    is_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. Transactions Table: Logs M-Pesa payments & lead purchases
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    agent_id INT REFERENCES agents(id),
+    amount DECIMAL(10, 2),
+    transaction_type ENUM('TOP_UP', 'LEAD_PURCHASE', 'SUBSCRIPTION'),
+    mpesa_receipt_number VARCHAR(100) UNIQUE, -- From Callback
+    status ENUM('PENDING', 'COMPLETED', 'FAILED') DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+2. The M-Pesa Callback Handler (Node.js/Express)
+When a landlord/agent pays via STK Push, Safaricom sends a JSON packet to your CallBackURL. This code parses that data and updates the agent's wallet immediately.
+const express = require('express');
+const router = express.Router();
+const db = require('./db'); // Your database connection
+
+router.post('/mpesa-callback', async (req, res) => {
+    const callbackData = req.body.Body.stkCallback;
+
+    // 1. Check if the transaction was successful (ResultCode 0)
+    if (callbackData.ResultCode === 0) {
+        const metadata = callbackData.CallbackMetadata.Item;
+        
+        // Extract values from M-Pesa metadata array
+        const amount = metadata.find(item => item.Name === 'Amount').Value;
+        const receipt = metadata.find(item => item.Name === 'MpesaReceiptNumber').Value;
+        const phone = metadata.find(item => item.Name === 'PhoneNumber').Value;
+
+        try {
+            // 2. Update the Agent's Wallet
+            // We use the phone number to identify which agent paid
+            await db.query(
+                `UPDATE agents 
+                 SET wallet_balance = wallet_balance + ? 
+                 WHERE phone_number = ?`, 
+                [amount, phone]
+            );
+
+            // 3. Log the successful transaction
+            await db.query(
+                `INSERT INTO transactions (agent_id, amount, transaction_type, mpesa_receipt_number, status) 
+                 VALUES ((SELECT id FROM agents WHERE phone_number = ?), ?, 'TOP_UP', ?, 'COMPLETED')`,
+                [phone, amount, receipt]
+            );
+
+            console.log(`Success: KES ${amount} added to ${phone}`);
+            return res.status(200).json({ ResultCode: 0, ResultDesc: "Success" });
+
+        } catch (error) {
+            console.error("Database Update Failed:", error);
+            return res.status(500).send("Internal Server Error");
+        }
+    } else {
+        // Transaction failed or cancelled by user
+        console.log(`Transaction Failed: ${callbackData.ResultDesc}`);
+        return res.status(200).json({ ResultCode: 1, ResultDesc: "Acknowledged Failure" });
+    }
+});
+
+module.exports = router;
+
+3. The "Surge Logic" Algorithm
+This sits between your landing page and the database. It calculates the "Unlock Price" dynamically.
+function getDynamicPrice(leadBudget, area) {
+    let basePrice = 0;
+
+    // Categorization
+    if (leadBudget > 100000) basePrice = 2500; // Gold
+    else if (leadBudget > 40000) basePrice = 1000; // Silver
+    else basePrice = 400; // Bronze
+
+    let multiplier = 1.0;
+
+    // Area Surge (e.g., 20% for high demand)
+    const hotZones = ['Westlands', 'Kilimani', 'Karen'];
+    if (hotZones.includes(area)) multiplier += 0.2;
+
+    // Time Surge (e.g., 30% for January/September moves)
+    const month = new Date().getMonth(); 
+    if (month === 0 || month === 8) multiplier += 0.3;
+
+    return basePrice * multiplier;
+}
+
+How this hits your 30 Million Target:
+ * Zero Leakage: By using the Wallet System, you get paid before the agent sees the lead's phone number.
+ * Instant Scalability: The mpesa-callback works 24/7 without you lifting a finger. An agent can top up at 3 AM, buy a lead, and close the deal by 9 AM.
+ * Data Play: By tracking leads_consumed_this_month, you can identify your top 10% of agents and invite them into an exclusive "Diamond Tier" with even higher fees.
+Would you like me to help you write the logic that automatically "locks" the lead after 3 agents have bought it to ensure high lead quality?
+
+
+
+
+To maximize your KES 30 Million profit goal, you must protect the "scarcity" and "quality" of your leads. If 20 agents call one tenant, that tenant gets annoyed, the agents get angry, and your platform loses trust.
+In the 2026 Kenyan market, Exclusivity is a premium feature you can sell. Here is the logic and code to limit how many agents can "unlock" a single lead.
+1. The Strategy: The "Rule of 3"
+ * Standard Leads: Can be unlocked by a maximum of 3 agents. This creates competition but doesn't overwhelm the tenant.
+ * Premium/Exclusive Leads: Can be unlocked by only 1 agent at a 3x price multiplier.
+ * Scarcity Trigger: When a lead has 1 slot left, your Infobip WhatsApp message should change to: "LAST SLOT! 2 agents have already claimed this lead. Unlock now before it's gone!"
+2. Database Update: Tracking Claims
+You need a new table to track who has bought what, and a counter on the leads table.
+-- Track which agent bought which lead
+CREATE TABLE lead_claims (
+    id SERIAL PRIMARY KEY,
+    lead_id INT REFERENCES leads(id),
+    agent_id INT REFERENCES agents(id),
+    claimed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add a counter to your existing leads table
+ALTER TABLE leads ADD COLUMN claim_count INT DEFAULT 0;
+ALTER TABLE leads ADD COLUMN max_claims INT DEFAULT 3; 
+
+3. The "Atomic" Unlock Algorithm
+When multiple agents try to click "Unlock" at the exact same time, you need a Database Lock to prevent "over-selling" the lead.
+const db = require('./db');
+
+async function claimLead(agentId, leadId) {
+    const client = await db.connect(); // Use a transaction for safety
+
+    try {
+        await client.query('BEGIN');
+
+        // 1. SELECT FOR UPDATE locks the row so no other agent can touch it for a millisecond
+        const leadRes = await client.query(
+            'SELECT claim_count, max_claims FROM leads WHERE id = $1 FOR UPDATE', 
+            [leadId]
+        );
+        const lead = leadRes.rows[0];
+
+        // 2. Check if lead is still available
+        if (lead.claim_count >= lead.max_claims) {
+            throw new Error("LEAD_EXHAUSTED");
+        }
+
+        // 3. Verify Agent Wallet (Logic from previous step)
+        // ... (check balance vs price)
+
+        // 4. Update the counts and log the claim
+        await client.query(
+            'UPDATE leads SET claim_count = claim_count + 1 WHERE id = $1', 
+            [leadId]
+        );
+        await client.query(
+            'INSERT INTO lead_claims (lead_id, agent_id) VALUES ($1, $2)', 
+            [leadId, agentId]
+        );
+
+        await client.query('COMMIT');
+        return { success: true, message: "Lead Unlocked!" };
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        return { success: false, error: error.message };
+    } finally {
+        client.release();
+    }
+}
+
+4. Revenue Maximization: The "Auto-Refill" Wallet
+To hit your 30M goal, you don't want an agent to miss a lead because they forgot to top up.
+Implement "Low Balance Alerts" via Infobip:
+ * Trigger: If an agent's wallet falls below KES 2,000.
+ * WhatsApp Message: "Your wallet is low (KES 450). You might miss the next Gold Lead in Westlands. [Click here to Top Up KES 5,000 via M-Pesa]."
+5. Summary of the 30M Profit Logic
+By combining these technical features, your business model looks like this:
+| Feature | Financial Impact |
+|---|---|
+| Claim Limits | Increases trust; agents pay more for "less competition." |
+| Exclusivity Upsell | Sell 1 lead for KES 5,000 instead of 3 leads for KES 1,000. |
+| Atomic Locking | Prevents system errors and double-charging. |
+| Infobip Scarcity | Uses "FOMO" (Fear Of Missing Out) to drive instant purchases. |
+Final Step for You:
+Now that the core logic is ready, you need to decide on your Admin Dashboard. This is where you will see the 30 Million growing. You'll need to see total revenue, most active areas, and agent churn rates.
+Would you like me to draft the "Admin Revenue Analytics" view so you can track your progress toward the 30M goal?
+
+
+
+To reach your KES 30 Million profit, you cannot afford to have "leaky" revenue where agents close a deal but don't pay you. A Tenant Referral System turns the tenant into your "undercover agent" who confirms the move-in for you.
+Here is the design for a system that ensures you get paid for every closing.
+1. The Strategy: The "Housewarming Gift" Hook
+Don't ask the tenant for "help"—offer them a KES 1,000 – 2,000 Reward (e.g., a Carrefour or Naivas voucher) to report their move.
+ * The Landing Page Message: "Found your home? Report your successful move-in and get a KES 1,500 'Housewarming Voucher' on us!"
+ * The Result: The tenant is now incentivized to tell you they moved in, even if the agent tries to hide it.
+2. The Database Schema: Tracking Referrals
+You need to link the original lead to a "Move-in Claim."
+-- 1. Tenant Rewards Table
+CREATE TABLE tenant_rewards (
+    id SERIAL PRIMARY KEY,
+    lead_id INT REFERENCES leads(id),
+    agent_id INT REFERENCES agents(id),
+    voucher_code VARCHAR(100), -- The reward you give the tenant
+    move_in_date DATE,
+    status ENUM('PENDING', 'VERIFIED', 'PAID') DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Audit Trail for Agent Integrity
+ALTER TABLE agents ADD COLUMN side_deal_strikes INT DEFAULT 0;
+
+3. The Logic: "The Integrity Check"
+When a tenant reports a move, your system checks if the agent also reported it. If they didn't, it flags the agent.
+async function verifyMoveIn(leadId, tenantReportedDate) {
+    // 1. Check if the agent already marked this lead as "Closed"
+    const lead = await db.query('SELECT status, agent_id FROM leads WHERE id = ?', [leadId]);
+
+    if (lead.status !== 'CLOSED') {
+        // AGENT ALERT: They didn't report the closing!
+        await db.query(
+            'UPDATE agents SET side_deal_strikes = side_deal_strikes + 1 WHERE id = ?', 
+            [lead.agent_id]
+        );
+        
+        // Automation: Send a "Friendly Reminder" to the Agent via Infobip
+        await sendWhatsApp(lead.agent_id, "We noticed a move-in for [Property]. Please update your status to avoid account suspension.");
+    }
+
+    // 2. Trigger Tenant Reward
+    await issueVoucher(leadId);
+}
+
+4. Admin View: The "Integrity Scoreboard"
+To protect your 30M goal, you need to see which agents are "cheating" the system.
+ * Metric: Unreported Closings Rate.
+ * Action: If an agent reaches 3 Strikes, they are automatically moved to "Pay-Per-Lead Only" (no subscription benefits) or banned from the platform.
+5. Automated "Housewarming" WhatsApp (Infobip)
+Since your Infobip integration is already live, use it to send the reward automatically once the move is verified.
+ * To Tenant: "Congratulations on your new home in ${area}! Here is your KES 1,500 voucher: ${voucherCode}. Welcome home!"
+ * To Agent: "Tenant confirmed move-in. Your 'Closed Deal' badge has been updated. Professional agents get 20% more leads!"
+Why this hits 30M:
+ * Ensures Data Accuracy: You know exactly which areas are converting best, allowing you to raise Surge Prices in those zones.
+ * Monetizes Trust: You can sell "Premium Placement" to agents with a 100% Integrity Score.
+ * Tenant Loyalty: Tenants will come back to your platform for their next move because they trust the "Reward" system.
+Would you like me to help you draft the "Terms & Conditions" for agents regarding these "Strikes" and "Closings," so you are legally protected when you ban dishonest users?
+
+
+To safeguard your KES 30 Million profit, the Tenant Referral System acts as your verification layer. By incentivizing tenants to report their move, you gain the data needed to audit agents and enforce your terms.
+1. The Tenant Journey: "The Move-In Bonus"
+When a tenant inquires on your landing page, they should immediately receive a WhatsApp message via Infobip:
+> "Hi [Name], thanks for using our platform! 🏠 Once you find your home, simply send us a photo of your signed lease or a selfie in your new house to get a KES 1,500 Naivas/Carrefour Voucher as a housewarming gift!"
+> 
+2. The Verification Logic (Backend)
+This function handles the tenant's report and cross-references it with the agent's data.
+async function processTenantMoveReport(leadId, tenantData) {
+    // 1. Fetch the lead and the assigned agent
+    const lead = await db.query('SELECT agent_id, status FROM leads WHERE id = ?', [leadId]);
+    const agentId = lead.agent_id;
+
+    // 2. Check for "Side-Deals"
+    if (lead.status !== 'CLOSED') {
+        // Flag the agent for an unreported closing
+        await db.query(
+            'UPDATE agents SET side_deal_strikes = side_deal_strikes + 1 WHERE id = ?',
+            [agentId]
+        );
+
+        // Notify the Admin (You) to review the agent's account
+        console.log(`ALERT: Agent ${agentId} failed to report a close for Lead ${leadId}`);
+    }
+
+    // 3. Approve Tenant Reward
+    await db.query(
+        'INSERT INTO tenant_rewards (lead_id, agent_id, status) VALUES (?, ?, "VERIFIED")',
+        [leadId, agentId]
+    );
+
+    // 4. Send Automated Reward via Infobip
+    await sendWhatsApp(tenantData.phone, `Congrats! 🎊 Your move is verified. Use code HOME2026 for your KES 1,500 voucher.`);
+}
+
+3. Agent "Strikes" & Accountability
+To maintain professional standards and protect your revenue, your Terms & Conditions for agents must be clear. Under the Estate Agents Act (CAP 533) in Kenya, you have the right to set "Rules of Practice" for your platform.
+| Strike Level | Penalty | Recovery Path |
+|---|---|---|
+| Strike 1 | Warning + KES 2,000 "Integrity Fee" deduction from wallet. | Clear 30 days without issues. |
+| Strike 2 | 7-Day Account Suspension + Loss of "Priority Ranking". | Mandatory "System Training" call. |
+| Strike 3 | Permanent Ban + Forfeiture of remaining wallet balance. | No recovery. |
+4. Legal Protection: Terms & Conditions Highlights
+Ensure your agent agreement includes these specific clauses to protect your 30M goal:
+ * Reporting Obligation: Agents must update the status of a lead within 24 hours of a deposit payment.
+ * Audit Rights: The platform reserves the right to contact tenants directly to verify the status of any lead provided.
+ * Termination for Dishonesty: You reserve the right to terminate access immediately for any "side-marketing" or attempts to bypass the platform's payment gateway.
+ * Data Protection: All tenant data is provided for the sole purpose of the specific rental inquiry and cannot be added to private databases without consent (per Kenya's Data Protection Act).
+Why this ensures your 30 Million:
+ * Revenue Capture: You stop losing the 20-30% "backend" commission or lead fees from hidden deals.
+ * Platform Reputation: High-quality tenants will stay because they get rewards; high-quality agents will stay because the competition is fair.
+ * Self-Policing: The system audits itself. You don't need a massive team to track every agent—the tenants do it for you.
+Would you like me to draft the full "Terms of Service" document for your agents to sign when they first join the platform?
+
+
+To safeguard your KES 30 Million profit, the Tenant Referral System acts as your verification layer. By incentivizing tenants to report their move, you gain the data needed to audit agents and enforce your terms.
+1. The Tenant Journey: "The Move-In Bonus"
+When a tenant inquires on your landing page, they should immediately receive a WhatsApp message via Infobip:
+> "Hi [Name], thanks for using our platform! 🏠 Once you find your home, simply send us a photo of your signed lease or a selfie in your new house to get a KES 1,500 Naivas/Carrefour Voucher as a housewarming gift!"
+> 
+2. The Verification Logic (Backend)
+This function handles the tenant's report and cross-references it with the agent's data.
+async function processTenantMoveReport(leadId, tenantData) {
+    // 1. Fetch the lead and the assigned agent
+    const lead = await db.query('SELECT agent_id, status FROM leads WHERE id = ?', [leadId]);
+    const agentId = lead.agent_id;
+
+    // 2. Check for "Side-Deals"
+    if (lead.status !== 'CLOSED') {
+        // Flag the agent for an unreported closing
+        await db.query(
+            'UPDATE agents SET side_deal_strikes = side_deal_strikes + 1 WHERE id = ?',
+            [agentId]
+        );
+
+        // Notify the Admin (You) to review the agent's account
+        console.log(`ALERT: Agent ${agentId} failed to report a close for Lead ${leadId}`);
+    }
+
+    // 3. Approve Tenant Reward
+    await db.query(
+        'INSERT INTO tenant_rewards (lead_id, agent_id, status) VALUES (?, ?, "VERIFIED")',
+        [leadId, agentId]
+    );
+
+    // 4. Send Automated Reward via Infobip
+    await sendWhatsApp(tenantData.phone, `Congrats! 🎊 Your move is verified. Use code HOME2026 for your KES 1,500 voucher.`);
+}
+
+3. Agent "Strikes" & Accountability
+To maintain professional standards and protect your revenue, your Terms & Conditions for agents must be clear. Under the Estate Agents Act (CAP 533) in Kenya, you have the right to set "Rules of Practice" for your platform.
+| Strike Level | Penalty | Recovery Path |
+|---|---|---|
+| Strike 1 | Warning + KES 2,000 "Integrity Fee" deduction from wallet. | Clear 30 days without issues. |
+| Strike 2 | 7-Day Account Suspension + Loss of "Priority Ranking". | Mandatory "System Training" call. |
+| Strike 3 | Permanent Ban + Forfeiture of remaining wallet balance. | No recovery. |
+4. Legal Protection: Terms & Conditions Highlights
+Ensure your agent agreement includes these specific clauses to protect your 30M goal:
+ * Reporting Obligation: Agents must update the status of a lead within 24 hours of a deposit payment.
+ * Audit Rights: The platform reserves the right to contact tenants directly to verify the status of any lead provided.
+ * Termination for Dishonesty: You reserve the right to terminate access immediately for any "side-marketing" or attempts to bypass the platform's payment gateway.
+ * Data Protection: All tenant data is provided for the sole purpose of the specific rental inquiry and cannot be added to private databases without consent (per Kenya's Data Protection Act).
+Why this ensures your 30 Million:
+ * Revenue Capture: You stop losing the 20-30% "backend" commission or lead fees from hidden deals.
+ * Platform Reputation: High-quality tenants will stay because they get rewards; high-quality agents will stay because the competition is fair.
+ * Self-Policing: The system audits itself. You don't need a massive team to track every agent—the tenants do it for you.
+Would you like me to draft the full "Terms of Service" document for your agents to sign when they first join the platform?
+
+
+To protect your KES 30 Million profit, the Terms and Conditions (T&Cs) must clearly define the rules of the game. These terms ensure that agents understand that bypassing the platform (side-dealing) has financial and legal consequences.
+Below is a draft of the core clauses you should include in your Agent Partnership Agreement.
+Agent Terms of Service: Key Clauses
+1. Lead Ownership and "Side-Dealing"
+ * Definition: A "Side-Deal" occurs when an Agent concludes a rental agreement with a Lead provided by the Platform without updating the Platform status or paying the required fees.
+ * Verification: The Agent acknowledges that the Platform uses a Tenant Verification System. If a Tenant reports a successful move-in that the Agent did not disclose, it will be flagged as a Side-Deal.
+ * Penalties: Each Side-Deal results in an automatic "Integrity Strike."
+2. The Three-Strike Policy
+To maintain high standards, the following ladder of penalties applies:
+ * Strike 1 (Warning): A formal warning and a mandatory Integrity Fee of KES 2,000 deducted from the Agent’s wallet.
+ * Strike 2 (Suspension): A 7-day suspension from receiving new leads and removal of "Priority Listing" status.
+ * Strike 3 (Termination): Permanent banning from the platform. Any remaining wallet balance will be forfeited as liquidated damages for breach of contract.
+3. Reporting and Data Accuracy
+ * Real-Time Updates: Agents are required to mark a lead as "Closed" or "Lost" within 24 hours of the status changing.
+ * Honesty: Providing false information regarding why a lead was "lost" to avoid fees is grounds for an immediate Strike 2.
+4. Subscription and Payments
+ * Non-Refundable: Subscription fees (KES 5,000/month) are non-refundable.
+ * Wallet Balance: Credits purchased for leads do not expire but cannot be withdrawn as cash; they must be used for platform services.
+Implementation: The "I Accept" Workflow
+Before an agent can access their dashboard or top up their wallet for the first time, you should present these terms in a scrollable window with a mandatory checkbox:
+> [ ] I have read and agree to the Agent Terms of Service, including the Three-Strike Integrity Policy.
+> 
+Scaling to 30 Million:
+By having these terms in place:
+ * Legal Recourse: You have a clear path to remove bad actors who would otherwise dilute your lead quality.
+ * Professionalism: High-end agencies are more likely to join a platform that "polices" its users, as it keeps the market fair.
+ * Automation: You can set your system to automatically trigger a Strike 1 if the Tenant Referral System detects a move-in that the agent didn't report.
+Would you like me to help you draft the "Suspension Email/WhatsApp" template that gets sent to an agent if they hit their first strike?

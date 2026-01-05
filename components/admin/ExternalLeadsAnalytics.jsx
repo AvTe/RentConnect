@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     TrendingUp, ExternalLink, Loader2, RefreshCw, Search, Filter,
     Zap, Target, Globe, ArrowUpRight, ArrowDownRight, BarChart3,
-    PieChart, Activity, Calendar, Eye, Users, Inbox, MapPin
+    PieChart, Activity, Calendar, Eye, Users, Inbox, MapPin,
+    Facebook, Chrome, Instagram, Layout, Sparkles, Link2, Share2
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { getExternalLeads, getLeadSourceAnalytics, getExternalLeadLogs } from '@/lib/database';
@@ -14,9 +15,9 @@ export const ExternalLeadsAnalytics = () => {
     const [externalLeads, setExternalLeads] = useState([]);
     const [analytics, setAnalytics] = useState(null);
     const [logs, setLogs] = useState([]);
-    const [activeTab, setActiveTab] = useState('overview'); // overview, leads, logs
-    const [dateRange, setDateRange] = useState('30'); // 7, 15, 30, 90 days
-    const [sourceFilter, setSourceFilter] = useState('all'); // all, facebook, google, zapier, etc.
+    const [activeTab, setActiveTab] = useState('overview');
+    const [dateRange, setDateRange] = useState('30');
+    const [sourceFilter, setSourceFilter] = useState('all');
 
     // Fetch all data
     const fetchData = useCallback(async () => {
@@ -56,18 +57,27 @@ export const ExternalLeadsAnalytics = () => {
         return colors[source?.toLowerCase()] || { bg: 'bg-gray-400', light: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' };
     };
 
-    // Get source icon
-    const getSourceIcon = (source) => {
-        const icons = {
-            facebook: '📘',
-            google: '🔍',
-            zapier: '⚡',
-            tiktok: '🎵',
-            instagram: '📷',
-            website: '🌐',
-            organic: '🌱'
-        };
-        return icons[source?.toLowerCase()] || '📊';
+    // Get source icon component - using Lucide icons instead of emojis
+    const SourceIcon = ({ source, size = 18, className = '' }) => {
+        const iconProps = { size, className };
+        switch (source?.toLowerCase()) {
+            case 'facebook':
+                return <Facebook {...iconProps} />;
+            case 'google':
+                return <Chrome {...iconProps} />;
+            case 'zapier':
+                return <Zap {...iconProps} />;
+            case 'tiktok':
+                return <Share2 {...iconProps} />;
+            case 'instagram':
+                return <Instagram {...iconProps} />;
+            case 'website':
+                return <Globe {...iconProps} />;
+            case 'organic':
+                return <Sparkles {...iconProps} />;
+            default:
+                return <Link2 {...iconProps} />;
+        }
     };
 
     // Calculate totals from analytics
@@ -102,54 +112,67 @@ export const ExternalLeadsAnalytics = () => {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                    <div className="flex items-center gap-4">
+                <div className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-gray-300 transition-colors">
+                    <div className="flex items-start justify-between mb-4">
                         <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-                            <Target size={22} className="text-blue-600" />
+                            <Target className="w-6 h-6 text-blue-600" />
                         </div>
-                        <div>
-                            <p className="text-3xl font-black text-gray-900">{externalLeads.length}</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">External Leads</p>
-                        </div>
+                        {totals.totalLeads > 0 && (
+                            <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                                <ArrowUpRight size={12} />
+                                Active
+                            </span>
+                        )}
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">External Leads</p>
+                        <p className="text-2xl md:text-3xl font-black text-gray-900 mt-1">{externalLeads.length}</p>
                     </div>
                 </div>
-                <div className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm">
-                    <div className="flex items-center gap-4">
+
+                <div className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-gray-300 transition-colors">
+                    <div className="flex items-start justify-between mb-4">
                         <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
-                            <TrendingUp size={22} className="text-emerald-600" />
-                        </div>
-                        <div>
-                            <p className="text-3xl font-black text-emerald-600">{totals.totalConverted}</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Converted</p>
+                            <TrendingUp className="w-6 h-6 text-emerald-600" />
                         </div>
                     </div>
-                </div>
-                <div className="bg-white rounded-2xl p-6 border border-[#FE9200]/20 shadow-sm">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-[#FFF9F2] flex items-center justify-center">
-                            <Zap size={22} className="text-[#FE9200]" />
-                        </div>
-                        <div>
-                            <p className="text-3xl font-black text-[#FE9200]">{totals.totalRevenue}</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Credits Revenue</p>
-                        </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Converted</p>
+                        <p className="text-2xl md:text-3xl font-black text-emerald-600 mt-1">{totals.totalConverted}</p>
                     </div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl p-6 shadow-sm text-white">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl">
-                            {totals.topSource ? getSourceIcon(totals.topSource[0]) : '📊'}
+
+                <div className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-gray-300 transition-colors">
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-[#FFF2E5] flex items-center justify-center">
+                            <Zap className="w-6 h-6 text-[#FE9200]" />
                         </div>
-                        <div>
-                            <p className="text-lg font-black truncate capitalize">{totals.topSource?.[0] || '—'}</p>
-                            <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Top Source</p>
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Credits Revenue</p>
+                        <p className="text-2xl md:text-3xl font-black text-[#FE9200] mt-1">{totals.totalRevenue}</p>
+                    </div>
+                </div>
+
+                <div className="bg-gray-900 rounded-2xl p-6">
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+                            {totals.topSource ? (
+                                <SourceIcon source={totals.topSource[0]} className="text-white" />
+                            ) : (
+                                <BarChart3 className="w-6 h-6 text-white" />
+                            )}
                         </div>
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Top Source</p>
+                        <p className="text-xl font-black text-white mt-1 capitalize">{totals.topSource?.[0] || 'N/A'}</p>
                     </div>
                 </div>
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="bg-white rounded-2xl p-2 border border-gray-200 inline-flex gap-1">
                 {[
                     { key: 'overview', label: 'Overview', icon: BarChart3 },
                     { key: 'leads', label: 'External Leads', icon: Inbox, count: externalLeads.length },
@@ -158,15 +181,15 @@ export const ExternalLeadsAnalytics = () => {
                     <button
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key)}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-2 ${activeTab === tab.key
-                                ? 'bg-gray-900 text-white shadow-lg'
-                                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                        className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${activeTab === tab.key
+                            ? 'bg-[#FE9200] text-white shadow-sm'
+                            : 'text-gray-600 hover:bg-gray-50'
                             }`}
                     >
-                        <tab.icon size={14} />
+                        <tab.icon size={16} />
                         {tab.label}
-                        {tab.count !== undefined && (
-                            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+                        {tab.count !== undefined && tab.count > 0 && (
+                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
                                 }`}>
                                 {tab.count}
                             </span>
@@ -179,12 +202,15 @@ export const ExternalLeadsAnalytics = () => {
             {activeTab === 'overview' && (
                 <div className="space-y-6">
                     {/* Source Breakdown */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-100">
-                            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                                <PieChart size={16} className="text-gray-400" />
-                                Lead Sources Breakdown
-                            </h3>
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                                <PieChart size={18} className="text-gray-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-gray-900">Lead Sources Breakdown</h3>
+                                <p className="text-xs text-gray-400">Performance by acquisition channel</p>
+                            </div>
                         </div>
                         <div className="p-6">
                             {loading ? (
@@ -193,11 +219,14 @@ export const ExternalLeadsAnalytics = () => {
                                 </div>
                             ) : !analytics || Object.keys(analytics).length === 0 ? (
                                 <div className="text-center py-12">
-                                    <Globe className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                    <p className="text-gray-500 font-medium">No external lead data yet</p>
+                                    <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                        <Globe className="w-8 h-8 text-gray-400" />
+                                    </div>
+                                    <p className="text-gray-900 font-bold mb-1">No external lead data yet</p>
+                                    <p className="text-gray-500 text-sm">Connect your ad platforms to start tracking leads</p>
                                 </div>
                             ) : (
-                                <div className="space-y-4">
+                                <div className="space-y-5">
                                     {Object.entries(analytics)
                                         .filter(([key]) => key !== 'organic')
                                         .sort((a, b) => (b[1].count || 0) - (a[1].count || 0))
@@ -210,18 +239,22 @@ export const ExternalLeadsAnalytics = () => {
                                                 <div key={source} className="space-y-2">
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-3">
-                                                            <span className="text-xl">{getSourceIcon(source)}</span>
-                                                            <span className="font-bold text-gray-900 capitalize">{source}</span>
-                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${color.light} ${color.text}`}>
-                                                                {data.count || 0} leads
-                                                            </span>
+                                                            <div className={`w-10 h-10 rounded-xl ${color.light} flex items-center justify-center`}>
+                                                                <SourceIcon source={source} size={18} className={color.text} />
+                                                            </div>
+                                                            <div>
+                                                                <span className="font-bold text-gray-900 capitalize">{source}</span>
+                                                                <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${color.light} ${color.text}`}>
+                                                                    {data.count || 0} leads
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                         <div className="flex items-center gap-4 text-sm">
                                                             <span className="text-emerald-600 font-bold">{data.converted || 0} converted</span>
-                                                            <span className="text-gray-400">{percentage}%</span>
+                                                            <span className="text-gray-400 font-medium">{percentage}%</span>
                                                         </div>
                                                     </div>
-                                                    <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden ml-13">
                                                         <div
                                                             className={`h-full rounded-full transition-all ${color.bg}`}
                                                             style={{ width: `${percentage}%` }}
@@ -234,12 +267,14 @@ export const ExternalLeadsAnalytics = () => {
                                     {/* Include organic for comparison */}
                                     {analytics.organic && (
                                         <div className="pt-4 mt-4 border-t border-gray-100">
-                                            <div className="flex items-center justify-between text-sm text-gray-500">
-                                                <div className="flex items-center gap-2">
-                                                    <span>🌱</span>
-                                                    <span className="font-medium">Organic (Direct)</span>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                                                        <Sparkles size={18} className="text-purple-600" />
+                                                    </div>
+                                                    <span className="font-medium text-gray-600">Organic (Direct)</span>
                                                 </div>
-                                                <span>{analytics.organic.count || 0} leads</span>
+                                                <span className="text-gray-500 text-sm">{analytics.organic.count || 0} leads</span>
                                             </div>
                                         </div>
                                     )}
@@ -257,18 +292,20 @@ export const ExternalLeadsAnalytics = () => {
                                 ? ((data.converted || 0) / data.count * 100).toFixed(1)
                                 : 0;
                             return (
-                                <div key={source} className={`bg-white rounded-2xl p-5 border ${color.border} shadow-sm`}>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span className="text-2xl">{getSourceIcon(source)}</span>
+                                <div key={source} className={`bg-white rounded-2xl p-5 border-2 ${color.border} hover:shadow-md transition-all`}>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className={`w-10 h-10 rounded-xl ${color.light} flex items-center justify-center`}>
+                                            <SourceIcon source={source} size={18} className={color.text} />
+                                        </div>
                                         <span className="font-bold text-gray-900 capitalize">{source}</span>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3 text-center">
-                                        <div>
-                                            <p className="text-2xl font-black text-gray-900">{data.count || 0}</p>
+                                        <div className="bg-gray-50 rounded-xl p-3">
+                                            <p className="text-xl font-black text-gray-900">{data.count || 0}</p>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase">Leads</p>
                                         </div>
-                                        <div>
-                                            <p className={`text-2xl font-black ${color.text}`}>{conversionRate}%</p>
+                                        <div className={`${color.light} rounded-xl p-3`}>
+                                            <p className={`text-xl font-black ${color.text}`}>{conversionRate}%</p>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase">Conv.</p>
                                         </div>
                                     </div>
@@ -283,11 +320,11 @@ export const ExternalLeadsAnalytics = () => {
             {activeTab === 'leads' && (
                 <div className="space-y-4">
                     {/* Filter */}
-                    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                    <div className="bg-white rounded-2xl p-4 border border-gray-200">
                         <div className="flex flex-wrap gap-2">
                             <button
                                 onClick={() => setSourceFilter('all')}
-                                className={`px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all ${sourceFilter === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${sourceFilter === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
                                 All Sources
@@ -298,12 +335,13 @@ export const ExternalLeadsAnalytics = () => {
                                     <button
                                         key={source}
                                         onClick={() => setSourceFilter(source)}
-                                        className={`px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${sourceFilter === source
-                                                ? `${color.bg} text-white`
-                                                : `${color.light} ${color.text} hover:opacity-80`
+                                        className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${sourceFilter === source
+                                            ? `${color.bg} text-white`
+                                            : `${color.light} ${color.text} hover:opacity-80`
                                             }`}
                                     >
-                                        {getSourceIcon(source)} {source}
+                                        <SourceIcon source={source} size={14} />
+                                        <span className="capitalize">{source}</span>
                                     </button>
                                 );
                             })}
@@ -312,25 +350,27 @@ export const ExternalLeadsAnalytics = () => {
 
                     {/* Leads List */}
                     {loading ? (
-                        <div className="bg-white rounded-2xl p-12 border border-gray-100 flex flex-col items-center justify-center">
+                        <div className="bg-white rounded-2xl p-12 border border-gray-200 flex flex-col items-center justify-center">
                             <Loader2 className="w-10 h-10 text-[#FE9200] animate-spin mb-4" />
                             <p className="text-gray-500 font-medium">Loading external leads...</p>
                         </div>
                     ) : externalLeads.length === 0 ? (
-                        <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
-                            <ExternalLink className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <div className="bg-white rounded-2xl p-12 border border-gray-200 text-center">
+                            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <ExternalLink className="w-8 h-8 text-gray-400" />
+                            </div>
                             <p className="text-gray-900 font-bold mb-1">No external leads found</p>
                             <p className="text-gray-500 text-sm">Leads from ads and integrations will appear here.</p>
                         </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {externalLeads.map((lead) => {
                                 const color = getSourceColor(lead.source);
                                 return (
-                                    <div key={lead.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-all">
+                                    <div key={lead.id} className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-gray-300 hover:shadow-sm transition-all">
                                         <div className="flex items-start gap-4">
-                                            <div className={`w-12 h-12 rounded-xl ${color.light} flex items-center justify-center text-2xl flex-shrink-0`}>
-                                                {getSourceIcon(lead.source)}
+                                            <div className={`w-12 h-12 rounded-xl ${color.light} flex items-center justify-center flex-shrink-0`}>
+                                                <SourceIcon source={lead.source} size={20} className={color.text} />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -339,32 +379,34 @@ export const ExternalLeadsAnalytics = () => {
                                                         {lead.source}
                                                     </span>
                                                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${lead.status === 'active' ? 'bg-emerald-50 text-emerald-600' :
-                                                            lead.status === 'closed' ? 'bg-gray-100 text-gray-500' :
-                                                                'bg-amber-50 text-amber-600'
+                                                        lead.status === 'closed' ? 'bg-gray-100 text-gray-500' :
+                                                            'bg-amber-50 text-amber-600'
                                                         }`}>
                                                         {lead.status}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-4 text-xs text-gray-500">
                                                     <span className="flex items-center gap-1">
-                                                        <MapPin size={10} />
+                                                        <MapPin size={12} />
                                                         {lead.location || 'N/A'}
                                                     </span>
                                                     <span className="flex items-center gap-1 text-[#FE9200] font-bold">
                                                         KSh {lead.budget?.toLocaleString() || 'N/A'}
                                                     </span>
                                                     <span className="flex items-center gap-1">
-                                                        <Eye size={10} /> {lead.views || 0}
+                                                        <Eye size={12} />
+                                                        {lead.views || 0} views
                                                     </span>
                                                     <span className="flex items-center gap-1">
-                                                        <Users size={10} /> {lead.contacts || 0}
+                                                        <Users size={12} />
+                                                        {lead.contacts || 0} contacts
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="text-right flex-shrink-0 text-xs text-gray-400">
-                                                <p>{lead.created_at ? new Date(lead.created_at).toLocaleDateString() : 'N/A'}</p>
+                                            <div className="text-right flex-shrink-0">
+                                                <p className="text-xs text-gray-400">{lead.created_at ? new Date(lead.created_at).toLocaleDateString() : 'N/A'}</p>
                                                 {lead.campaign && (
-                                                    <p className="mt-1 font-medium text-gray-500">Campaign: {lead.campaign}</p>
+                                                    <p className="mt-1 text-xs font-medium text-gray-500">Campaign: {lead.campaign}</p>
                                                 )}
                                             </div>
                                         </div>
@@ -378,12 +420,15 @@ export const ExternalLeadsAnalytics = () => {
 
             {/* Logs Tab */}
             {activeTab === 'logs' && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100">
-                        <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                            <Activity size={16} className="text-gray-400" />
-                            Import Activity Logs
-                        </h3>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                            <Activity size={18} className="text-gray-600" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-gray-900">Import Activity Logs</h3>
+                            <p className="text-xs text-gray-400">Track all lead imports and updates</p>
+                        </div>
                     </div>
                     <div className="p-6">
                         {loading ? (
@@ -392,17 +437,20 @@ export const ExternalLeadsAnalytics = () => {
                             </div>
                         ) : logs.length === 0 ? (
                             <div className="text-center py-12">
-                                <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                <p className="text-gray-500 font-medium">No activity logs yet</p>
+                                <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <Activity className="w-8 h-8 text-gray-400" />
+                                </div>
+                                <p className="text-gray-900 font-bold mb-1">No activity logs yet</p>
+                                <p className="text-gray-500 text-sm">Import activity will be recorded here</p>
                             </div>
                         ) : (
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {logs.map((log, idx) => {
                                     const color = getSourceColor(log.source);
                                     return (
-                                        <div key={log.id || idx} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                                            <div className={`w-10 h-10 rounded-lg ${color.light} flex items-center justify-center text-lg`}>
-                                                {getSourceIcon(log.source)}
+                                        <div key={log.id || idx} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                            <div className={`w-10 h-10 rounded-xl ${color.light} flex items-center justify-center`}>
+                                                <SourceIcon source={log.source} size={16} className={color.text} />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-bold text-gray-900">{log.action || 'Lead imported'}</p>

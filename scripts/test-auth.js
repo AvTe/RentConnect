@@ -12,13 +12,13 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-console.log('\n🔐 RentConnect Authentication Test Suite\n');
+console.log('\n🔐 Yoombaa Authentication Test Suite\n');
 console.log('='.repeat(50));
 
 // Check environment variables
 function checkEnvVars() {
   console.log('\n📋 Environment Variables Check:\n');
-  
+
   const vars = [
     { name: 'NEXT_PUBLIC_SUPABASE_URL', value: supabaseUrl },
     { name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', value: supabaseAnonKey },
@@ -40,21 +40,21 @@ function checkEnvVars() {
 // Test Supabase connection
 async function testSupabaseConnection() {
   console.log('\n🔌 Testing Supabase Connection:\n');
-  
+
   try {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    
+
     // Test basic query
     const { data, error } = await supabase
       .from('users')
       .select('count')
       .limit(1);
-    
+
     if (error && !error.message.includes('permission')) {
       console.log('  ❌ Connection failed:', error.message);
       return false;
     }
-    
+
     console.log('  ✅ Supabase connection successful');
     return true;
   } catch (error) {
@@ -66,7 +66,7 @@ async function testSupabaseConnection() {
 // Test Admin API (service role)
 async function testAdminAPI() {
   console.log('\n🔑 Testing Admin API (Service Role):\n');
-  
+
   if (!supabaseServiceKey) {
     console.log('  ⚠️  Service role key not configured');
     return false;
@@ -74,7 +74,7 @@ async function testAdminAPI() {
 
   try {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    
+
     // Test generating a password reset link
     const testEmail = 'test-no-send@example.com';
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
@@ -106,14 +106,14 @@ async function testAdminAPI() {
 // Test password reset for real user
 async function testPasswordResetForRealUser(email) {
   console.log(`\n📧 Testing Password Reset for: ${email}\n`);
-  
+
   if (!supabaseServiceKey) {
     console.log('  ⚠️  Service role key not configured - using standard flow');
   }
 
   try {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey);
-    
+
     // Check if user exists
     const { data: userData } = await supabaseAdmin
       .from('users')
@@ -140,12 +140,12 @@ async function testPasswordResetForRealUser(email) {
 
       if (resetError) {
         console.log('  ⚠️  Could not generate link via admin API:', resetError.message);
-        
+
         // Try standard flow
         const { error: standardError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
           redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5000'}/auth/reset-password`
         });
-        
+
         if (standardError) {
           console.log('  ❌ Standard reset also failed:', standardError.message);
           return false;
@@ -172,7 +172,7 @@ async function testPasswordResetForRealUser(email) {
 // Check SendGrid configuration
 async function testSendGrid() {
   console.log('\n📨 Testing SendGrid Configuration:\n');
-  
+
   if (!process.env.SENDGRID_API_KEY) {
     console.log('  ❌ SENDGRID_API_KEY not configured');
     return false;
@@ -201,12 +201,12 @@ async function runTests() {
 
   // Run tests
   results.envVars = checkEnvVars();
-  
+
   if (results.envVars) {
     results.supabaseConnection = await testSupabaseConnection();
     results.adminAPI = await testAdminAPI();
     results.sendGrid = await testSendGrid();
-    
+
     // Test with real email if provided as argument
     const testEmail = process.argv[2];
     if (testEmail) {
@@ -217,7 +217,7 @@ async function runTests() {
   // Summary
   console.log('\n' + '='.repeat(50));
   console.log('📊 Test Summary:\n');
-  
+
   Object.entries(results).forEach(([test, passed]) => {
     if (test === 'passwordReset' && !process.argv[2]) {
       console.log(`  ⏭️  ${test}: Skipped (no email provided)`);
@@ -233,7 +233,7 @@ async function runTests() {
 
   // Production readiness check
   console.log('🚀 Production Readiness:\n');
-  
+
   const prodChecks = [
     { name: 'Environment variables', pass: results.envVars },
     { name: 'Database connection', pass: results.supabaseConnection },

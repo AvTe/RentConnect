@@ -4,20 +4,20 @@ import React from 'react';
  * Reusable sidebar navigation item component for dashboards
  * Used in UserDashboard, AgentDashboard, AdminDashboard
  */
-export const SidebarNavItem = ({ 
-  icon: Icon, 
-  label, 
-  id, 
-  active, 
+export const SidebarNavItem = ({
+  icon: Icon,
+  label,
+  id,
+  active,
   onClick,
   className = '',
   variant = 'default' // 'default' | 'danger'
 }) => {
   const baseClasses = "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all";
-  
+
   const variantClasses = {
-    default: active 
-      ? 'bg-white text-gray-900 shadow-sm' 
+    default: active
+      ? 'bg-white text-gray-900 shadow-sm'
       : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50',
     danger: 'text-red-600 hover:bg-red-50'
   };
@@ -59,12 +59,16 @@ export const SidebarUserProfile = ({ user, compact = false }) => {
 /**
  * Logo component for sidebar header
  */
-export const SidebarLogo = ({ name = 'Yoombaa', initial = 'R' }) => (
+export const SidebarLogo = ({ name = 'Yoombaa', useLogo = true }) => (
   <div className="flex items-center gap-3 px-2">
-    <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold">
-      {initial}
-    </div>
-    <span className="font-bold text-gray-900">{name}</span>
+    {useLogo ? (
+      <img src="/yoombaa-logo.svg" alt="Yoombaa" className="w-8 h-8" />
+    ) : (
+      <div className="w-8 h-8 bg-[#FE9200] rounded-lg flex items-center justify-center text-white font-bold">
+        Y
+      </div>
+    )}
+    <span className="font-bold text-[#FE9200]">{name}</span>
   </div>
 );
 

@@ -263,14 +263,8 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificati
         {/* Sidebar Header */}
         <div className={`p-4 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} border-b border-gray-100`}>
           {!isSidebarCollapsed && (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#FE9200] rounded-xl flex items-center justify-center text-white font-black text-lg">
-                R
-              </div>
-              <div>
-                <span className="font-black text-gray-900 text-lg">Rent</span>
-                <span className="font-black text-[#FE9200] text-lg">Connect</span>
-              </div>
+            <div className="flex items-center">
+              <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-10" />
             </div>
           )}
 

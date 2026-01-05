@@ -33,8 +33,14 @@ export const metadata = {
     type: 'website',
   },
   icons: {
-    icon: '/yoombaa-logo.png',
-    apple: '/yoombaa-logo.png',
+    icon: [
+      { url: '/yoombaa-favicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/yoombaa-favicon.png', sizes: '16x16', type: 'image/png' },
+    ],
+    shortcut: '/yoombaa-favicon.png',
+    apple: [
+      { url: '/yoombaa-favicon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
 }
 
@@ -53,6 +59,7 @@ export default function RootLayout({ children }) {
 
         {/* Optimize performance with link prefetch */}
         <link rel="prefetch" href="/yoombaa-logo.png" as="image" />
+        <link rel="prefetch" href="/yoombaa-favicon.png" as="image" />
       </head>
       <body className={`${dmSans.className} font-sans`}>
         <ToastProvider>

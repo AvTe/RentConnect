@@ -27,37 +27,32 @@ const EmailConfirmationSuccess = ({ onContinue, onGoHome }) => {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Card Container */}
-        <div 
-          className={`bg-white rounded-2xl shadow-xl p-8 text-center transform transition-all duration-700 ease-out ${
-            isAnimated ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-          }`}
+        <div
+          className={`bg-white rounded-2xl shadow-xl p-8 text-center transform transition-all duration-700 ease-out ${isAnimated ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+            }`}
         >
           {/* Success Icon with Animation */}
           <div className="relative flex items-center justify-center mb-8">
             {/* Animated rings */}
-            <div 
-              className={`absolute w-32 h-32 rounded-full bg-green-100 transition-all duration-1000 ease-out ${
-                isAnimated ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-              }`}
+            <div
+              className={`absolute w-32 h-32 rounded-full bg-green-100 transition-all duration-1000 ease-out ${isAnimated ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                }`}
               style={{ animationDelay: '200ms' }}
             />
-            <div 
-              className={`absolute w-24 h-24 rounded-full bg-green-200 transition-all duration-700 ease-out ${
-                isAnimated ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-              }`}
+            <div
+              className={`absolute w-24 h-24 rounded-full bg-green-200 transition-all duration-700 ease-out ${isAnimated ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                }`}
               style={{ animationDelay: '400ms' }}
             />
-            
+
             {/* Check icon */}
-            <div 
-              className={`relative z-10 w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg transform transition-all duration-500 ${
-                isAnimated ? 'scale-100 rotate-0' : 'scale-0 rotate-180'
-              }`}
+            <div
+              className={`relative z-10 w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-lg transform transition-all duration-500 ${isAnimated ? 'scale-100 rotate-0' : 'scale-0 rotate-180'
+                }`}
             >
-              <CheckCircle 
-                className={`w-10 h-10 text-white transition-all duration-300 ${
-                  isAnimated ? 'opacity-100' : 'opacity-0'
-                }`} 
+              <CheckCircle
+                className={`w-10 h-10 text-white transition-all duration-300 ${isAnimated ? 'opacity-100' : 'opacity-0'
+                  }`}
                 strokeWidth={2.5}
               />
             </div>
@@ -74,10 +69,9 @@ const EmailConfirmationSuccess = ({ onContinue, onGoHome }) => {
           </div>
 
           {/* Content */}
-          <div 
-            className={`transition-all duration-500 ${
-              showContent ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-            }`}
+          <div
+            className={`transition-all duration-500 ${showContent ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+              }`}
           >
             {/* Email Icon Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full text-green-700 text-sm font-medium mb-4">
@@ -90,8 +84,8 @@ const EmailConfirmationSuccess = ({ onContinue, onGoHome }) => {
             </h1>
 
             <p className="text-gray-600 mb-8 leading-relaxed">
-              Your email address has been successfully verified. 
-              You can now access all features of your RentConnect account.
+              Your email address has been successfully verified.
+              You can now access all features of your Yoombaa account.
             </p>
 
             {/* Action Buttons */}
@@ -138,12 +132,11 @@ const EmailConfirmationSuccess = ({ onContinue, onGoHome }) => {
         </div>
 
         {/* Footer text */}
-        <p 
-          className={`text-center text-sm text-gray-400 mt-6 transition-all duration-500 ${
-            showContent ? 'opacity-100' : 'opacity-0'
-          }`}
+        <p
+          className={`text-center text-sm text-gray-400 mt-6 transition-all duration-500 ${showContent ? 'opacity-100' : 'opacity-0'
+            }`}
         >
-          Welcome to RentConnect 🏠
+          Welcome to Yoombaa 🏠
         </p>
       </div>
 

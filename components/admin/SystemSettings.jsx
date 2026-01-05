@@ -89,8 +89,8 @@ export const SystemSettings = () => {
             icon: Globe,
             description: 'General platform configuration',
             fields: [
-                { key: 'platform_name', label: 'Platform Name', type: 'text', default: 'RentConnect' },
-                { key: 'support_email', label: 'Support Email', type: 'text', default: 'support@rentconnect.co.ke' },
+                { key: 'platform_name', label: 'Platform Name', type: 'text', default: 'Yoombaa' },
+                { key: 'support_email', label: 'Support Email', type: 'text', default: 'support@yoombaa.com' },
                 { key: 'support_phone', label: 'Support Phone', type: 'text', default: '' },
                 { key: 'maintenance_mode', label: 'Maintenance Mode', type: 'toggle', default: false },
                 { key: 'registration_open', label: 'Registration Open', type: 'toggle', default: true }
