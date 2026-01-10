@@ -1,25 +1,29 @@
 {
-  "name": "Yoombaa - Find Your Perfect Home",
+  "name": "Yoombaa - Kenya's #1 Rental Marketplace",
   "short_name": "Yoombaa",
-  "description": "Connect with trusted agents and find your perfect rental property.",
+  "description": "Find apartments for rent in Nairobi, Mombasa & across Kenya. Connect with verified property agents. No broker fees.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#1e2530",
   "background_color": "#ffffff",
+  "lang": "en-KE",
+  "categories": ["real estate", "property", "rentals"],
   "icons": [
     {
       "src": "/yoombaa-logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/yoombaa-logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
 }

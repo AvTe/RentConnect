@@ -16,6 +16,98 @@ const dmSans = DM_Sans({
   fallback: ['system-ui', 'arial'],
 })
 
+// JSON-LD Structured Data for SEO
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://yoombaa.com/#organization',
+      name: 'Yoombaa',
+      url: 'https://yoombaa.com',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://yoombaa.com/yoombaa-logo.png',
+        width: 512,
+        height: 512,
+      },
+      description: 'Kenya\'s leading rental marketplace connecting tenants with trusted property agents.',
+      foundingDate: '2024',
+      areaServed: {
+        '@type': 'Country',
+        name: 'Kenya',
+      },
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'customer service',
+        availableLanguage: ['English', 'Swahili'],
+      },
+      sameAs: [
+        'https://www.facebook.com/yoombaa',
+        'https://www.instagram.com/yoombaa',
+        'https://twitter.com/yoombaa',
+        'https://www.linkedin.com/company/yoombaa',
+      ],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://yoombaa.com/#website',
+      url: 'https://yoombaa.com',
+      name: 'Yoombaa',
+      description: 'Find rental properties and verified tenants in Kenya',
+      publisher: {
+        '@id': 'https://yoombaa.com/#organization',
+      },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: 'https://yoombaa.com/?search={search_term_string}',
+        },
+        'query-input': 'required name=search_term_string',
+      },
+      inLanguage: 'en-KE',
+    },
+    {
+      '@type': 'LocalBusiness',
+      '@id': 'https://yoombaa.com/#localbusiness',
+      name: 'Yoombaa',
+      image: 'https://yoombaa.com/yoombaa-logo.png',
+      '@type': ['LocalBusiness', 'RealEstateAgent'],
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Nairobi',
+        addressCountry: 'KE',
+      },
+      geo: {
+        '@type': 'GeoCoordinates',
+        latitude: -1.2921,
+        longitude: 36.8219,
+      },
+      url: 'https://yoombaa.com',
+      priceRange: 'KSh',
+      openingHoursSpecification: {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        opens: '08:00',
+        closes: '18:00',
+      },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      '@id': 'https://yoombaa.com/#breadcrumb',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: 'https://yoombaa.com',
+        },
+      ],
+    },
+  ],
+}
+
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -26,22 +118,36 @@ export const viewport = {
 export const metadata = {
   metadataBase: new URL('https://yoombaa.com'),
   title: {
-    default: 'Yoombaa - Find Rental Properties & Verified Tenants in Kenya',
-    template: '%s | Yoombaa'
+    default: 'Yoombaa - Find Rental Properties & Verified Tenants in Kenya | Nairobi Apartments',
+    template: '%s | Yoombaa Kenya'
   },
-  description: 'Yoombaa connects tenants with trusted agents in Kenya. Find your perfect rental property or verify quality tenants without the hassle.',
+  description: 'Kenya\'s #1 rental marketplace. Find apartments for rent in Nairobi, Mombasa, Kisumu & across Kenya. Connect with verified property agents. No broker fees, trusted tenants.',
   keywords: [
     'rental properties Kenya',
-    'find tenants Nairobi',
     'apartments for rent Nairobi',
+    'houses for rent Kenya',
+    'find tenants Nairobi',
     'property agents Kenya',
+    'Nairobi apartments',
+    'Mombasa rentals',
+    'Kisumu houses for rent',
+    'bedsitter Nairobi',
+    'studio apartment Kenya',
+    'one bedroom apartment Nairobi',
+    'two bedroom house Kenya',
+    'furnished apartments Nairobi',
     'house hunting Kenya',
     'real estate Kenya',
     'Yoombaa',
     'rental marketplace Kenya',
     'verified tenants Kenya',
-    'trusted property agents Nairobi'
+    'trusted property agents Nairobi',
+    'nyumba ya kupanga Kenya',
+    'kodi Nairobi',
   ],
+  authors: [{ name: 'Yoombaa', url: 'https://yoombaa.com' }],
+  creator: 'Yoombaa',
+  publisher: 'Yoombaa',
   manifest: '/manifest.json',
   alternates: {
     canonical: '/',
@@ -99,7 +205,7 @@ export const metadata = {
     ],
   },
   verification: {
-    google: 'your-google-verification-code', // Replace with actual verification code
+    google: 'BxEEJ2mEjqcEWhnx68dd9EXUCWwMAnUlU0-5eUd-Vpk',
   },
   category: 'real estate',
 }
@@ -108,6 +214,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={dmSans.variable}>
       <head>
+        {/* JSON-LD Structured Data for SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+
         {/* Preconnect to external resources */}
         <link rel="preconnect" href="https://yydwhwkvrvgkqnmirbrr.supabase.co" />
 
