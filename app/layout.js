@@ -226,6 +226,8 @@ export default function RootLayout({ children }) {
         {/* DNS Prefetch for performance */}
         <link rel="dns-prefetch" href="https://www.google.com" />
         <link rel="dns-prefetch" href="https://www.gstatic.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
 
         {/* Optimize performance with link prefetch */}
         <link rel="prefetch" href="/yoombaa-logo.png" as="image" />
@@ -269,6 +271,23 @@ export default function RootLayout({ children }) {
           src="https://www.google.com/recaptcha/enterprise.js?render=6LfThBosAAAAALZ06Y7e9jaFROeO_hSgiGdzQok1"
           strategy="afterInteractive"
         />
+
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-2K6X0KZ9P6"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-2K6X0KZ9P6', {
+              page_title: document.title,
+              page_location: window.location.href,
+            });
+          `}
+        </Script>
       </body>
     </html>
   )
