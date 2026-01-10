@@ -557,6 +557,7 @@ export const RenterManagement = () => {
 
   useEffect(() => {
     fetchRenters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchRenters = async () => {

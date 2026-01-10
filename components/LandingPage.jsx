@@ -537,8 +537,28 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
 
   return (
     <div className="h-[100dvh] w-screen bg-white font-sans overflow-hidden flex flex-col">
+      {/* SEO Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Yoombaa",
+            "url": "https://yoombaa.com",
+            "logo": "https://yoombaa.com/yoombaa-logo.svg",
+            "description": "Kenya&apos;s leading marketplace for rental houses, apartments and verified tenants.",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Nairobi",
+              "addressCountry": "KE"
+            }
+          })
+        }}
+      />
+
       {/* Header */}
-      <div className="px-3 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-2 sm:pb-3 relative z-20">
+      <header className="px-3 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-2 sm:pb-3 relative z-20">
         <div className="max-w-[1400px] mx-auto bg-white rounded-full shadow-lg border border-gray-100 px-4 sm:px-8 py-2 sm:py-3 flex justify-between items-center">
           <div className="cursor-pointer" onClick={() => onNavigate("landing")}>
             <img
@@ -579,17 +599,17 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
             )}
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Hero Section */}
-      <div className="flex-1 relative flex flex-col min-h-0">
+      <section className="flex-1 relative flex flex-col min-h-0">
         {/* Hero Background Container */}
         <div className="absolute inset-0 mx-3 sm:mx-6 lg:mx-8 mb-16 sm:mb-20">
           <div className="h-[115%] w-full max-w-[1400px] mx-auto relative rounded-2xl sm:rounded-3xl overflow-hidden">
             {/* Hero Background Image */}
             <img
               src="/hero-section.jpg"
-              alt="Modern homes"
+              alt="Beautiful modern residential properties in Nairobi Kenya - Find your perfect home with Yoombaa"
               className="w-full h-full object-cover"
             />
 
@@ -599,28 +619,30 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
         </div>
 
         {/* Hero Content - Centered */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pb-32 sm:pb-56">
-          <div className="text-center max-w-3xl mx-auto">
-            {/* Main Headline */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pb-32 sm:pb-56 text-center">
+          <div className="max-w-3xl mx-auto">
+            {/* Main Headline - SEO Optimized */}
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-2 sm:mb-3 drop-shadow-sm">
-              Find Verified Tenants
+              Find Verified Tenants & Rental Properties in Kenya
             </h1>
+            <p className="sr-only">Kenya&apos;s leading marketplace for rental houses, apartments and verified tenants. Connect with trusted agents in Nairobi and across the country.</p>
             <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-medium italic text-[#FE9200] leading-tight mb-4 sm:mb-5 drop-shadow-sm">
-              Looking For Rentals
+              The Smarter Way to Rent
             </h2>
-
-            {/* 
-            <p className="text-base text-gray-700 mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed px-4">
-              Connect With Active Renters In Nairobi. Get Their Contact Details. Close Deals Faster.
-            </p> */}
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
               <button
                 onClick={() => onNavigate("tenant-form")}
-                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white/20 backdrop-blur-md border-2 border-[#FE9200] text-[#ffffff] font-medium hover:bg-[#FE9200] hover:text-white transition-all text-sm  hover:shadow-lg"
+                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white/20 backdrop-blur-md border-2 border-[#FE9200] text-[#ffffff] font-medium hover:bg-[#FE9200] hover:text-white transition-all text-sm hover:shadow-lg"
               >
                 I Need a Place to Rent
+              </button>
+              <button
+                onClick={() => onNavigate("login", { tab: "agent" })}
+                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#FE9200] text-white font-medium hover:bg-[#E58300] transition-all text-sm hover:shadow-lg"
+              >
+                I Have a Property to List
               </button>
             </div>
           </div>
@@ -694,33 +716,35 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Pagination dots */}
-      {displayLeads.length > 0 && (
-        <div className="flex justify-center items-center gap-1.5 sm:gap-2 py-2 sm:py-3 bg-white/80 backdrop-blur-sm">
-          {displayLeads
-            .slice(0, Math.min(displayLeads.length, isMobile ? 6 : 8))
-            .map((_, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setIsTransitioning(true);
-                  setCurrentIndex(index);
-                }}
-                className={`rounded-full transition-all duration-300 ${activeIndex === index
-                  ? "bg-[#FE9200] w-2.5 h-2.5 sm:w-3.5 sm:h-3.5"
-                  : "bg-gray-400 w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 hover:bg-gray-500"
-                  }`}
-              />
-            ))}
-          {displayLeads.length > (isMobile ? 6 : 8) && (
-            <span className="text-[10px] sm:text-xs text-gray-500 ml-0.5 sm:ml-1">
-              +{displayLeads.length - (isMobile ? 6 : 8)}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
+      {
+        displayLeads.length > 0 && (
+          <div className="flex justify-center items-center gap-1.5 sm:gap-2 py-2 sm:py-3 bg-white/80 backdrop-blur-sm">
+            {displayLeads
+              .slice(0, Math.min(displayLeads.length, isMobile ? 6 : 8))
+              .map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setIsTransitioning(true);
+                    setCurrentIndex(index);
+                  }}
+                  className={`rounded-full transition-all duration-300 ${activeIndex === index
+                    ? "bg-[#FE9200] w-2.5 h-2.5 sm:w-3.5 sm:h-3.5"
+                    : "bg-gray-400 w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 hover:bg-gray-500"
+                    }`}
+                />
+              ))}
+            {displayLeads.length > (isMobile ? 6 : 8) && (
+              <span className="text-[10px] sm:text-xs text-gray-500 ml-0.5 sm:ml-1">
+                +{displayLeads.length - (isMobile ? 6 : 8)}
+              </span>
+            )}
+          </div>
+        )
+      }
+    </div >
   );
 };

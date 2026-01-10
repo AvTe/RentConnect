@@ -704,6 +704,7 @@ const AssetCard = ({ asset, viewMode, onPreview, onShare, onCopyLink, onDelete, 
             <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4 hover:border-gray-300 transition-colors">
                 <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {asset.file_type === 'image' && asset.public_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img src={asset.public_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                         getFileIcon(asset.file_type, 24)
@@ -737,6 +738,7 @@ const AssetCard = ({ asset, viewMode, onPreview, onShare, onCopyLink, onDelete, 
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors group">
             <div className="relative aspect-square bg-gray-100 cursor-pointer" onClick={onPreview}>
                 {asset.file_type === 'image' && asset.public_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={asset.public_url} alt={asset.file_name} className="w-full h-full object-cover" />
                 ) : asset.file_type === 'video' && asset.public_url ? (
                     <div className="w-full h-full flex items-center justify-center bg-gray-900">
@@ -860,6 +862,7 @@ const AssetPreviewModal = ({ asset, onClose, onDelete, onShare, onCopyLink }) =>
 
             <div className="max-w-4xl max-h-[80vh] w-full">
                 {asset.file_type === 'image' ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={asset.public_url} alt={asset.file_name} className="w-full h-full object-contain" />
                 ) : asset.file_type === 'video' ? (
                     <video src={asset.public_url} controls className="w-full h-full" />

@@ -29,6 +29,7 @@ export const AgentRegistration = ({ onNavigate, onSubmit, initialReferralCode = 
     if (initialReferralCode && initialReferralCode !== formData.referralCode) {
       setFormData(prev => ({ ...prev, referralCode: initialReferralCode }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialReferralCode]);
 
   const handlePhoneVerified = (verifiedPhone) => {

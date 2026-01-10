@@ -1,0 +1,52 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#1e2530"/>
+  
+  <!-- Gradient overlay -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e2530;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#2d3748;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e2530;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="glowTop" cx="85%" cy="15%" r="25%">
+      <stop offset="0%" style="stop-color:#FE9200;stop-opacity:0.15" />
+      <stop offset="100%" style="stop-color:#FE9200;stop-opacity:0" />
+    </radialGradient>
+    <radialGradient id="glowBottom" cx="15%" cy="85%" r="20%">
+      <stop offset="0%" style="stop-color:#FE9200;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#FE9200;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  <rect width="1200" height="630" fill="url(#glowTop)"/>
+  <rect width="1200" height="630" fill="url(#glowBottom)"/>
+  
+  <!-- Yoombaa Logo Text -->
+  <text x="600" y="200" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="bold" fill="#ffffff" letter-spacing="-2">
+    Yoombaa
+  </text>
+  
+  <!-- Main Title -->
+  <text x="600" y="300" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="bold" fill="#ffffff">
+    Find Your Perfect Rental Home in Kenya
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="600" y="360" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-style="italic" fill="#FE9200">
+    Connect with verified agents and tenants
+  </text>
+  
+  <!-- Bottom tagline -->
+  <text x="600" y="560" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#9CA3AF">
+    🇰🇪 Kenya's Leading Rental Marketplace
+  </text>
+  
+  <!-- Decorative house icon hint -->
+  <g transform="translate(550, 400)">
+    <path d="M50 10 L90 45 L90 90 L10 90 L10 45 Z" fill="none" stroke="#FE9200" stroke-width="2" opacity="0.3"/>
+    <rect x="35" y="60" width="30" height="30" fill="none" stroke="#FE9200" stroke-width="2" opacity="0.3"/>
+  </g>
+</svg>
+

@@ -1,10 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 import React, { useState, useEffect } from 'react';
 import {
-  LayoutGrid, FileText, History, Settings, LogOut,
-  Plus, Search, Bell, Menu, X, Users, User,
-  MoreVertical, Eye, Coins, MapPin, Home, Calendar, Zap, Edit2, Trash2, Clock, PauseCircle, PlayCircle,
-  MessageSquare, HelpCircle, CheckCircle, ChevronRight, Phone, Send, Info
+  LayoutGrid, FileText, Settings, LogOut,
+  Plus, Menu, X, Users, User,
+  Eye, MapPin, Home, Zap, Edit2, Trash2, Clock, PauseCircle, PlayCircle,
+  MessageSquare, HelpCircle, ChevronRight, Info,
+  PanelLeftClose, PanelLeft, Headphones
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { UserProfile } from './UserProfile';
@@ -15,6 +16,9 @@ import { NotificationBell } from './NotificationBell';
 import { Tooltip } from './ui/Tooltip';
 import { useToast } from '@/context/ToastContext';
 import { EditLeadModal } from './EditLeadModal';
+import { HelpCenter } from './HelpCenter';
+import { UserSupportDashboard } from './tickets';
+import { getUserTickets } from '@/lib/ticket-service';
 
 export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUser, onUpdateUser,
   onLogout,
@@ -25,8 +29,11 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
   const [myRequests, setMyRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [editingRequest, setEditingRequest] = useState(null);
+  const [showHelpCenter, setShowHelpCenter] = useState(false);
+  const [activeTicketCount, setActiveTicketCount] = useState(0);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -130,9 +137,23 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
     const userId = currentUser?.uid || currentUser?.id;
     if (userId) {
       fetchMyRequests();
+      // Fetch active support ticket count
+      fetchActiveTicketCount(userId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.uid, currentUser?.id]);
+
+  const fetchActiveTicketCount = async (userId) => {
+    try {
+      const result = await getUserTickets(userId, {});
+      if (result.success) {
+        const activeCount = result.data.filter(t => t.status === 'open' || t.status === 'in_progress').length;
+        setActiveTicketCount(activeCount);
+      }
+    } catch (error) {
+      console.error('Error fetching ticket count:', error);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'requests') {
@@ -172,22 +193,38 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
     return location;
   };
 
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
   const SidebarItem = ({ icon: Icon, label, id, active }) => (
     <button
       onClick={() => handleTabChange(id)}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active
-        ? 'bg-white text-gray-900 shadow-sm'
-        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
-        }`}
+      title={isSidebarCollapsed ? label : undefined}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
+        ${active
+          ? 'bg-[#FE9200] text-white'
+          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+        }
+        ${isSidebarCollapsed ? 'justify-center' : ''}
+      `}
     >
-      <Icon className={`w-4 h-4 ${active ? 'text-gray-900' : 'text-gray-500'}`} />
-      <span className="truncate">{label}</span>
+      <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${active ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'}`} />
+      {!isSidebarCollapsed && <span className="truncate">{label}</span>}
     </button>
   );
 
   const renderContent = () => {
     if (activeTab === 'profile') {
-      return <UserProfile user={user} onSave={handleSaveProfile} onCancel={() => setActiveTab('dashboard')} />;
+      return (
+        <UserProfile
+          user={user}
+          onSave={handleSaveProfile}
+          onCancel={() => setActiveTab('dashboard')}
+          onLogout={onLogout}
+          onOpenHelpCenter={() => setShowHelpCenter(true)}
+        />
+      );
     }
 
     if (activeTab === 'requests') {
@@ -312,7 +349,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 border-dashed">
+            <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 border-dashed">
               <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6"><FileText className="w-10 h-10 text-gray-300" /></div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">No active requests</h3>
               <p className="text-gray-500 mb-8 max-w-sm mx-auto">Post a request to let pre-verified agents find exactly what you care about.</p>
@@ -325,7 +362,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
 
     if (activeTab === 'messages') {
       return (
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[40px] border border-gray-100 shadow-sm">
+        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
           <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-6">
             <MessageSquare className="w-10 h-10 text-[#FE9200]" />
           </div>
@@ -341,6 +378,15 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
       );
     }
 
+    if (activeTab === 'support') {
+      return (
+        <UserSupportDashboard
+          user={user}
+          userType="tenant"
+        />
+      );
+    }
+
     // Default Dashboard View
     return (
       <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
@@ -348,7 +394,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
         <RatingPrompt currentUser={currentUser} />
 
         {/* Hero Banner Section */}
-        <div className="relative rounded-[32px] overflow-hidden bg-gray-900 aspect-[21/9] md:aspect-[21/6] group shadow-2xl shadow-orange-100/20">
+        <div className="relative rounded-2xl overflow-hidden bg-gray-900 aspect-[21/9] md:aspect-[21/6] group shadow-2xl shadow-orange-100/20">
           <img
             src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=1200"
             alt="Hero"
@@ -375,7 +421,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
             <div className="flex items-center justify-between mb-4">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.1em] leading-none">Active Requests</span>
               <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center text-[#FE9200] group-hover:scale-110 transition-transform duration-300"><Home size={18} /></div>
@@ -386,7 +432,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
             <div className="flex items-center justify-between mb-4">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.1em] leading-none">Total Views</span>
               <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform duration-300"><Eye size={18} /></div>
@@ -397,7 +443,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
             <div className="flex items-center justify-between mb-4">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.1em] leading-none">Agent Responses</span>
               <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform duration-300"><MessageSquare size={18} /></div>
@@ -421,7 +467,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             </div>
 
             {myRequests.slice(0, 3).map(request => (
-              <div key={request.id} className="bg-white rounded-[32px] border border-gray-100 p-6 flex flex-col md:flex-row md:items-center gap-6 group hover:shadow-2xl hover:border-[#FE9200]/10 transition-all duration-500 relative overflow-hidden">
+              <div key={request.id} className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col md:flex-row md:items-center gap-6 group hover:shadow-2xl hover:border-[#FE9200]/10 transition-all duration-500 relative overflow-hidden">
                 <div className="flex-1 space-y-3 relative z-10">
                   <div className="flex items-center gap-3">
                     <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${request.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'
@@ -462,7 +508,7 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             ))}
 
             {myRequests.length === 0 && (
-              <div className="bg-white rounded-[40px] p-20 text-center border border-gray-100 border-dashed">
+              <div className="bg-white rounded-2xl p-16 text-center border border-gray-100 border-dashed">
                 <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-6 text-[#FE9200] opacity-50">
                   <Plus size={40} />
                 </div>
@@ -474,59 +520,9 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
           </div>
 
           {/* Widgets Sidebar */}
-          <div className="space-y-8 lg:pt-14">
-            {/* Agent Activity Widget */}
-            <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm shadow-gray-100/50">
-              <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-[#FCFCFD]">
-                <h3 className="text-lg font-black text-gray-900 tracking-tight">Agent Activity</h3>
-                <button className="text-[11px] font-bold text-[#FE9200] uppercase tracking-widest hover:underline">View All</button>
-              </div>
-              <div className="p-6 space-y-6">
-                <div className="space-y-6">
-                  <div className="flex gap-4 group/item">
-                    <div className="relative flex-shrink-0">
-                      <div className="w-12 h-12 rounded-2xl bg-gray-100 overflow-hidden shadow-sm border-2 border-white">
-                        <img src="https://i.pravatar.cc/150?u=agent1" alt="Agent" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <h4 className="text-sm font-bold text-gray-900 truncate">David Mwangi</h4>
-                        <span className="text-[10px] font-semibold text-gray-400 flex-shrink-0">2m ago</span>
-                      </div>
-                      <p className="text-[10px] font-black text-gray-400 leading-none mb-3 uppercase tracking-widest">Apex Realty Ltd</p>
-                      <div className="bg-gray-50 p-3 rounded-2xl text-[13px] text-gray-600 line-clamp-2 italic leading-relaxed border border-gray-100 relative group-hover/item:bg-orange-50/30 transition-colors">
-                        &quot;Hi {user.name?.split(' ')[0]}, I have a unit in Westlands matching...&quot;
-                      </div>
-                      <div className="flex items-center gap-2 mt-4">
-                        <button className="flex-1 bg-[#FE9200] text-white text-xs font-bold py-2.5 rounded-xl hover:bg-[#E58300] transition-all shadow-lg shadow-orange-100 active:scale-95">Reply</button>
-                        <button className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-gray-100 hover:text-[#FE9200] transition-all border border-gray-100"><Phone size={14} /></button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-6 border-t border-gray-50 flex gap-4 opacity-70 group/item hover:opacity-100 transition-opacity">
-                    <div className="w-12 h-12 rounded-2xl bg-gray-100 overflow-hidden border-2 border-white flex-shrink-0">
-                      <img src="https://i.pravatar.cc/150?u=agent2" alt="Agent" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <h4 className="text-sm font-bold text-gray-900 truncate">Sarah Wanjiku</h4>
-                        <span className="text-[10px] font-semibold text-gray-400 flex-shrink-0">1h ago</span>
-                      </div>
-                      <p className="text-[10px] font-black text-gray-400 leading-none mb-2 uppercase tracking-widest">Independent Agent</p>
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full w-fit">
-                        <CheckCircle size={10} /> Unlocked contact
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
+          <div className="space-y-6 lg:pt-14">
             {/* Profile Completion Widget */}
-            <div className="bg-[#FFF9F2] rounded-[32px] p-6 border border-[#FE9200]/10 relative overflow-hidden group">
+            <div className="bg-[#FFF9F2] rounded-2xl p-6 border border-[#FE9200]/10 relative overflow-hidden group">
               <div className="absolute -right-8 -top-8 w-24 h-24 bg-[#FE9200]/5 rounded-full blur-2xl group-hover:bg-[#FE9200]/10 transition-colors"></div>
               <div className="flex items-center justify-between mb-5 relative z-10">
                 <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Profile Setup</h3>
@@ -558,65 +554,109 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
     { id: 'profile', label: 'Profile', icon: User },
   ];
 
+  // If showing help center, render it full screen
+  if (showHelpCenter) {
+    return <HelpCenter onBack={() => setShowHelpCenter(false)} />;
+  }
+
   return (
-    <div className="flex h-screen bg-[#F3F4F6] font-sans overflow-hidden">
-      {/* Sidebar - Desktop & Mobile overlay */}
-      <div className={`fixed inset-0 z-50 md:hidden bg-gray-900/50 backdrop-blur-sm transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsSidebarOpen(false)} />
+    <div className="flex h-screen bg-[#F8F9FB] font-sans overflow-hidden">
+      {/* Mobile Overlay */}
+      <div
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setIsSidebarOpen(false)}
+      />
 
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white transition-transform duration-300 transform md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col flex-shrink-0 border-r border-gray-100 shadow-2xl md:shadow-none`}>
-        <div className="flex flex-col h-full bg-[#FCFCFD]">
-          {/* Logo Section */}
-          <div className="p-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-[#FE9200] rounded-lg flex items-center justify-center shadow-lg shadow-orange-200">
-                <Home className="text-white w-5 h-5" />
-              </div>
-              <span className="font-bold text-gray-900 text-xl tracking-tight">Yoombaa</span>
+      {/* Sidebar */}
+      <aside className={`
+        fixed md:relative inset-y-0 left-0 z-50
+        ${isSidebarCollapsed ? 'w-20' : 'w-64'}
+        bg-white border-r border-gray-200
+        flex flex-col flex-shrink-0
+        transform transition-all duration-300 ease-in-out
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0
+      `}>
+        {/* Sidebar Header */}
+        <div className={`p-4 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} border-b border-gray-100`}>
+          {!isSidebarCollapsed && (
+            <div className="flex items-center">
+              <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-10" />
             </div>
-            <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 text-gray-400 hover:text-gray-900 transition-colors">
-              <X size={18} />
-            </button>
-          </div>
+          )}
+          {isSidebarCollapsed && (
+            <div className="w-10 h-10 rounded-xl bg-[#FE9200] flex items-center justify-center">
+              <Home className="w-5 h-5 text-white" />
+            </div>
+          )}
 
-          {/* User Profile Info Card */}
-          <div className="px-4 mb-6">
-            <div className="p-3 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 border-2 border-white shadow-sm">
+          {/* Collapse toggle (desktop) */}
+          <button
+            onClick={toggleSidebarCollapse}
+            className="hidden md:flex w-8 h-8 items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            {isSidebarCollapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
+          </button>
+
+          {/* Close button (mobile) */}
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* User Profile Card - Only when expanded */}
+        {!isSidebarCollapsed && (
+          <div className="px-3 py-4 border-b border-gray-100">
+            <div className="p-3 bg-gray-50 rounded-xl flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gray-200 overflow-hidden flex-shrink-0">
                 {user.avatar ? (
                   <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-900 text-white font-bold">
+                  <div className="w-full h-full flex items-center justify-center bg-[#FE9200] text-white font-bold text-sm">
                     {user.name?.charAt(0)}
                   </div>
                 )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate">{user.name}</p>
-                <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Tenant Account</p>
+                <p className="text-[10px] font-semibold text-[#FE9200] uppercase tracking-wider">Tenant Account</p>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Navigation */}
-          <div className="flex-1 px-4 space-y-1.5">
-            <SidebarItem icon={LayoutGrid} label="Dashboard" id="dashboard" active={activeTab === 'dashboard'} />
-            <SidebarItem icon={FileText} label="My Requests" id="requests" active={activeTab === 'requests'} />
-            <div className="relative group">
-              <SidebarItem icon={MessageSquare} label="Messages" id="messages" active={activeTab === 'messages'} />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#FE9200] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">2</span>
-            </div>
-            <SidebarItem icon={Settings} label="Profile Settings" id="profile" active={activeTab === 'profile'} />
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-1">
+          <SidebarItem icon={LayoutGrid} label="Dashboard" id="dashboard" active={activeTab === 'dashboard'} />
+          <SidebarItem icon={FileText} label="My Requests" id="requests" active={activeTab === 'requests'} />
+          <div className="relative">
+            <SidebarItem icon={MessageSquare} label="Messages" id="messages" active={activeTab === 'messages'} />
+            {!isSidebarCollapsed && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#FE9200] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">2</span>
+            )}
           </div>
+          <div className="relative">
+            <SidebarItem icon={Headphones} label="Support" id="support" active={activeTab === 'support'} />
+            {!isSidebarCollapsed && activeTicketCount > 0 && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{activeTicketCount}</span>
+            )}
+          </div>
+          <SidebarItem icon={Settings} label="Profile Settings" id="profile" active={activeTab === 'profile'} />
+        </div>
 
-          <div className="p-4 mt-auto border-t border-gray-50">
-            <button
-              onClick={() => { onLogout(); }}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all group"
-            >
-              <LogOut className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              Log Out
-            </button>
-          </div>
+        {/* Sidebar Footer */}
+        <div className={`p-4 border-t border-gray-100 ${isSidebarCollapsed ? 'flex justify-center' : ''}`}>
+          <button
+            onClick={() => { onLogout(); setIsSidebarOpen(false); }}
+            title={isSidebarCollapsed ? 'Log Out' : undefined}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}
+          >
+            <LogOut className="w-5 h-5" />
+            {!isSidebarCollapsed && 'Log Out'}
+          </button>
         </div>
       </aside>
 
@@ -649,20 +689,12 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                   }}
                 />
               )}
-              <button className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all">
+              <button
+                onClick={() => setShowHelpCenter(true)}
+                className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all"
+              >
                 <HelpCircle size={20} />
               </button>
-            </div>
-
-            <div className="w-[1px] h-6 bg-gray-100 hidden md:block" />
-
-            {/* Profile Dropdown */}
-            <div className="flex items-center gap-3 pl-2 py-1.5 pr-1.5 group cursor-pointer hover:bg-gray-50 rounded-xl transition-all">
-              <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 shadow-sm border border-white">
-                {user.avatar ? <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold">{user.name?.charAt(0)}</div>}
-              </div>
-              <span className="hidden md:block text-sm font-bold text-gray-700">{user.name}</span>
-              <Menu size={14} className="text-gray-400 hidden md:block group-hover:text-gray-900 transition-colors" />
             </div>
           </div>
         </header>

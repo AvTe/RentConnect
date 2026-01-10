@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Check, Zap, Shield, Coins, Star, Lock, Smartphone, ArrowRight, Loader2, ShieldCheck, Globe, CreditCard } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Check, Zap, Shield, Coins, Star, Lock, Smartphone, ArrowRight, Loader2, ShieldCheck, Globe, CreditCard, Gift } from 'lucide-react';
 import { Button } from './ui/Button';
 import { getAllCreditBundles } from '@/lib/database';
 
@@ -16,16 +16,35 @@ export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }
     const [bundles, setBundles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
+    const [merchants, setMerchants] = useState([]);
+    const [merchantsLoading, setMerchantsLoading] = useState(true);
 
     useEffect(() => {
         if (isOpen) {
             setMounted(true);
             setStep('selection');
             fetchBundles();
+            fetchMerchants();
         } else {
             setMounted(false);
         }
     }, [isOpen]);
+
+    // Fetch GiftPesa merchants dynamically
+    const fetchMerchants = async () => {
+        setMerchantsLoading(true);
+        try {
+            const response = await fetch('/api/giftpesa/merchants');
+            const result = await response.json();
+            if (result.success && result.data) {
+                setMerchants(result.data);
+            }
+        } catch (error) {
+            console.error('Error fetching merchants:', error);
+        } finally {
+            setMerchantsLoading(false);
+        }
+    };
 
     const fetchBundles = async () => {
         setLoading(true);
@@ -112,11 +131,53 @@ export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }
                     </div>
                 </div>
 
-                <div className="relative z-10 pt-6 border-t border-white/5 mt-auto">
+                {/* Voucher Reward Section */}
+                <div className="relative z-10 mt-6 pt-6 border-t border-white/10">
+                    <div className="flex items-center gap-2 mb-3">
+                        <div className="p-1.5 rounded-lg bg-gradient-to-br from-[#FE9200] to-[#FF6B00]">
+                            <Gift className="w-3.5 h-3.5 text-white" />
+                        </div>
+                        <span className="text-[10px] font-black text-[#FE9200] uppercase tracking-[0.15em]">Bonus Reward</span>
+                    </div>
+                    <p className="text-xs text-slate-300 font-medium mb-4">Purchase a bundle & get a chance to win <span className="text-[#FE9200] font-bold">FREE vouchers!</span></p>
+
+                    {/* Animated Brand Logos Carousel */}
+                    <div className="overflow-hidden">
+                        {merchantsLoading ? (
+                            // Loading skeleton
+                            <div className="flex gap-2">
+                                {[...Array(5)].map((_, i) => (
+                                    <div key={i} className="flex-shrink-0 w-11 h-11 bg-white/10 rounded-xl animate-pulse" />
+                                ))}
+                            </div>
+                        ) : merchants.length > 0 ? (
+                            <div className="flex gap-2 animate-scroll">
+                                {/* Duplicate merchants for infinite scroll effect */}
+                                {[...merchants.slice(0, 5), ...merchants.slice(0, 5)].map((merchant, i) => (
+                                    <div
+                                        key={`${merchant.id}-${i}`}
+                                        className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center shadow-sm hover:scale-110 transition-transform"
+                                        style={{ backgroundColor: merchant.color || '#FE9200' }}
+                                        title={merchant.name}
+                                    >
+                                        <span className="text-white font-black text-xs">
+                                            {merchant.name?.substring(0, 2).toUpperCase()}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-[10px] text-slate-400 text-center">Loading brands...</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="relative z-10 pt-4 border-t border-white/5 mt-auto">
                     <div className="flex items-center gap-2.5">
                         <div className="flex -space-x-2">
                             {[1, 2, 3].map(i => (
                                 <div key={i} className="w-7 h-7 rounded-full border-2 border-[#0F172A] bg-slate-800 overflow-hidden ring-1 ring-white/5">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={`https://i.pravatar.cc/100?u=${i + 40}`} alt="Agent" className="w-full h-full object-cover" />
                                 </div>
                             ))}
@@ -208,6 +269,7 @@ export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }
                         <div className="hidden lg:flex flex-col sm:flex-row items-center gap-4 sm:gap-8 opacity-60 hover:opacity-100 transition-opacity">
                             <div className="flex items-center gap-4 grayscale brightness-125">
                                 {ACCEPTED_LOGOS.map((logo, i) => (
+                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img key={i} src={logo.url} alt={logo.name} className={`${logo.h} object-contain`} />
                                 ))}
                             </div>

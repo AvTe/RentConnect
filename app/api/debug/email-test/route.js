@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
+// Force dynamic rendering since this uses cookies
+export const dynamic = 'force-dynamic';
+
 /**
  * Debug API Route - Check database state for email delivery testing
  * GET /api/debug/email-test

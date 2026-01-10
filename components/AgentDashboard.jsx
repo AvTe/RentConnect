@@ -35,6 +35,8 @@ import {
   Wallet,
   Users,
   FolderOpen,
+  Gift,
+  Headphones,
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Badge } from "./ui/Badge";
@@ -61,7 +63,9 @@ import { LiveActivityTicker, LiveActivityPopup } from "./LiveActivityTicker";
 import { Tooltip } from "./ui/Tooltip";
 import { initializePayment } from "@/lib/pesapal";
 import { AgentAssets } from "./AgentAssets";
+import { AgentRewards } from "./AgentRewards";
 import { checkAndNotifySubscriptionExpiry } from "@/lib/notifications";
+import { UserSupportDashboard } from "./tickets";
 
 export const AgentDashboard = ({
   onNavigate,
@@ -508,6 +512,7 @@ export const AgentDashboard = ({
                 <div className="flex -space-x-4">
                   {[1, 2, 3, 4, 5].map(i => (
                     <div key={i} className="w-14 h-14 rounded-full border-4 border-white bg-gray-100 overflow-hidden shadow-sm">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={`https://i.pravatar.cc/100?u=${i + 50}`} alt="User" />
                     </div>
                   ))}
@@ -620,6 +625,19 @@ export const AgentDashboard = ({
 
     if (activeTab === "assets") {
       return <AgentAssets currentUser={currentUser} />;
+    }
+
+    if (activeTab === "rewards") {
+      return <AgentRewards currentUser={currentUser} />;
+    }
+
+    if (activeTab === "support") {
+      return (
+        <UserSupportDashboard
+          user={agent}
+          userType="agent"
+        />
+      );
     }
 
     if (activeTab === "properties") {
@@ -1281,7 +1299,7 @@ export const AgentDashboard = ({
   const bottomNavItems = [
     { id: 'leads', label: 'Leads', icon: LayoutGrid },
     { id: 'properties', label: 'Properties', icon: Home },
-    { id: 'assets', label: 'Assets', icon: FolderOpen },
+    { id: 'rewards', label: 'Rewards', icon: Gift },
     { id: 'referrals', label: 'Refer', icon: Share2 },
     { id: 'profile', label: 'Profile', icon: User },
   ];
@@ -1352,6 +1370,12 @@ export const AgentDashboard = ({
               active={activeTab === "assets"}
             />
             <SidebarItem
+              icon={Gift}
+              label="Rewards"
+              id="rewards"
+              active={activeTab === "rewards"}
+            />
+            <SidebarItem
               icon={Share2}
               label="Refer & Earn"
               id="referrals"
@@ -1364,6 +1388,12 @@ export const AgentDashboard = ({
               Account
             </h3>
             <div className="space-y-1">
+              <SidebarItem
+                icon={Headphones}
+                label="Support"
+                id="support"
+                active={activeTab === "support"}
+              />
               <SidebarItem
                 icon={Settings}
                 label="Profile Settings"
@@ -1481,12 +1511,18 @@ export const AgentDashboard = ({
               <span>/</span>
               <span className="text-gray-900">
                 {activeTab === "leads"
-                  ? "Leads"
+                  ? "Leads Dashboard"
                   : activeTab === "properties"
-                    ? "Properties"
+                    ? "My Properties"
                     : activeTab === "referrals"
-                      ? "Referrals"
-                      : "Profile"}
+                      ? "Refer & Earn"
+                      : activeTab === "support"
+                        ? "Support Tickets"
+                        : activeTab === "rewards"
+                          ? "Rewards"
+                          : activeTab === "assets"
+                            ? "My Assets"
+                            : "Profile Settings"}
               </span>
             </div>
           </div>

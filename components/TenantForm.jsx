@@ -286,6 +286,7 @@ export const TenantForm = ({
       );
       setVerificationStep("idle");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.whatsapp]);
 
   const handleVerifyOtp = useCallback(

@@ -243,6 +243,7 @@ export const NotificationModal = ({ notification, onClose, currentUser }) => {
                                     <div className="relative inline-block mx-auto">
                                         <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-[#FFF5E6] border-4 border-white shadow-lg flex items-center justify-center text-[#FE9200] text-4xl md:text-5xl font-black">
                                             {data.avatar ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
                                                 <img src={data.avatar} alt={data.name} className="w-full h-full rounded-[40px] object-cover" />
                                             ) : (
                                                 (data.name || 'A').charAt(0)

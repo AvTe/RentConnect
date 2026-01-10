@@ -1,0 +1,28 @@
+# Yoombaa - Kenya's Leading Rental Marketplace
+# https://yoombaa.com
+
+User-agent: *
+Allow: /
+
+# Disallow admin and API routes
+Disallow: /api/
+Disallow: /admin/
+Disallow: /admin
+Disallow: /_next/
+Disallow: /private/
+
+# Allow important static assets
+Allow: /api/og
+Allow: /*.js$
+Allow: /*.css$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.svg$
+Allow: /*.webp$
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://yoombaa.com/sitemap.xml
+

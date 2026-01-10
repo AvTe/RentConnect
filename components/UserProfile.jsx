@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { User, Mail, MapPin, Camera, Save, CheckCircle, AlertCircle, Phone, Loader2 } from 'lucide-react';
+import { User, Mail, MapPin, Camera, Save, CheckCircle, AlertCircle, Phone, Loader2, MessageCircle, LogOut, HelpCircle } from 'lucide-react';
 import { Button } from './ui/Button';
 import { PhoneVerification } from './ui/PhoneVerification';
 import { uploadProfileImage } from '@/lib/storage-supabase';
 
-export const UserProfile = ({ user, onSave, onCancel }) => {
+export const UserProfile = ({ user, onSave, onCancel, onLogout, onOpenHelpCenter }) => {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -66,7 +66,7 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
       }
 
       const result = await uploadProfileImage(userId, file);
-      
+
       if (result.success) {
         setFormData(prev => ({ ...prev, avatar: result.url }));
       } else {
@@ -153,7 +153,7 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full pl-9 md:pl-10 pr-4 py-2.5 md:py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm md:text-base"
               />
             </div>
@@ -166,7 +166,7 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full pl-9 md:pl-10 pr-4 py-2.5 md:py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm md:text-base"
               />
             </div>
@@ -179,7 +179,7 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
               <input
                 type="text"
                 value={formData.city}
-                onChange={(e) => setFormData({...formData, city: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 className="w-full pl-9 md:pl-10 pr-4 py-2.5 md:py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-[#FE9200] focus:border-[#FE9200] outline-none transition-all bg-white text-gray-900 placeholder-gray-400 text-sm md:text-base"
               />
             </div>
@@ -203,7 +203,7 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
 
           <PhoneVerification
             phoneNumber={formData.phone}
-            onPhoneChange={(value) => setFormData({...formData, phone: value})}
+            onPhoneChange={(value) => setFormData({ ...formData, phone: value })}
             onVerified={handlePhoneVerified}
             checkExisting={false}
             defaultCountry="KE"
@@ -239,6 +239,64 @@ export const UserProfile = ({ user, onSave, onCancel }) => {
             <Save className="w-4 h-4" />
             {phoneChanged && !isPhoneVerified ? 'Verify Phone First' : 'Save Changes'}
           </Button>
+        </div>
+
+        {/* Quick Actions Section */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Quick Actions</p>
+
+          {/* Live Support */}
+          <button
+            type="button"
+            onClick={onOpenHelpCenter}
+            className="w-full flex items-center justify-between p-4 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors group mb-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
+                <MessageCircle size={20} className="text-white" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-gray-900">Live Support</p>
+                <p className="text-sm text-gray-500">Chat with our team</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              <span className="text-sm font-semibold text-emerald-600">Online</span>
+            </div>
+          </button>
+
+          {/* Help Center */}
+          <button
+            type="button"
+            onClick={onOpenHelpCenter}
+            className="w-full flex items-center gap-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group mb-3"
+          >
+            <div className="w-10 h-10 bg-[#FE9200] rounded-xl flex items-center justify-center">
+              <HelpCircle size={20} className="text-white" />
+            </div>
+            <div className="text-left flex-1">
+              <p className="font-semibold text-gray-900">Help Center</p>
+              <p className="text-sm text-gray-500">Documentation & FAQs</p>
+            </div>
+          </button>
+
+          {/* Logout - visible on mobile */}
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="w-full flex items-center gap-3 p-4 bg-red-50 hover:bg-red-100 rounded-xl transition-colors group md:hidden"
+            >
+              <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
+                <LogOut size={20} className="text-white" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="font-semibold text-red-600">Log Out</p>
+                <p className="text-sm text-red-400">Sign out of your account</p>
+              </div>
+            </button>
+          )}
         </div>
       </form>
     </div>

@@ -278,6 +278,7 @@ export const ReferralDashboard = () => {
                                 {/* Avatar */}
                                 <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-xl font-black text-gray-400 flex-shrink-0 border-2 border-white shadow-md">
                                     {agent.avatar ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
                                         <img src={agent.avatar} alt={agent.name} className="w-full h-full rounded-xl object-cover" />
                                     ) : (
                                         agent.name?.charAt(0).toUpperCase()

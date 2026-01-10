@@ -62,6 +62,7 @@ export const SidebarUserProfile = ({ user, compact = false }) => {
 export const SidebarLogo = ({ name = 'Yoombaa', useLogo = true }) => (
   <div className="flex items-center gap-3 px-2">
     {useLogo ? (
+      // eslint-disable-next-line @next/next/no-img-element
       <img src="/yoombaa-logo.svg" alt="Yoombaa" className="w-8 h-8" />
     ) : (
       <div className="w-8 h-8 bg-[#FE9200] rounded-lg flex items-center justify-center text-white font-bold">

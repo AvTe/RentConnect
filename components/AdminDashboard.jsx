@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Users, CreditCard, FileText, CheckCircle, XCircle,
   LogOut, Search, Bell, ShieldCheck, DollarSign, Activity, User, Settings as SettingsIcon, Shield, Mail, Zap,
-  Menu, X, Flag, Star, Gift, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft
+  Menu, X, Flag, Star, Gift, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeft, Ticket, Headphones
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import {
@@ -27,20 +27,25 @@ import { RatingsManagement } from './admin/RatingsManagement';
 import { ExternalLeadsAnalytics } from './admin/ExternalLeadsAnalytics';
 import { SystemSettings } from './admin/SystemSettings';
 import { AdminActivityLogs } from './admin/AdminActivityLogs';
+import AdminVoucherManagement from './admin/AdminVoucherManagement';
 import { NotificationBell } from './NotificationBell';
 import { useToast } from '@/context/ToastContext';
+import { AdminTicketsDashboard } from './tickets';
+import { getTicketStats } from '@/lib/ticket-service';
 
 // Sidebar navigation items configuration
 const navItems = [
   { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, section: 'main' },
   { id: 'admin_management', label: 'Admin Users', icon: Shield, section: 'main' },
+  { id: 'support_tickets', label: 'Support Tickets', icon: Headphones, section: 'main' },
+  { id: 'leads', label: 'All Leads', icon: FileText, section: 'leads' },
   { id: 'agents', label: 'Agents', icon: Users, section: 'users' },
   { id: 'renters', label: 'Renters', icon: User, section: 'users' },
   { id: 'verifications', label: 'Verifications', icon: ShieldCheck, section: 'users' },
-  { id: 'leads', label: 'All Leads', icon: FileText, section: 'leads' },
   { id: 'bad_leads', label: 'Bad Reports', icon: Flag, section: 'leads' },
   { id: 'finance', label: 'Finance', icon: DollarSign, section: 'business' },
   { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, section: 'business' },
+  { id: 'vouchers', label: 'Vouchers', icon: Ticket, section: 'business' },
   { id: 'referrals', label: 'Referrals', icon: Gift, section: 'marketing' },
   { id: 'ratings', label: 'Ratings', icon: Star, section: 'marketing' },
   { id: 'analytics', label: 'Analytics', icon: Zap, section: 'marketing' },
@@ -50,12 +55,11 @@ const navItems = [
   { id: 'system_settings', label: 'Settings', icon: SettingsIcon, section: 'system' },
 ];
 
-// Collapsible Sidebar Item
-const SidebarItem = ({ icon: Icon, label, id, active, onClick, collapsed }) => (
+const SidebarItem = ({ icon: Icon, label, id, active, onClick, collapsed, badge }) => (
   <button
     onClick={() => onClick(id)}
     title={collapsed ? label : undefined}
-    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
+    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative
       ${active
         ? 'bg-[#FE9200] text-white'
         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -65,6 +69,16 @@ const SidebarItem = ({ icon: Icon, label, id, active, onClick, collapsed }) => (
   >
     <Icon className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${active ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'}`} />
     {!collapsed && <span className="truncate">{label}</span>}
+    {!collapsed && badge > 0 && (
+      <span className={`ml-auto px-1.5 py-0.5 text-[10px] font-bold rounded-full ${active ? 'bg-white/20 text-white' : 'bg-red-500 text-white'}`}>
+        {badge}
+      </span>
+    )}
+    {collapsed && badge > 0 && (
+      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+        {badge > 9 ? '9+' : badge}
+      </span>
+    )}
   </button>
 );
 
@@ -75,6 +89,7 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificati
   const [loading, setLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [openTicketCount, setOpenTicketCount] = useState(0);
 
   // Handle tab change and close sidebar on mobile
   const handleTabChange = (tabId) => {
@@ -91,8 +106,21 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificati
     if (activeTab === 'verifications') {
       fetchData();
     }
+    // Fetch ticket stats on mount
+    fetchTicketCount();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+
+  const fetchTicketCount = async () => {
+    try {
+      const result = await getTicketStats();
+      if (result.success) {
+        setOpenTicketCount(result.data.open || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching ticket stats:', error);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -152,6 +180,8 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificati
         return <FinanceManagement />;
       case 'subscriptions':
         return <SubscriptionManagement />;
+      case 'vouchers':
+        return <AdminVoucherManagement currentUser={currentUser} />;
       case 'admin_management':
         return <AdminManagement currentUser={currentUser} />;
       case 'notification_templates':
@@ -170,6 +200,8 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificati
         return <SystemSettings />;
       case 'activity_logs':
         return <AdminActivityLogs />;
+      case 'support_tickets':
+        return <AdminTicketsDashboard currentUser={currentUser} />;
       default:
         return <AdminOverview />;
     }
@@ -264,6 +296,7 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificati
         <div className={`p-4 flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} border-b border-gray-100`}>
           {!isSidebarCollapsed && (
             <div className="flex items-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-10" />
             </div>
           )}
@@ -296,6 +329,7 @@ export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificati
               active={activeTab === item.id}
               onClick={handleTabChange}
               collapsed={isSidebarCollapsed}
+              badge={item.id === 'support_tickets' ? openTicketCount : 0}
             />
           ))}
         </div>

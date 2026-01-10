@@ -8,10 +8,12 @@ import DebugPanel from '@/components/DebugPanel'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  style: ['normal', 'italic'],
   display: 'swap',
   variable: '--font-dm-sans',
   preload: true,
+  fallback: ['system-ui', 'arial'],
 })
 
 export const viewport = {
@@ -22,15 +24,69 @@ export const viewport = {
 }
 
 export const metadata = {
-  title: 'Yoombaa - Find Your Perfect Home',
-  description: 'Yoombaa connects tenants with trusted agents. Find your perfect rental property without the hassle.',
-  keywords: 'rental, apartments, housing, agents, tenants, property rental',
+  metadataBase: new URL('https://yoombaa.com'),
+  title: {
+    default: 'Yoombaa - Find Rental Properties & Verified Tenants in Kenya',
+    template: '%s | Yoombaa'
+  },
+  description: 'Yoombaa connects tenants with trusted agents in Kenya. Find your perfect rental property or verify quality tenants without the hassle.',
+  keywords: [
+    'rental properties Kenya',
+    'find tenants Nairobi',
+    'apartments for rent Nairobi',
+    'property agents Kenya',
+    'house hunting Kenya',
+    'real estate Kenya',
+    'Yoombaa',
+    'rental marketplace Kenya',
+    'verified tenants Kenya',
+    'trusted property agents Nairobi'
+  ],
   manifest: '/manifest.json',
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
-    title: 'Yoombaa - Find Your Perfect Home',
-    description: 'Connect with trusted agents and find your perfect rental property.',
+    title: 'Yoombaa - Kenya\'s Leading Rental Marketplace',
+    description: 'Connect with trusted agents and find your perfect rental property faster. Kenya\'s smartest way to rent.',
+    url: 'https://yoombaa.com',
     siteName: 'Yoombaa',
+    locale: 'en_KE',
     type: 'website',
+    images: [
+      {
+        url: '/api/og',
+        width: 1200,
+        height: 630,
+        alt: 'Yoombaa - Find Your Perfect Rental Home in Kenya',
+        type: 'image/png',
+      },
+      {
+        url: '/og-image.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Yoombaa - Kenya Rental Marketplace',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Yoombaa - Rental Marketplace Kenya',
+    description: 'Find verified tenants and rental properties across Kenya.',
+    images: ['/api/og'],
+    creator: '@yoombaa',
+    site: '@yoombaa',
   },
   icons: {
     icon: [
@@ -42,6 +98,10 @@ export const metadata = {
       { url: '/yoombaa-favicon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
+  verification: {
+    google: 'your-google-verification-code', // Replace with actual verification code
+  },
+  category: 'real estate',
 }
 
 export default function RootLayout({ children }) {
@@ -49,8 +109,6 @@ export default function RootLayout({ children }) {
     <html lang="en" className={dmSans.variable}>
       <head>
         {/* Preconnect to external resources */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://yydwhwkvrvgkqnmirbrr.supabase.co" />
 
         {/* DNS Prefetch for performance */}
@@ -67,9 +125,6 @@ export default function RootLayout({ children }) {
             {children}
           </Suspense>
         </ToastProvider>
-
-        {/* Debug Panel - TEMPORARY for troubleshooting */}
-        <DebugPanel />
 
         {/* Suppress harmless ResizeObserver loop errors */}
         <Script id="resize-observer-fix" strategy="beforeInteractive">

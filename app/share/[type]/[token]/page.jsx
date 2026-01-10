@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import Image from 'next/image';
 import {
     Folder, Image as ImageIcon, Video, FileText, Download, Share2,
     MapPin, User, Phone, Loader2, ExternalLink, ArrowLeft, Grid3X3, List
@@ -100,7 +101,7 @@ export default function SharedAssetPage() {
                     <div className="max-w-4xl mx-auto px-4 py-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                                <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-8" />
+                                <Image src="/yoombaa-logo.svg" alt="Yoombaa" width={100} height={32} className="h-8 w-auto" />
                                 <span className="text-sm text-gray-400">Shared Property Asset</span>
                             </div>
                             {data.agent && (
@@ -122,7 +123,10 @@ export default function SharedAssetPage() {
                 <main className="max-w-4xl mx-auto px-4 py-8">
                     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                         {data.file_type === 'image' ? (
-                            <img src={data.public_url} alt={data.file_name} className="w-full max-h-[70vh] object-contain bg-gray-100" />
+                            <div className="relative w-full" style={{ maxHeight: '70vh' }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={data.public_url} alt={data.file_name} className="w-full max-h-[70vh] object-contain bg-gray-100" />
+                            </div>
                         ) : data.file_type === 'video' ? (
                             <video src={data.public_url} controls className="w-full max-h-[70vh]" />
                         ) : (
@@ -190,7 +194,7 @@ export default function SharedAssetPage() {
                 <div className="max-w-6xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <img src="/yoombaa-logo.svg" alt="Yoombaa" className="h-8" />
+                            <Image src="/yoombaa-logo.svg" alt="Yoombaa" width={100} height={32} className="h-8 w-auto" />
                             <span className="text-sm text-gray-400">Shared Property</span>
                         </div>
                         {data.agent && (
@@ -270,6 +274,8 @@ export default function SharedAssetPage() {
                                     <>
                                         <div className="aspect-square bg-gray-100 relative">
                                             {asset.file_type === 'image' && asset.public_url ? (
+                                                // Dynamic external images need unoptimized prop
+                                                // eslint-disable-next-line @next/next/no-img-element
                                                 <img src={asset.public_url} alt={asset.file_name} className="w-full h-full object-cover" />
                                             ) : asset.file_type === 'video' ? (
                                                 <div className="w-full h-full flex items-center justify-center bg-gray-900">
@@ -290,6 +296,7 @@ export default function SharedAssetPage() {
                                     <>
                                         <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                                             {asset.file_type === 'image' && asset.public_url ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
                                                 <img src={asset.public_url} alt="" className="w-full h-full object-cover" />
                                             ) : (
                                                 getFileIcon(asset.file_type, 24)
@@ -347,6 +354,7 @@ export default function SharedAssetPage() {
 
                     <div className="max-w-4xl max-h-[80vh] w-full" onClick={e => e.stopPropagation()}>
                         {selectedAsset.file_type === 'image' ? (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img src={selectedAsset.public_url} alt={selectedAsset.file_name} className="w-full h-full object-contain" />
                         ) : selectedAsset.file_type === 'video' ? (
                             <video src={selectedAsset.public_url} controls className="w-full h-full" />
