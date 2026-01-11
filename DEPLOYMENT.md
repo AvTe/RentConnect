@@ -27,8 +27,8 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 #### Site URLs (Required)
 ```
-NEXT_PUBLIC_SITE_URL=https://rent-connect-9uvq.vercel.app
-NEXT_PUBLIC_APP_URL=https://rent-connect-9uvq.vercel.app
+NEXT_PUBLIC_SITE_URL=https://yoombaa.com
+NEXT_PUBLIC_APP_URL=https://yoombaa.com
 ```
 
 #### Payment & Services (Optional but recommended)
@@ -49,10 +49,12 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
 #### A. Authentication → URL Configuration
 Go to Supabase Dashboard → Authentication → URL Configuration:
-- **Site URL**: `https://rent-connect-9uvq.vercel.app`
+- **Site URL**: `https://yoombaa.com`
 - **Redirect URLs**: Add:
-  - `https://rent-connect-9uvq.vercel.app/auth/callback`
-  - `https://rent-connect-9uvq.vercel.app/auth/reset-password`
+  - `https://yoombaa.com/**`
+  - `https://yoombaa.com/auth/callback`
+  - `https://yoombaa.com/auth/reset-password`
+  - `https://www.yoombaa.com/**`
   - `http://localhost:5000/auth/callback` (for development)
   - `http://localhost:5000/auth/reset-password` (for development)
 
@@ -72,7 +74,7 @@ Customize email templates for:
 ### 3. Payment Gateway Setup
 
 #### Pesapal (Kenya - M-Pesa)
-- Register IPN URL: `https://rent-connect-9uvq.vercel.app/api/pesapal/ipn`
+- Register IPN URL: `https://yoombaa.com/api/pesapal/ipn`
 - Update callback URL in Pesapal dashboard
 
 ### 4. Common Post-Deployment Issues & Fixes

@@ -101,72 +101,71 @@ const LeadCard = ({
     }
   };
 
-  // Mobile compact card (optimized for exactly 2 per screen)
-  // Width calculation: (100vw - container padding - inner padding - gap) / 2
-  // = (100vw - 24px - 24px - 8px) / 2 = 50vw - 28px
+  // Mobile compact card - optimized for 2 cards visible on screen
+  // Width: ~45vw to show partial 3rd card (indicating scrollability)
   if (isMobile) {
     return (
-      <div className="bg-[#FFF5E6] rounded-xl p-1.5 w-[calc(50vw-28px)] flex-shrink-0 select-none">
+      <div className="bg-[#FFF5E6] rounded-xl p-2 w-[46vw] min-w-[160px] max-w-[180px] flex-shrink-0 select-none">
         <div className="bg-white rounded-lg overflow-hidden border-b-[3px] border-[#FE9200] h-full flex flex-col shadow-sm">
-          <div className="p-2 flex flex-col flex-1">
-            {/* Top badges - compact */}
-            <div className="flex items-center justify-between mb-1.5 gap-1">
-              <div className="flex items-center gap-0.5 bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">
-                <Users size={8} className="text-[#2E7D32]" />
-                <span className="text-[7px] font-semibold text-[#2E7D32]">
+          <div className="p-2.5 flex flex-col flex-1">
+            {/* Top badges */}
+            <div className="flex items-center justify-between mb-2 gap-1">
+              <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1 rounded-full">
+                <Users size={10} className="text-[#2E7D32]" />
+                <span className="text-[9px] font-semibold text-[#2E7D32]">
                   {contactCount}
                 </span>
               </div>
-              <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-1.5 py-0.5 rounded-full text-[7px] font-bold">
+              <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-2 py-1 rounded-full text-[9px] font-bold">
                 {formatBudget(budget)}
               </span>
             </div>
 
-            {/* Property info - compact */}
-            <h3 className="text-xs font-bold text-gray-900 mb-0.5 truncate leading-tight">
+            {/* Property info */}
+            <h3 className="text-sm font-bold text-gray-900 mb-0.5 truncate leading-tight">
               {propertyType}
             </h3>
-            <p className="text-[9px] text-gray-500 mb-2 truncate">{location}</p>
+            <p className="text-[11px] text-gray-500 mb-2 truncate">{location}</p>
 
-            {/* Compact status badges - no redundancy */}
-            <div className="flex items-center gap-1 mb-2">
-              <div className="flex items-center gap-0.5 bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">
-                <CheckCircle size={8} className="text-[#2E7D32]" />
-                <span className="text-[7px] text-[#2E7D32] font-medium capitalize">{status}</span>
+            {/* Status badges */}
+            <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+              <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1 rounded-full">
+                <CheckCircle size={10} className="text-[#2E7D32]" />
+                <span className="text-[9px] text-[#2E7D32] font-medium capitalize">{status}</span>
               </div>
-              <div className="flex items-center gap-0.5 bg-[#FFF5E6] px-1.5 py-0.5 rounded-full">
-                <Zap size={8} className="text-[#FE9200]" />
-                <span className="text-[7px] text-gray-600 font-medium">Ready</span>
+              <div className="flex items-center gap-1 bg-[#FFF5E6] px-2 py-1 rounded-full">
+                <Zap size={10} className="text-[#FE9200]" />
+                <span className="text-[9px] text-gray-600 font-medium">Ready</span>
               </div>
             </div>
 
-            {/* Contact section - compact */}
+            {/* Contact section */}
             {isPremium ? (
-              <div className="bg-[#E8F5E9] rounded-lg p-1.5 mt-auto">
+              <div className="bg-[#E8F5E9] rounded-lg p-2 mt-auto">
                 <div className="flex items-center justify-around">
                   <button
                     onClick={() => handleContactClick("phone")}
-                    className="flex items-center justify-center w-7 h-7 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors"
+                    className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors active:scale-95"
                   >
-                    <Phone size={12} className="text-white" />
+                    <Phone size={14} className="text-white" />
                   </button>
-                  <div className="w-px h-5 bg-[#2E7D32]/30" />
+                  <div className="w-px h-6 bg-[#2E7D32]/30" />
                   <button
                     onClick={() => handleContactClick("email")}
-                    className="flex items-center justify-center w-7 h-7 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors"
+                    className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors active:scale-95"
                   >
-                    <Mail size={12} className="text-white" />
+                    <Mail size={14} className="text-white" />
                   </button>
                 </div>
               </div>
             ) : (
               <button
                 onClick={handleOverlayClick}
-                className="bg-[#FFF5E6] rounded-lg p-2 border border-[#FE9200] mt-auto hover:bg-[#FFE8CC] transition-colors"
+                className="bg-[#FFF5E6] rounded-lg py-2.5 px-3 border border-[#FE9200] mt-auto hover:bg-[#FFE8CC] transition-colors active:scale-[0.98]"
               >
-                <div className="flex items-center justify-center gap-1">
-                  <Lock size={10} className="text-[#FE9200]" />
-                  <span className="text-[8px] text-[#FE9200] font-semibold">
+                <div className="flex items-center justify-center gap-1.5">
+                  <Lock size={12} className="text-[#FE9200]" />
+                  <span className="text-[10px] text-[#FE9200] font-semibold">
                     Subscribe
                   </span>
                 </div>
@@ -265,20 +264,19 @@ const LeadCard = ({
 const SkeletonCardSmall = ({ isMobile }) => {
   if (isMobile) {
     return (
-      <div className="bg-[#FFF5E6] rounded-xl p-1.5 w-[calc(50vw-28px)] flex-shrink-0 animate-pulse">
-        <div className="bg-white rounded-lg p-2 h-[180px]">
+      <div className="bg-[#FFF5E6] rounded-xl p-2 w-[46vw] min-w-[160px] max-w-[180px] flex-shrink-0 animate-pulse">
+        <div className="bg-white rounded-lg p-2.5 h-[200px]">
           <div className="flex justify-between mb-2">
-            <div className="h-4 bg-gray-200 rounded-full w-8"></div>
-            <div className="h-4 bg-gray-200 rounded-full w-12"></div>
+            <div className="h-5 bg-gray-200 rounded-full w-10"></div>
+            <div className="h-5 bg-gray-200 rounded-full w-14"></div>
           </div>
-          <div className="h-3 bg-gray-200 rounded w-3/4 mb-1"></div>
-          <div className="h-2 bg-gray-200 rounded w-1/2 mb-2"></div>
-          <div className="grid grid-cols-2 gap-1 mb-2">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-6 bg-gray-100 rounded"></div>
-            ))}
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
+          <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
+          <div className="flex gap-1.5 mb-2">
+            <div className="h-6 bg-gray-100 rounded-full w-16"></div>
+            <div className="h-6 bg-gray-100 rounded-full w-14"></div>
           </div>
-          <div className="h-8 bg-gray-100 rounded"></div>
+          <div className="h-10 bg-gray-100 rounded-lg mt-auto"></div>
         </div>
       </div>
     );
@@ -604,8 +602,8 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
       {/* Hero Section */}
       <section className="flex-1 relative flex flex-col min-h-0">
         {/* Hero Background Container */}
-        <div className="absolute inset-0 mx-3 sm:mx-6 lg:mx-8 mb-16 sm:mb-20">
-          <div className="h-[115%] w-full max-w-[1400px] mx-auto relative rounded-2xl sm:rounded-3xl overflow-hidden">
+        <div className="absolute inset-0 mx-2 sm:mx-6 lg:mx-8 mb-12 sm:mb-20">
+          <div className="h-[100%] sm:h-[115%] w-full max-w-[1400px] mx-auto relative rounded-2xl sm:rounded-3xl overflow-hidden">
             {/* Hero Background Image */}
             <img
               src="/hero-section.jpg"
@@ -614,33 +612,33 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
             />
 
             {/* Dark gradient overlay for better text readability */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/40 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/25 to-black/50 pointer-events-none" />
           </div>
         </div>
 
         {/* Hero Content - Centered */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pb-32 sm:pb-56 text-center">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 pb-40 sm:pb-56 pt-4 sm:pt-0 text-center">
           <div className="max-w-3xl mx-auto">
             {/* Main Headline - SEO Optimized */}
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-2 sm:mb-3 drop-shadow-sm">
+            <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-snug mb-2 sm:mb-3 drop-shadow-md px-2">
               Find Verified Tenants & Rental Properties in Kenya
             </h1>
             <p className="sr-only">Kenya&apos;s leading marketplace for rental houses, apartments and verified tenants. Connect with trusted agents in Nairobi and across the country.</p>
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-medium italic text-[#FE9200] leading-tight mb-4 sm:mb-5 drop-shadow-sm">
+            <h2 className="text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-4xl font-medium italic text-[#FE9200] leading-tight mb-5 sm:mb-6 drop-shadow-md">
               The Smarter Way to Rent
             </h2>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+            <div className="flex flex-col items-center justify-center gap-3 sm:gap-3 px-4 sm:px-0">
               <button
                 onClick={() => onNavigate("tenant-form")}
-                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white/20 backdrop-blur-md border-2 border-[#FE9200] text-[#ffffff] font-medium hover:bg-[#FE9200] hover:text-white transition-all text-sm hover:shadow-lg"
+                className="w-full max-w-xs sm:max-w-none sm:w-auto px-6 sm:px-8 py-3 sm:py-3 rounded-full bg-white/15 backdrop-blur-md border-2 border-[#FE9200] text-white font-semibold hover:bg-[#FE9200] hover:text-white transition-all text-base sm:text-base hover:shadow-lg active:scale-[0.98]"
               >
                 I Need a Place to Rent
               </button>
               <button
                 onClick={() => onNavigate("login", { tab: "agent" })}
-                className="w-full sm:w-auto px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#FE9200] text-white font-medium hover:bg-[#E58300] transition-all text-sm hover:shadow-lg"
+                className="w-full max-w-xs sm:max-w-none sm:w-auto px-6 sm:px-8 py-3 sm:py-3 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all text-base sm:text-base hover:shadow-lg active:scale-[0.98]"
               >
                 I Have a Property to List
               </button>
@@ -649,12 +647,12 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
         </div>
 
         {/* Cards Section - Positioned at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 px-3 sm:px-6 lg:px-8">
+        <div className="absolute bottom-0 left-0 right-0 z-10 px-2 sm:px-6 lg:px-8">
           <div className="max-w-[1400px] mx-auto">
             {/* Cards Carousel */}
             <div
               ref={containerRef}
-              className="overflow-hidden touch-pan-y pb-4 sm:pb-6"
+              className="overflow-hidden touch-pan-y pb-3 sm:pb-6 mx-2.5 sm:mx-0"
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => {
                 if (isDraggingRef.current) handleMouseUp();
@@ -671,7 +669,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
               <div className="overflow-visible">
                 {loading ? (
                   <div className="flex gap-2 sm:gap-3 px-1 sm:px-2">
-                    {(isMobile ? [1, 2, 3, 4] : [1, 2, 3, 4, 5, 6]).map((i) => (
+                    {(isMobile ? [1, 2, 3] : [1, 2, 3, 4, 5, 6]).map((i) => (
                       <SkeletonCardSmall key={i} isMobile={isMobile} />
                     ))}
                   </div>
@@ -706,7 +704,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-32 sm:h-48 text-gray-500 bg-white/90 backdrop-blur-sm rounded-xl mx-2 sm:mx-4">
+                  <div className="flex items-center justify-center h-28 sm:h-48 text-gray-500 bg-white/90 backdrop-blur-sm rounded-xl mx-2 sm:mx-4">
                     <p className="text-xs sm:text-base">
                       No property leads available yet
                     </p>
@@ -721,7 +719,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
       {/* Pagination dots */}
       {
         displayLeads.length > 0 && (
-          <div className="flex justify-center items-center gap-1.5 sm:gap-2 py-2 sm:py-3 bg-white/80 backdrop-blur-sm">
+          <div className="flex justify-center items-center gap-2 sm:gap-2 py-2.5 sm:py-3 bg-white/90 backdrop-blur-sm">
             {displayLeads
               .slice(0, Math.min(displayLeads.length, isMobile ? 6 : 8))
               .map((_, index) => (
@@ -732,13 +730,13 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
                     setCurrentIndex(index);
                   }}
                   className={`rounded-full transition-all duration-300 ${activeIndex === index
-                    ? "bg-[#FE9200] w-2.5 h-2.5 sm:w-3.5 sm:h-3.5"
-                    : "bg-gray-400 w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 hover:bg-gray-500"
+                    ? "bg-[#FE9200] w-3 h-3 sm:w-3.5 sm:h-3.5"
+                    : "bg-gray-300 w-2 h-2 sm:w-2.5 sm:h-2.5 hover:bg-gray-400"
                     }`}
                 />
               ))}
             {displayLeads.length > (isMobile ? 6 : 8) && (
-              <span className="text-[10px] sm:text-xs text-gray-500 ml-0.5 sm:ml-1">
+              <span className="text-xs sm:text-xs text-gray-500 ml-1 sm:ml-1">
                 +{displayLeads.length - (isMobile ? 6 : 8)}
               </span>
             )}
