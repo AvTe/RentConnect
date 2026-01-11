@@ -1,8 +1,17 @@
 'use client';
 import React from 'react';
+import { useScrollDirection } from '@/lib/hooks';
 
 /**
- * Mobile Bottom Navigation Bar
+ * Mobile Bottom Navigation Bar with Smart Hide/Show
+ *
+ * Features:
+ * - Shows when user first visits
+ * - Hides when scrolling down (more content space)
+ * - Shows when scrolling up (user wants to navigate)
+ * - Always visible on non-scrollable screens
+ * - Smooth fade + slide animations
+ *
  * Height: 56-64px (within 60-72px guideline)
  * Icons: 20px (within 18-24px guideline)
  * Touch targets: 44px min
@@ -12,12 +21,29 @@ export const BottomNavigation = ({
   items = [],
   activeId,
   onNavigate,
-  className = ''
+  className = '',
+  scrollContainer = null // Optional: custom scroll container element
 }) => {
+  // Use scroll direction hook for smart nav behavior
+  const { showNav } = useScrollDirection({
+    threshold: 10,
+    scrollContainer
+  });
+
   if (items.length === 0) return null;
 
   return (
-    <nav className={`fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center pb-safe ${className}`}>
+    <nav
+      className={`
+        fixed bottom-0 left-0 right-0 z-50 md:hidden flex justify-center pb-safe
+        transition-all duration-300 ease-out
+        ${showNav
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 translate-y-full pointer-events-none'
+        }
+        ${className}
+      `}
+    >
       {/* Centered dark pill container - height ~56px */}
       <div className="bg-gray-900 backdrop-blur-lg mb-3 rounded-full shadow-xl px-3 py-2 flex items-center gap-0.5">
         {items.map((item) => {
@@ -67,6 +93,7 @@ export const getNavItemsForRole = (role, icons) => {
     return [
       { id: 'leads', label: 'Leads', icon: LayoutGrid },
       { id: 'properties', label: 'Properties', icon: Home },
+      { id: 'assets', label: 'Assets', icon: FileText },
       { id: 'referrals', label: 'Refer', icon: Share2 },
       { id: 'profile', label: 'Profile', icon: User },
     ];

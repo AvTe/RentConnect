@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Save, Building, ShieldCheck, ShieldAlert } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import Image from 'next/image';
+import { User, Mail, Phone, MapPin, Camera, Save, Building, ShieldCheck, ShieldAlert, Loader2, MessageCircle, LogOut, HelpCircle, Wallet, Gift, FolderOpen, ChevronRight } from 'lucide-react';
 import { Button } from './ui/Button';
+import { uploadProfileImage } from '@/lib/storage-supabase';
 
-export const AgentProfile = ({ agent, onSave, onCancel }) => {
+export const AgentProfile = ({ agent, onSave, onCancel, onLogout, onOpenSupport, onNavigate }) => {
   const [formData, setFormData] = useState({
     name: agent?.name || '',
     agencyName: agent?.agencyName || '',
     email: agent?.email || '',
     phone: agent?.phone || '',
     experience: agent?.experience || '',
-    location: agent?.location || agent?.city || ''
+    location: agent?.location || agent?.city || '',
+    profileImage: agent?.profileImage || null
   });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const isVerified = agent?.verificationStatus === 'verified';
   const isPending = agent?.verificationStatus === 'pending';
@@ -18,6 +23,23 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const result = await uploadProfileImage(agent?.uid || agent?.id, file);
+      if (result.success) {
+        setFormData({ ...formData, profileImage: result.url });
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -44,12 +66,40 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
         {/* Photo Upload - smaller on mobile */}
         <div className="flex items-center gap-4 md:gap-6">
           <div className="relative flex-shrink-0">
-            <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-xl md:text-2xl font-bold border-2 md:border-4 border-white shadow-md">
-              {String(formData.name || 'A').charAt(0)}
-            </div>
-            <button type="button" className="absolute -bottom-0.5 -right-0.5 md:bottom-0 md:right-0 bg-[#FE9200] text-white p-1.5 md:p-2 rounded-full hover:bg-[#E58300] transition-colors shadow-sm">
-              <Camera className="w-3 h-3 md:w-4 md:h-4" />
+            {formData.profileImage ? (
+              <div className="w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden border-2 md:border-4 border-white shadow-md">
+                <Image
+                  src={formData.profileImage}
+                  alt="Profile"
+                  width={96}
+                  height={96}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-xl md:text-2xl font-bold border-2 md:border-4 border-white shadow-md">
+                {String(formData.name || 'A').charAt(0)}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute -bottom-0.5 -right-0.5 md:bottom-0 md:right-0 bg-[#FE9200] text-white p-1.5 md:p-2 rounded-full hover:bg-[#E58300] transition-colors shadow-sm disabled:opacity-50"
+            >
+              {uploading ? (
+                <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
+              ) : (
+                <Camera className="w-3 h-3 md:w-4 md:h-4" />
+              )}
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 text-sm md:text-base">Profile Photo</h3>
@@ -150,6 +200,102 @@ export const AgentProfile = ({ agent, onSave, onCancel }) => {
             <Save className="w-4 h-4" />
             Save Changes
           </Button>
+        </div>
+
+        {/* Mobile Navigation Section - Only visible on mobile */}
+        {onNavigate && (
+          <div className="border-t border-gray-100 pt-4 md:pt-6 mt-4 md:mt-6 md:hidden">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Quick Navigation</h3>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => onNavigate('wallet')}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-200 hover:border-[#FE9200] hover:bg-[#FFF5E6] transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                    <Wallet className="w-5 h-5 text-[#FE9200]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-900">Wallet</p>
+                    <p className="text-xs text-gray-500">Balance & Transactions</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onNavigate('rewards')}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-200 hover:border-[#FE9200] hover:bg-[#FFF5E6] transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                    <Gift className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-900">Rewards</p>
+                    <p className="text-xs text-gray-500">Earn rewards & bonuses</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onNavigate('assets')}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-200 hover:border-[#FE9200] hover:bg-[#FFF5E6] transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                    <FolderOpen className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-900">My Assets</p>
+                    <p className="text-xs text-gray-500">Your saved content</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Quick Actions Section */}
+        <div className="border-t border-gray-100 pt-4 md:pt-6 mt-4 md:mt-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Quick Actions</h3>
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
+            {onOpenSupport && (
+              <button
+                type="button"
+                onClick={onOpenSupport}
+                className="flex items-center gap-2 p-2 md:p-3 rounded-xl border border-gray-200 hover:border-[#FE9200] hover:bg-[#FFF5E6] transition-all text-left"
+              >
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <HelpCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs md:text-sm font-medium text-gray-900">Support</p>
+                  <p className="text-[10px] md:text-xs text-gray-500">Get help</p>
+                </div>
+              </button>
+            )}
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="flex items-center gap-2 p-2 md:p-3 rounded-xl border border-gray-200 hover:border-red-300 hover:bg-red-50 transition-all text-left"
+              >
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
+                  <LogOut className="w-4 h-4 md:w-5 md:h-5 text-red-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs md:text-sm font-medium text-gray-900">Logout</p>
+                  <p className="text-[10px] md:text-xs text-gray-500">Sign out</p>
+                </div>
+              </button>
+            )}
+          </div>
         </div>
       </form>
     </div>

@@ -64,6 +64,7 @@ import { Tooltip } from "./ui/Tooltip";
 import { initializePayment } from "@/lib/pesapal";
 import { AgentAssets } from "./AgentAssets";
 import { AgentRewards } from "./AgentRewards";
+import { WalletManagement } from "./WalletManagement";
 import { checkAndNotifySubscriptionExpiry } from "@/lib/notifications";
 import { UserSupportDashboard } from "./tickets";
 
@@ -619,6 +620,9 @@ export const AgentDashboard = ({
           agent={agent}
           onSave={handleSaveProfile}
           onCancel={() => setActiveTab("leads")}
+          onLogout={onLogout}
+          onOpenSupport={() => setActiveTab("support")}
+          onNavigate={(tab) => setActiveTab(tab)}
         />
       );
     }
@@ -629,6 +633,22 @@ export const AgentDashboard = ({
 
     if (activeTab === "rewards") {
       return <AgentRewards currentUser={currentUser} />;
+    }
+
+    if (activeTab === "wallet") {
+      return (
+        <WalletManagement
+          currentUser={currentUser}
+          onBack={() => setActiveTab("leads")}
+          onTopUp={() => {
+            if (!isVerified) {
+              alert("Please verify your account before purchasing credits.");
+              return;
+            }
+            if (onOpenSubscription) onOpenSubscription();
+          }}
+        />
+      );
     }
 
     if (activeTab === "support") {
@@ -1295,11 +1315,11 @@ export const AgentDashboard = ({
     );
   };
 
-  // Bottom navigation items for mobile
+  // Bottom navigation items for mobile (max 5 items for usability)
   const bottomNavItems = [
     { id: 'leads', label: 'Leads', icon: LayoutGrid },
     { id: 'properties', label: 'Properties', icon: Home },
-    { id: 'rewards', label: 'Rewards', icon: Gift },
+    { id: 'assets', label: 'Assets', icon: FolderOpen },
     { id: 'referrals', label: 'Refer', icon: Share2 },
     { id: 'profile', label: 'Profile', icon: User },
   ];
@@ -1528,11 +1548,14 @@ export const AgentDashboard = ({
           </div>
 
           <div className="flex items-center gap-3 md:gap-4">
-            {/* Mobile: Show wallet balance - 44px touch target */}
-            <div className="md:hidden flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-xl min-h-[44px]">
+            {/* Mobile: Show wallet balance - 44px touch target - clickable */}
+            <button
+              onClick={() => setActiveTab('wallet')}
+              className="md:hidden flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-xl min-h-[44px] transition-colors"
+            >
               <Wallet className="w-4 h-4 text-[#FE9200]" />
               <span className="text-sm font-semibold text-gray-900">{walletBalance}</span>
-            </div>
+            </button>
 
             <div className="relative hidden lg:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
