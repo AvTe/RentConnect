@@ -1,18 +1,44 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users, FileText, TrendingUp, Activity, Clock,
   AlertCircle, DollarSign, UserPlus, CreditCard, Lock, Wallet,
-  ArrowUpRight, ArrowDownRight, Eye, RefreshCw, ChevronRight
+  ArrowUpRight, ArrowDownRight, Eye, RefreshCw, ChevronRight, BarChart3, MapPin
 } from 'lucide-react';
-import { getDashboardStats, getRecentActivity } from '@/lib/database';
+import {
+  getDashboardStats,
+  getRecentActivity,
+  getRevenueTrendData,
+  getUserGrowthData,
+  getLeadsDistribution,
+  getTopLeadLocations,
+  getDailyActivityData
+} from '@/lib/database';
+import {
+  ChartContainer,
+  TimeRangeToggle,
+  RevenueLineChart,
+  UserGrowthChart,
+  LeadsDonutChart,
+  TopLocationsChart,
+  DailyActivityChart
+} from './charts/ChartComponents';
 
 export const AdminOverview = () => {
   const [stats, setStats] = useState(null);
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Chart states
+  const [revenueTimeRange, setRevenueTimeRange] = useState('30d');
+  const [revenueData, setRevenueData] = useState([]);
+  const [userGrowthData, setUserGrowthData] = useState([]);
+  const [leadsDistribution, setLeadsDistribution] = useState([]);
+  const [topLocations, setTopLocations] = useState([]);
+  const [dailyActivity, setDailyActivity] = useState([]);
+  const [chartsLoading, setChartsLoading] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -21,7 +47,42 @@ export const AdminOverview = () => {
 
   useEffect(() => {
     fetchData();
+    fetchChartData();
   }, []);
+
+  const fetchRevenueData = useCallback(async () => {
+    const days = revenueTimeRange === '7d' ? 7 : revenueTimeRange === '30d' ? 30 : 90;
+    const result = await getRevenueTrendData(days);
+    if (result.success) setRevenueData(result.data || []);
+  }, [revenueTimeRange]);
+
+  // Refetch revenue data when time range changes
+  useEffect(() => {
+    fetchRevenueData();
+  }, [fetchRevenueData]);
+
+  const fetchChartData = async () => {
+    setChartsLoading(true);
+    try {
+      const [revenueResult, userResult, leadsResult, locationsResult, activityResult] = await Promise.all([
+        getRevenueTrendData(30),
+        getUserGrowthData(30),
+        getLeadsDistribution(),
+        getTopLeadLocations(10),
+        getDailyActivityData(7)
+      ]);
+
+      if (revenueResult.success) setRevenueData(revenueResult.data || []);
+      if (userResult.success) setUserGrowthData(userResult.data || []);
+      if (leadsResult.success) setLeadsDistribution(leadsResult.data || []);
+      if (locationsResult.success) setTopLocations(locationsResult.data || []);
+      if (activityResult.success) setDailyActivity(activityResult.data || []);
+    } catch (error) {
+      console.error("Error fetching chart data:", error);
+    } finally {
+      setChartsLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -38,6 +99,11 @@ export const AdminOverview = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchData();
+    fetchChartData();
   };
 
   // Format relative time
@@ -109,10 +175,10 @@ export const AdminOverview = () => {
           <p className="text-gray-500 font-medium mt-1">Here&apos;s what&apos;s happening with your platform today.</p>
         </div>
         <button
-          onClick={fetchData}
+          onClick={handleRefresh}
           className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
         >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={16} className={loading || chartsLoading ? 'animate-spin' : ''} />
           Refresh
         </button>
       </div>
@@ -185,6 +251,66 @@ export const AdminOverview = () => {
             <p className="text-xs text-white/50 mt-1">Wallet: {formatCurrency(stats?.totalWalletBalance)}</p>
           </div>
         </div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Trend Chart */}
+        <ChartContainer
+          title="Revenue Trend"
+          subtitle="Track your platform revenue over time"
+          loading={chartsLoading}
+          actions={
+            <TimeRangeToggle
+              value={revenueTimeRange}
+              onChange={setRevenueTimeRange}
+              options={['7d', '30d', '90d']}
+            />
+          }
+        >
+          <RevenueLineChart data={revenueData} timeRange={revenueTimeRange} />
+        </ChartContainer>
+
+        {/* User Growth Chart */}
+        <ChartContainer
+          title="User Growth"
+          subtitle="Cumulative growth of Agents and Tenants"
+          loading={chartsLoading}
+        >
+          <UserGrowthChart data={userGrowthData} />
+        </ChartContainer>
+      </div>
+
+      {/* Second Row of Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Leads Distribution Donut */}
+        <ChartContainer
+          title="Leads Distribution"
+          subtitle="Lead status breakdown"
+          loading={chartsLoading}
+        >
+          <LeadsDonutChart data={leadsDistribution} />
+        </ChartContainer>
+
+        {/* Top Locations */}
+        <ChartContainer
+          title="Top Locations"
+          subtitle="Where most leads originate"
+          loading={chartsLoading}
+          className="md:col-span-1"
+        >
+          <TopLocationsChart data={topLocations} />
+        </ChartContainer>
+
+        {/* Daily Activity */}
+        <ChartContainer
+          title="Daily Activity"
+          subtitle="Last 7 days activity"
+          loading={chartsLoading}
+          className="md:col-span-2 lg:col-span-1"
+        >
+          <DailyActivityChart data={dailyActivity} />
+        </ChartContainer>
       </div>
 
       {/* Main Content Grid */}

@@ -5,7 +5,7 @@ import {
   Plus, Menu, X, Users, User,
   Eye, MapPin, Home, Zap, Edit2, Trash2, Clock, PauseCircle, PlayCircle,
   MessageSquare, HelpCircle, ChevronRight, Info,
-  PanelLeftClose, PanelLeft, Headphones
+  PanelLeftClose, PanelLeft, Headphones, RefreshCw
 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { UserProfile } from './UserProfile';
@@ -34,6 +34,38 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
   const [editingRequest, setEditingRequest] = useState(null);
   const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [activeTicketCount, setActiveTicketCount] = useState(0);
+
+  // Helper function to check if a lead is expired based on expires_at or 48-hour default
+  const isLeadExpired = (request) => {
+    if (request.status === 'sold_out' || request.status === 'closed' || request.status === 'expired') {
+      return true;
+    }
+    const expiryTime = request.expires_at
+      ? new Date(request.expires_at).getTime()
+      : new Date(request.created_at).getTime() + (48 * 60 * 60 * 1000);
+    return Date.now() > expiryTime;
+  };
+
+  // Get the display status for a lead (considering expiration)
+  const getLeadDisplayStatus = (request) => {
+    if (isLeadExpired(request)) return 'expired';
+    if (request.status === 'sold_out') return 'sold_out';
+    return request.status || 'active';
+  };
+
+  // Sort leads: active first, then paused, then expired/sold_out
+  const getSortedLeads = (leads) => {
+    const statusOrder = { active: 0, paused: 1, expired: 2, sold_out: 3 };
+    return [...leads].sort((a, b) => {
+      const statusA = getLeadDisplayStatus(a);
+      const statusB = getLeadDisplayStatus(b);
+      const orderA = statusOrder[statusA] ?? 4;
+      const orderB = statusOrder[statusB] ?? 4;
+      if (orderA !== orderB) return orderA - orderB;
+      // Secondary sort by created_at (newest first)
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+  };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -97,6 +129,28 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
   const handleBoostRequest = (e) => {
     e.stopPropagation();
     // Boost coming soon
+    setActiveMenuId(null);
+  };
+
+  // Reactivate an expired lead - reset status to active and extend expiry by 48 hours
+  const handleReactivateLead = async (e, request) => {
+    e.stopPropagation();
+    try {
+      const newExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+      const result = await updateLead(request.id, {
+        status: 'active',
+        expires_at: newExpiresAt
+      });
+      if (result.success) {
+        toast.success('Lead reactivated successfully! Active for 48 hours.');
+        fetchMyRequests();
+      } else {
+        toast.error(result.error || 'Failed to reactivate lead');
+      }
+    } catch (error) {
+      console.error('Error reactivating lead:', error);
+      toast.error('An unexpected error occurred');
+    }
     setActiveMenuId(null);
   };
 
@@ -254,18 +308,25 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             </div>
           ) : myRequests.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {myRequests.map(request => (
-                <div key={request.id} className="relative group bg-white rounded-2xl border border-gray-100 hover:shadow-xl hover:border-gray-200 transition-all duration-300 overflow-hidden">
+              {getSortedLeads(myRequests).map(request => {
+                const displayStatus = getLeadDisplayStatus(request);
+                return (
+                <div key={request.id} className={`relative group bg-white rounded-2xl border border-gray-100 hover:shadow-xl hover:border-gray-200 transition-all duration-300 overflow-hidden ${displayStatus === 'expired' || displayStatus === 'sold_out' ? 'opacity-75' : ''}`}>
                   <div className="p-5 md:p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
-                        <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${request.status === 'active'
-                          ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                          : request.status === 'paused'
-                            ? 'bg-amber-50 text-amber-600 border-amber-100'
-                            : 'bg-gray-50 text-gray-500 border-gray-100'
+                        <div className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
+                          displayStatus === 'expired'
+                            ? 'bg-gray-100 text-gray-500 border-gray-200'
+                            : displayStatus === 'sold_out'
+                              ? 'bg-red-50 text-red-600 border-red-100'
+                              : displayStatus === 'active'
+                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                : displayStatus === 'paused'
+                                  ? 'bg-amber-50 text-amber-600 border-amber-100'
+                                  : 'bg-gray-50 text-gray-500 border-gray-100'
                           }`}>
-                          {request.status || 'Active'}
+                          {displayStatus === 'expired' ? 'Expired' : displayStatus === 'sold_out' ? 'Sold Out' : displayStatus || 'Active'}
                         </div>
                         <span className="text-[10px] text-gray-400 font-medium italic">
                           Posted {request.created_at ? new Date(request.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'Recently'}
@@ -324,22 +385,32 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                               <Edit2 size={16} className="text-gray-400" />
                               <span className="font-medium text-gray-700">Edit Lead</span>
                             </button>
-                            <button
-                              onClick={(e) => handleToggleStatus(e, request)}
-                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                            >
-                              {request.status === 'paused' ? (
-                                <>
-                                  <PlayCircle size={16} className="text-emerald-500" />
-                                  <span className="font-medium text-gray-700">Resume Lead</span>
-                                </>
-                              ) : (
-                                <>
-                                  <PauseCircle size={16} className="text-amber-500" />
-                                  <span className="font-medium text-gray-700">Pause Lead</span>
-                                </>
-                              )}
-                            </button>
+                            {displayStatus === 'expired' ? (
+                              <button
+                                onClick={(e) => handleReactivateLead(e, request)}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-emerald-50 transition-colors"
+                              >
+                                <RefreshCw size={16} className="text-emerald-500" />
+                                <span className="font-medium text-emerald-600">Reactivate Lead</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={(e) => handleToggleStatus(e, request)}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                              >
+                                {request.status === 'paused' ? (
+                                  <>
+                                    <PlayCircle size={16} className="text-emerald-500" />
+                                    <span className="font-medium text-gray-700">Resume Lead</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <PauseCircle size={16} className="text-amber-500" />
+                                    <span className="font-medium text-gray-700">Pause Lead</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
                             <button
                               onClick={(e) => handleDeleteRequest(e, request.id)}
                               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-50 mt-1"
@@ -353,7 +424,8 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           ) : (
             <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 border-dashed">
@@ -396,69 +468,90 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
 
     // Default Dashboard View
     return (
-      <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
+      <div className="space-y-5 md:space-y-8 animate-in fade-in duration-500 overflow-hidden">
         {/* Rating Prompt */}
         <RatingPrompt currentUser={currentUser} />
 
-        {/* Hero Banner Section */}
-        <div className="relative rounded-2xl overflow-hidden bg-gray-900 aspect-[21/9] md:aspect-[21/6] group shadow-2xl shadow-orange-100/20">
+        {/* Hero Banner Section - Compact on mobile */}
+        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 min-h-[180px] md:aspect-[21/6] group shadow-lg">
+          {/* Background image with full overlay on mobile for cleaner look */}
           <img
             src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=1200"
             alt="Hero"
-            className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-1000"
+            className="absolute inset-0 w-full h-full object-cover opacity-30 md:opacity-50 group-hover:scale-105 transition-transform duration-1000"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 to-transparent flex items-center px-8 md:px-12">
-            <div className="max-w-md space-y-4 md:space-y-6">
-              <h2 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tight">
+          {/* Full gradient overlay on mobile, partial on desktop */}
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-900/95 via-gray-900/80 to-gray-900/60 md:from-gray-900/90 md:to-transparent" />
+          <div className="relative z-10 flex items-center h-full px-5 py-6 md:px-12 md:py-0">
+            <div className="max-w-md space-y-3 md:space-y-6">
+              <h2 className="text-2xl md:text-5xl font-black text-white leading-tight tracking-tight">
                 Jambo, {user.name?.split(' ')[0]}!
               </h2>
-              <p className="text-gray-200 text-sm md:text-lg font-medium leading-relaxed opacity-90">
+              <p className="text-gray-300 text-sm md:text-lg font-medium leading-relaxed">
                 Ready to find your next home? Post a request to let agents come to you.
               </p>
               <Button
                 onClick={() => onNavigate('tenant-form')}
-                className="h-12 md:h-14 px-8 bg-[#FE9200] hover:bg-[#E58300] text-white font-bold rounded-2xl shadow-xl shadow-orange-500/20 flex items-center gap-3 group/btn transition-all border-none"
+                className="h-11 md:h-14 px-6 md:px-8 bg-[#FE9200] hover:bg-[#E58300] text-white font-bold rounded-xl md:rounded-2xl shadow-lg flex items-center gap-2 md:gap-3 group/btn transition-all border-none text-sm md:text-base"
               >
-                <Plus size={20} className="group-hover/btn:rotate-90 transition-transform" />
+                <Plus size={18} className="group-hover/btn:rotate-90 transition-transform" />
                 <span>Post New Request</span>
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.1em] leading-none">Active Requests</span>
-              <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center text-[#FE9200] group-hover:scale-110 transition-transform duration-300"><Home size={18} /></div>
+        {/* Stats Row - Horizontal scroll on mobile for compact view */}
+        <div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-6">
+          {/* Active Requests */}
+          <div className="bg-white p-4 md:p-6 rounded-xl md:rounded-2xl border border-gray-100 shadow-sm">
+            <div className="flex items-center justify-between mb-2 md:mb-4">
+              <span className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wide leading-none">Active</span>
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-orange-50 flex items-center justify-center text-[#FE9200]">
+                <Home size={14} className="md:w-[18px] md:h-[18px]" />
+              </div>
             </div>
-            <div className="text-4xl font-black text-gray-900 mb-1 tracking-tight">{myRequests.filter(r => r.status === 'active').length}</div>
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-500">
+            <div className="text-2xl md:text-4xl font-black text-gray-900 mb-0.5 md:mb-1 tracking-tight">
+              {myRequests.filter(r => r.status === 'active' && !isLeadExpired(r)).length}
+            </div>
+            <div className="hidden md:flex items-center gap-1.5 text-[11px] font-bold text-emerald-500">
               <Zap size={12} fill="currentColor" /> Last updated just now
             </div>
+            <div className="md:hidden text-[9px] font-medium text-gray-400">Requests</div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.1em] leading-none">Total Views</span>
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform duration-300"><Eye size={18} /></div>
+          {/* Total Views */}
+          <div className="bg-white p-4 md:p-6 rounded-xl md:rounded-2xl border border-gray-100 shadow-sm">
+            <div className="flex items-center justify-between mb-2 md:mb-4">
+              <span className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wide leading-none">Views</span>
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500">
+                <Eye size={14} className="md:w-[18px] md:h-[18px]" />
+              </div>
             </div>
-            <div className="text-4xl font-black text-gray-900 mb-1 tracking-tight">{myRequests.reduce((sum, req) => sum + (req.views || 0), 0)}</div>
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-500">
+            <div className="text-2xl md:text-4xl font-black text-gray-900 mb-0.5 md:mb-1 tracking-tight">
+              {myRequests.reduce((sum, req) => sum + (req.views || 0), 0)}
+            </div>
+            <div className="hidden md:flex items-center gap-1.5 text-[11px] font-bold text-blue-500">
               <Plus size={12} strokeWidth={3} /> +12 this week
             </div>
+            <div className="md:hidden text-[9px] font-medium text-gray-400">Total</div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.1em] leading-none">Agent Responses</span>
-              <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform duration-300"><MessageSquare size={18} /></div>
+          {/* Agent Responses */}
+          <div className="bg-white p-4 md:p-6 rounded-xl md:rounded-2xl border border-gray-100 shadow-sm">
+            <div className="flex items-center justify-between mb-2 md:mb-4">
+              <span className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wide leading-none">Replies</span>
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500">
+                <MessageSquare size={14} className="md:w-[18px] md:h-[18px]" />
+              </div>
             </div>
-            <div className="text-4xl font-black text-gray-900 mb-1 tracking-tight">{myRequests.reduce((sum, req) => sum + (req.contacts || 0), 0)}</div>
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600">
+            <div className="text-2xl md:text-4xl font-black text-gray-900 mb-0.5 md:mb-1 tracking-tight">
+              {myRequests.reduce((sum, req) => sum + (req.contacts || 0), 0)}
+            </div>
+            <div className="hidden md:flex items-center gap-1.5 text-[11px] font-bold text-amber-600">
               <Clock size={12} strokeWidth={3} /> 3 new pending
             </div>
+            <div className="md:hidden text-[9px] font-medium text-gray-400">Agents</div>
           </div>
         </div>
 
@@ -473,15 +566,24 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
               </button>
             </div>
 
-            {myRequests.slice(0, 3).map(request => (
-              <div key={request.id} className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col md:flex-row md:items-center gap-6 group hover:shadow-2xl hover:border-[#FE9200]/10 transition-all duration-500 relative overflow-hidden">
+            {getSortedLeads(myRequests).slice(0, 3).map(request => {
+              const displayStatus = getLeadDisplayStatus(request);
+              return (
+              <div key={request.id} className={`bg-white rounded-2xl border border-gray-100 p-6 flex flex-col md:flex-row md:items-center gap-6 group hover:shadow-2xl hover:border-[#FE9200]/10 transition-all duration-500 relative overflow-hidden ${displayStatus === 'expired' || displayStatus === 'sold_out' ? 'opacity-75' : ''}`}>
                 <div className="flex-1 space-y-3 relative z-10">
                   <div className="flex items-center gap-3">
-                    <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${request.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'
+                    <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                      displayStatus === 'expired'
+                        ? 'bg-gray-100 text-gray-500 border-gray-200'
+                        : displayStatus === 'sold_out'
+                          ? 'bg-red-50 text-red-600 border-red-100'
+                          : displayStatus === 'active'
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                            : 'bg-amber-50 text-amber-600 border-amber-100'
                       }`}>
-                      {request.status || 'Active'}
+                      {displayStatus === 'expired' ? 'Expired' : displayStatus === 'sold_out' ? 'Sold Out' : displayStatus || 'Active'}
                     </span>
-                    <span className="text-[11px] font-medium text-gray-400 italic">Posted 2 days ago</span>
+                    <span className="text-[11px] font-medium text-gray-400 italic">Posted {request.created_at ? new Date(request.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'Recently'}</span>
                   </div>
                   <h4 className="text-xl font-bold text-gray-900 leading-tight group-hover:text-[#FE9200] transition-colors">{request.property_type} In {formatLocation(request.location)}</h4>
                   <div className="flex flex-wrap gap-4 text-sm text-gray-500">
@@ -512,7 +614,8 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
                   <ChevronRight size={24} />
                 </button>
               </div>
-            ))}
+            );
+            })}
 
             {myRequests.length === 0 && (
               <div className="bg-white rounded-2xl p-16 text-center border border-gray-100 border-dashed">
@@ -681,28 +784,28 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
             <h1 className="text-lg font-bold text-gray-900 tracking-tight">Dashboard</h1>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-5">
-            <div className="hidden md:flex items-center gap-1">
-              {(currentUser?.id || currentUser?.uid) && (
-                <NotificationBell
-                  userId={currentUser.id || currentUser.uid}
-                  onNotificationClick={(notif) => {
-                    if (onNotificationClick) {
-                      onNotificationClick(notif);
-                    }
-                    if (notif.type === 'agent_interested' || notif.type === 'agent_contact') {
-                      handleTabChange('requests');
-                    }
-                  }}
-                />
-              )}
-              <button
-                onClick={() => setShowHelpCenter(true)}
-                className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all"
-              >
-                <HelpCircle size={20} />
-              </button>
-            </div>
+          <div className="flex items-center gap-1 md:gap-3">
+            {/* Notification Bell - visible on all screen sizes */}
+            {(currentUser?.id || currentUser?.uid) && (
+              <NotificationBell
+                userId={currentUser.id || currentUser.uid}
+                onNotificationClick={(notif) => {
+                  if (onNotificationClick) {
+                    onNotificationClick(notif);
+                  }
+                  if (notif.type === 'agent_interested' || notif.type === 'agent_contact') {
+                    handleTabChange('requests');
+                  }
+                }}
+              />
+            )}
+            {/* Help button - hidden on mobile */}
+            <button
+              onClick={() => setShowHelpCenter(true)}
+              className="hidden md:flex p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all"
+            >
+              <HelpCircle size={20} />
+            </button>
           </div>
         </header>
 

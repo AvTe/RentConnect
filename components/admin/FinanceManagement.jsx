@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   DollarSign, CreditCard, Download, Plus, Trash2, Edit, RefreshCw, FileText,
   TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Calendar, Filter,
@@ -15,8 +15,16 @@ import {
   updateCreditBundle,
   deleteCreditBundle,
   addCredits,
-  getAllSubscriptions
+  getAllSubscriptions,
+  getRevenueBreakdown,
+  getTransactionVolume
 } from '@/lib/database';
+import {
+  ChartContainer,
+  TimeRangeToggle,
+  RevenueBreakdownChart,
+  TransactionVolumeChart
+} from './charts/ChartComponents';
 
 // Stats Card Component - Matches global design
 const StatsCard = ({ icon: Icon, label, value, bgColor, iconColor, trend, trendValue, subtext }) => (
@@ -318,14 +326,42 @@ export const FinanceManagement = () => {
   const [showBundleModal, setShowBundleModal] = useState(false);
   const [currentBundle, setCurrentBundle] = useState(null);
 
+  // Chart data states
+  const [revenueBreakdownData, setRevenueBreakdownData] = useState([]);
+  const [transactionVolumeData, setTransactionVolumeData] = useState([]);
+  const [chartsLoading, setChartsLoading] = useState(true);
+  const [chartTimeRange, setChartTimeRange] = useState('30d');
+
+  const fetchChartData = useCallback(async () => {
+    setChartsLoading(true);
+    try {
+      const days = chartTimeRange === '7d' ? 7 : chartTimeRange === '30d' ? 30 : 90;
+      const [breakdownResult, volumeResult] = await Promise.all([
+        getRevenueBreakdown(days),
+        getTransactionVolume(days)
+      ]);
+      if (breakdownResult.success) setRevenueBreakdownData(breakdownResult.data || []);
+      if (volumeResult.success) setTransactionVolumeData(volumeResult.data || []);
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+    } finally {
+      setChartsLoading(false);
+    }
+  }, [chartTimeRange]);
+
   useEffect(() => {
     fetchAllData();
-  }, []);
+    fetchChartData();
+  }, [fetchChartData]);
 
   useEffect(() => {
     if (activeTab === 'transactions') fetchTransactions();
     if (activeTab === 'bundles') fetchBundles();
   }, [activeTab]);
+
+  useEffect(() => {
+    fetchChartData();
+  }, [fetchChartData]);
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -607,12 +643,30 @@ export const FinanceManagement = () => {
       {/* Transactions Tab */}
       {activeTab === 'transactions' && (
         <div className="space-y-6">
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <RevenueChart data={monthlyChartData} title="Revenue Overview (Last 6 Months)" />
-            </div>
-            <TransactionTypeChart data={transactionTypeData} />
+          {/* Charts Row - Recharts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartContainer
+              title="Revenue by Bundle Type"
+              subtitle="Stacked revenue breakdown"
+              loading={chartsLoading}
+              actions={
+                <TimeRangeToggle
+                  value={chartTimeRange}
+                  onChange={setChartTimeRange}
+                  options={['7d', '30d', '90d']}
+                />
+              }
+            >
+              <RevenueBreakdownChart data={revenueBreakdownData} />
+            </ChartContainer>
+
+            <ChartContainer
+              title="Transaction Volume"
+              subtitle="Transaction count and volume over time"
+              loading={chartsLoading}
+            >
+              <TransactionVolumeChart data={transactionVolumeData} />
+            </ChartContainer>
           </div>
 
           {/* Filters */}

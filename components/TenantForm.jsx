@@ -111,6 +111,20 @@ export const TenantForm = ({
     whatsapp: "",
   });
 
+  // Auto-populate contact fields from currentUser when logged in
+  // This runs once when component mounts or when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      setFormData(prev => ({
+        ...prev,
+        // Only auto-populate if fields are empty (don't override user's edits)
+        name: prev.name || currentUser.name || '',
+        email: prev.email || currentUser.email || '',
+        whatsapp: prev.whatsapp || currentUser.phone || '',
+      }));
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     if (currentUser && formData.name && onUpdateUser) {
       if (currentUser.name !== formData.name) {
