@@ -652,7 +652,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
             {/* Cards Carousel */}
             <div
               ref={containerRef}
-              className="overflow-hidden touch-pan-y pb-3 sm:pb-6 mx-2.5 sm:mx-0"
+              className="overflow-hidden touch-pan-y pb-3 sm:pb-6 mx-2 sm:mx-0"
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => {
                 if (isDraggingRef.current) handleMouseUp();
