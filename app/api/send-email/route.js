@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createClient as createServerClient } from '@/utils/supabase/server';
 
 // Create Supabase admin client
 const supabaseAdmin = createClient(
@@ -10,6 +11,8 @@ const supabaseAdmin = createClient(
 /**
  * Generic email sending endpoint
  *
+ * SECURITY: Requires authentication to prevent abuse
+ *
  * NOTE: This endpoint is deprecated. For transactional emails, use:
  * - Password reset: Supabase Auth resetPasswordForEmail()
  * - Email verification: Supabase Auth resend()
@@ -19,6 +22,17 @@ const supabaseAdmin = createClient(
  */
 export async function POST(request) {
   try {
+    // Verify user is authenticated
+    const supabaseAuth = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Authentication required'
+      }, { status: 401 });
+    }
+
     const { to, subject, htmlContent, type } = await request.json();
 
     if (!to || !subject) {

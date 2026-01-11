@@ -6,11 +6,44 @@ export const dynamic = 'force-dynamic';
 
 /**
  * Debug API Route - Check database state for email delivery testing
+ *
+ * SECURITY: This endpoint exposes sensitive user data and is restricted to:
+ * - Development mode only, OR
+ * - Admin users in production
+ *
  * GET /api/debug/email-test
  */
 export async function GET(request) {
     try {
         const supabase = await createClient();
+        const isDev = process.env.NODE_ENV === 'development';
+
+        // In production, require admin authentication
+        if (!isDev) {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+            if (authError || !user) {
+                return NextResponse.json({
+                    success: false,
+                    error: 'Authentication required. This debug endpoint is only available to admins.'
+                }, { status: 401 });
+            }
+
+            // Check if user is admin
+            const { data: userData } = await supabase
+                .from('users')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            const adminRoles = ['admin', 'super_admin', 'main_admin'];
+            if (!userData || !adminRoles.includes(userData.role)) {
+                return NextResponse.json({
+                    success: false,
+                    error: 'Admin access required. Debug endpoints are restricted to admins.'
+                }, { status: 403 });
+            }
+        }
 
         // Get all agents
         const { data: agents, error: agentsError } = await supabase

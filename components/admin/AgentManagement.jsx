@@ -21,25 +21,24 @@ import {
 import { AgentDetail } from './AgentDetail';
 import { useToast } from '@/context/ToastContext';
 
-// Stats Card Component
+// Stats Card Component - Compact for mobile
 const StatsCard = ({ icon: Icon, label, value, bgColor, iconColor, subtext, trend }) => (
-  <div className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-gray-300 transition-colors">
-    <div className="flex items-start justify-between mb-4">
-      <div className={`w-12 h-12 rounded-xl ${bgColor} flex items-center justify-center`}>
-        <Icon className={`w-6 h-6 ${iconColor}`} />
+  <div className="bg-white rounded-xl md:rounded-2xl border border-gray-200 p-3 md:p-5 hover:border-gray-300 transition-colors">
+    <div className="flex items-center gap-3 md:flex-col md:items-start">
+      <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl ${bgColor} flex items-center justify-center flex-shrink-0`}>
+        <Icon className={`w-5 h-5 md:w-6 md:h-6 ${iconColor}`} />
+      </div>
+      <div className="flex-1 min-w-0 md:mt-3">
+        <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider md:tracking-widest truncate">{label}</p>
+        <p className="text-lg md:text-2xl lg:text-3xl font-black text-gray-900 truncate">{value}</p>
+        {subtext && <p className="text-[10px] md:text-xs text-gray-400 mt-0.5 truncate hidden md:block">{subtext}</p>}
       </div>
       {trend && (
-        <span className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${trend.type === 'up' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
-          }`}>
+        <span className={`hidden md:flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${trend.type === 'up' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
           <TrendingUp size={12} />
           {trend.value}
         </span>
       )}
-    </div>
-    <div>
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
-      <p className="text-2xl md:text-3xl font-black text-gray-900 mt-1">{value}</p>
-      {subtext && <p className="text-xs text-gray-400 mt-1">{subtext}</p>}
     </div>
   </div>
 );
@@ -66,9 +65,9 @@ const StatusBadge = ({ status, verificationStatus }) => {
   const IconComponent = config.icon;
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${config.bg} ${config.text} border ${config.border}`}>
-      <IconComponent className="w-3 h-3" />
-      {config.label}
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap ${config.bg} ${config.text} border ${config.border}`}>
+      <IconComponent className="w-3 h-3 flex-shrink-0" />
+      <span className="truncate">{config.label}</span>
     </span>
   );
 };
@@ -877,35 +876,37 @@ export const AgentManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 md:gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Agent Management</h1>
-          <p className="text-sm text-gray-500 font-medium mt-1">Manage agent accounts, verifications, and wallets</p>
+          <h1 className="text-xl md:text-2xl font-black text-gray-900">Agent Management</h1>
+          <p className="text-xs md:text-sm text-gray-500 font-medium mt-0.5 md:mt-1">Manage agent accounts, verifications, and wallets</p>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
+        <div className="flex gap-2 md:gap-3 w-full sm:w-auto">
           <Button
             onClick={fetchAgents}
             variant="outline"
             disabled={loading}
-            className="rounded-xl border-[#FE9200] text-[#FE9200] hover:bg-[#FFF2E5]"
+            size="sm"
+            className="rounded-lg md:rounded-xl border-[#FE9200] text-[#FE9200] hover:bg-[#FFF2E5] text-xs md:text-sm flex-1 sm:flex-none"
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button
             onClick={handleExportCSV}
-            className="bg-[#FE9200] hover:bg-[#E58300] text-white rounded-xl gap-2"
+            size="sm"
+            className="bg-[#FE9200] hover:bg-[#E58300] text-white rounded-lg md:rounded-xl gap-1.5 md:gap-2 text-xs md:text-sm flex-1 sm:flex-none"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5 md:w-4 md:h-4" />
             Export CSV
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
         <StatsCard
           icon={Users}
           label="Total Agents"
@@ -951,55 +952,59 @@ export const AgentManagement = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
+      <div className="bg-white rounded-xl md:rounded-2xl border border-gray-200 p-3 md:p-4">
+        <div className="flex flex-col gap-3 md:gap-4">
           {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, email, or agency..."
+              placeholder="Search by name, email, or agen..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
+              className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 rounded-lg md:rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm"
             />
           </div>
 
-          {/* Status Filter */}
-          <div className="flex bg-gray-100 rounded-xl p-1">
-            {['all', 'verified', 'pending', 'suspended'].map((f) => (
-              <button
-                key={f}
-                onClick={() => { setStatusFilter(f); setPage(1); }}
-                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all capitalize ${statusFilter === f ? 'bg-[#FE9200] text-white' : 'text-gray-600 hover:text-gray-900'
-                  }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-
-          {/* Location Filter */}
-          {locations.length > 0 && (
-            <div className="relative">
-              <select
-                value={locationFilter}
-                onChange={(e) => { setLocationFilter(e.target.value); setPage(1); }}
-                className="appearance-none pl-4 pr-10 py-2.5 rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-sm font-medium min-w-[140px]"
-              >
-                <option value="">All Locations</option>
-                {locations.map(loc => (
-                  <option key={loc} value={loc}>{loc}</option>
+          {/* Status Filter - Scrollable on mobile */}
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex-1 overflow-x-auto scrollbar-hide">
+              <div className="flex bg-gray-100 rounded-lg md:rounded-xl p-1 min-w-max">
+                {['all', 'verified', 'pending', 'suspended'].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => { setStatusFilter(f); setPage(1); }}
+                    className={`px-3 md:px-4 py-1.5 md:py-2 rounded-md md:rounded-lg text-xs md:text-sm font-bold transition-all capitalize whitespace-nowrap ${statusFilter === f ? 'bg-[#FE9200] text-white' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                  >
+                    {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
                 ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
             </div>
-          )}
+
+            {/* Location Filter */}
+            {locations.length > 0 && (
+              <div className="relative flex-shrink-0">
+                <select
+                  value={locationFilter}
+                  onChange={(e) => { setLocationFilter(e.target.value); setPage(1); }}
+                  className="appearance-none pl-3 pr-8 py-1.5 md:py-2.5 rounded-lg md:rounded-xl border-2 border-gray-100 focus:border-[#FE9200] outline-none transition-all text-xs md:text-sm font-medium w-full min-w-[100px] md:min-w-[140px]"
+                >
+                  <option value="">All Locations</option>
+                  {locations.map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 w-3 h-3 md:w-4 md:h-4 text-gray-400 pointer-events-none" />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl md:rounded-2xl border border-gray-200 overflow-hidden">
         {/* Desktop Table */}
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full">
@@ -1077,50 +1082,53 @@ export const AgentManagement = () => {
         {/* Mobile Cards */}
         <div className="lg:hidden divide-y divide-gray-100">
           {loading ? (
-            <div className="p-8 text-center">
-              <Loader2 className="w-8 h-8 text-[#FE9200] animate-spin mx-auto" />
+            <div className="p-6 text-center">
+              <Loader2 className="w-6 h-6 text-[#FE9200] animate-spin mx-auto" />
             </div>
           ) : paginatedAgents.length === 0 ? (
-            <div className="p-8 text-center">
-              <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No agents found</p>
+            <div className="p-6 text-center">
+              <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">No agents found</p>
             </div>
           ) : (
             paginatedAgents.map((agent) => (
-              <div key={agent.id} className="p-4">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm">
-                      {agent.name?.charAt(0) || '?'}
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900 text-sm">{agent.name}</p>
-                      <p className="text-xs text-gray-400">{agent.email}</p>
-                    </div>
+              <div key={agent.id} className="p-3">
+                {/* Agent Header Row */}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm flex-shrink-0">
+                    {agent.name?.charAt(0) || '?'}
                   </div>
-                  <StatusBadge status={agent.status} verificationStatus={agent.verificationStatus} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-bold text-gray-900 text-sm truncate">{agent.name}</p>
+                      <StatusBadge status={agent.status} verificationStatus={agent.verificationStatus} />
+                    </div>
+                    <p className="text-xs text-gray-400 truncate">{agent.email}</p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-xs bg-gray-50 rounded-xl p-3">
-                  <div>
-                    <span className="text-gray-400 block">Wallet</span>
+                {/* Stats Row */}
+                <div className="flex items-center gap-4 text-xs mb-2 pl-12">
+                  <div className="flex items-center gap-1.5">
+                    <Wallet className="w-3.5 h-3.5 text-gray-400" />
+                    <span className="text-gray-500">Wallet:</span>
                     <span className="font-bold text-gray-900">{agent.walletBalance || 0} CR</span>
                   </div>
-                  <div>
-                    <span className="text-gray-400 block">Leads</span>
+                  <div className="flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5 text-gray-400" />
+                    <span className="text-gray-500">Leads:</span>
                     <span className="font-bold text-gray-900">{agent.unlockedLeadsCount || 0}</span>
                   </div>
                 </div>
-                <div className="mt-3 flex gap-2">
-                  <Button
-                    onClick={() => handleAction('view', agent)}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 rounded-xl border-[#FE9200] text-[#FE9200]"
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    View
-                  </Button>
-                </div>
+                {/* View Button */}
+                <Button
+                  onClick={() => handleAction('view', agent)}
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-lg border-[#FE9200] text-[#FE9200] py-2 text-xs"
+                >
+                  <Eye className="w-3.5 h-3.5 mr-1.5" />
+                  View
+                </Button>
               </div>
             ))
           )}
@@ -1128,17 +1136,17 @@ export const AgentManagement = () => {
 
         {/* Pagination */}
         {filteredAgents.length > perPage && (
-          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-sm text-gray-500">
-              Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, filteredAgents.length)} of {filteredAgents.length}
+          <div className="px-3 md:px-6 py-3 md:py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span className="text-xs md:text-sm text-gray-500 order-2 sm:order-1">
+              Showing {(page - 1) * perPage + 1}-{Math.min(page * perPage, filteredAgents.length)} of {filteredAgents.length}
             </span>
-            <div className="flex gap-2">
+            <div className="flex gap-1 md:gap-2 order-1 sm:order-2">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
+                className="w-7 h-7 md:w-8 md:h-8 rounded-md md:rounded-lg flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
               </button>
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const pageNum = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
@@ -1147,7 +1155,7 @@ export const AgentManagement = () => {
                   <button
                     key={pageNum}
                     onClick={() => setPage(pageNum)}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium ${page === pageNum ? 'bg-[#FE9200] text-white' : 'hover:bg-gray-100 text-gray-600'
+                    className={`w-7 h-7 md:w-8 md:h-8 rounded-md md:rounded-lg flex items-center justify-center text-xs md:text-sm font-medium ${page === pageNum ? 'bg-[#FE9200] text-white' : 'hover:bg-gray-100 text-gray-600'
                       }`}
                   >
                     {pageNum}
@@ -1157,9 +1165,9 @@ export const AgentManagement = () => {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
+                className="w-7 h-7 md:w-8 md:h-8 rounded-md md:rounded-lg flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
               </button>
             </div>
           </div>

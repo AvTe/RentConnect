@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createClient as createServerClient } from '@/utils/supabase/server';
 
 // Create Supabase admin client for sending invites
 const supabaseAdmin = createClient(
@@ -10,9 +11,46 @@ const supabaseAdmin = createClient(
 /**
  * POST /api/admins/send-invite-email - Send admin invite email via Supabase Auth
  * Uses Supabase's built-in invite system for secure email delivery
+ *
+ * SECURITY: Requires admin authentication to prevent abuse
  */
 export async function POST(request) {
   try {
+    // Verify admin authentication
+    const supabaseAuth = await createServerClient();
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({
+        success: false,
+        error: 'Authentication required'
+      }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const { data: userData } = await supabaseAuth
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    const adminRoles = ['admin', 'super_admin', 'main_admin'];
+    if (!userData || !adminRoles.includes(userData.role)) {
+      // Also check admin_users table for admin users
+      const { data: adminUser } = await supabaseAuth
+        .from('admin_users')
+        .select('role')
+        .eq('email', user.email)
+        .single();
+
+      if (!adminUser) {
+        return NextResponse.json({
+          success: false,
+          error: 'Admin access required to send invite emails'
+        }, { status: 403 });
+      }
+    }
+
     const { to, name, role, inviteUrl, customMessage, invitedBy } = await request.json();
 
     if (!to || !name || !inviteUrl) {

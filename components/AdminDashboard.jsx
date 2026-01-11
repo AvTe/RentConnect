@@ -82,19 +82,26 @@ const SidebarItem = ({ icon: Icon, label, id, active, onClick, collapsed, badge 
   </button>
 );
 
-export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificationClick }) => {
+// Helper to update URL hash with view and tab
+const updateUrlHashWithTab = (tab) => {
+  if (typeof window === 'undefined') return;
+  window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#admin-dashboard/${tab}`);
+};
+
+export const AdminDashboard = ({ onNavigate, currentUser, onLogout, onNotificationClick, initialTab = 'overview' }) => {
   const { toast, showConfirm, showPrompt } = useToast();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [pendingAgents, setPendingAgents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [openTicketCount, setOpenTicketCount] = useState(0);
 
-  // Handle tab change and close sidebar on mobile
+  // Handle tab change, close sidebar on mobile, and update URL
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setIsSidebarOpen(false);
+    updateUrlHashWithTab(tabId);
   };
 
   // Toggle sidebar collapse (desktop only)

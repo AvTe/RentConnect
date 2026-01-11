@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 import {
     sendEmail,
     sendWelcomeAgentEmail,
@@ -16,10 +17,43 @@ import {
 /**
  * Test endpoint for Resend email service
  * Tests all email types with sample data
- * 
+ *
+ * SECURITY: Requires admin authentication to prevent abuse
+ *
  * GET /api/email/test?email=your@email.com
  */
 export async function GET(request) {
+    // Check for development mode OR admin authentication
+    const isDev = process.env.NODE_ENV === 'development';
+
+    if (!isDev) {
+        // In production, require admin authentication
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return NextResponse.json({
+                success: false,
+                error: 'Authentication required. This endpoint is only available to admins in production.'
+            }, { status: 401 });
+        }
+
+        // Check if user is admin
+        const { data: userData } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        const adminRoles = ['admin', 'super_admin', 'main_admin'];
+        if (!userData || !adminRoles.includes(userData.role)) {
+            return NextResponse.json({
+                success: false,
+                error: 'Admin access required. Only admins can use this test endpoint in production.'
+            }, { status: 403 });
+        }
+    }
+
     const { searchParams } = new URL(request.url);
     const testEmail = searchParams.get('email');
     const testType = searchParams.get('type') || 'all';

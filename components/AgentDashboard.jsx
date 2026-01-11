@@ -107,10 +107,17 @@ export const AgentDashboard = ({
     setActiveFilters(filters);
   };
 
+  // Helper to update URL hash with view and tab
+  const updateUrlHashWithTab = (tab) => {
+    if (typeof window === 'undefined') return;
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#agent-dashboard/${tab}`);
+  };
+
   // Handle responsive sidebar close on navigation
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setIsSidebarOpen(false);
+    updateUrlHashWithTab(tabId);
   };
 
   const [currentTime, setCurrentTime] = useState(new Date());

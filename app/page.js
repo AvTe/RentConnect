@@ -28,8 +28,60 @@ import { initializePayment } from '@/lib/pesapal';
 import { uploadImage } from '@/lib/storage-supabase';
 import { useLeads, useSubscription } from '@/lib/hooks';
 
+// Valid views that can be persisted in URL hash
+const PERSISTABLE_VIEWS = [
+  'landing', 'login', 'tenant-form', 'agent-registration', 'subscription',
+  'user-dashboard', 'agent-dashboard', 'admin-dashboard',
+  'agents', 'agent-detail', 'user-subscription', 'properties',
+  'email-confirmed', 'password-reset-success', 'reset-password'
+];
+
+// Helper to parse view and tab from URL hash
+// Format: #view/tab (e.g., #admin-dashboard/agents)
+const parseViewFromHash = () => {
+  if (typeof window === 'undefined') return { view: 'landing', tab: null };
+  const hash = window.location.hash.slice(1); // Remove the # symbol
+  if (!hash) return { view: 'landing', tab: null };
+
+  const parts = hash.split('/');
+  const view = parts[0];
+  const tab = parts[1] || null;
+
+  if (PERSISTABLE_VIEWS.includes(view)) {
+    return { view, tab };
+  }
+  return { view: 'landing', tab: null };
+};
+
+// Helper to get initial view from URL hash
+const getInitialViewFromHash = () => {
+  return parseViewFromHash().view;
+};
+
+// Helper to get initial tab from URL hash
+const getInitialTabFromHash = () => {
+  return parseViewFromHash().tab;
+};
+
+// Helper to update URL hash without triggering navigation
+// Supports format: #view or #view/tab
+const updateUrlHash = (viewName, tabName = null) => {
+  if (typeof window === 'undefined') return;
+  // Don't save landing to hash - just clear it
+  if (viewName === 'landing') {
+    if (window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  } else {
+    const hashValue = tabName ? `${viewName}/${tabName}` : viewName;
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${hashValue}`);
+  }
+};
+
 export default function RentalLeadApp() {
-  const [view, setView] = useState('landing');
+  // Initialize view and tab from URL hash to persist across refreshes
+  const [view, setView] = useState(() => getInitialViewFromHash());
+  const [initialTabFromHash] = useState(() => getInitialTabFromHash()); // Store initial tab from hash
   const [viewOptions, setViewOptions] = useState({});
   const [currentUser, setCurrentUser] = useState(null);
   const [prefilledData, setPrefilledData] = useState(null);
@@ -39,6 +91,8 @@ export default function RentalLeadApp() {
   const [selectedAgentId, setSelectedAgentId] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  // Track if we've already determined the correct view on mount
+  const [viewDeterminedOnMount, setViewDeterminedOnMount] = useState(false);
 
   const handleOpenSubscriptionModal = () => setIsSubscriptionModalOpen(true);
 
@@ -46,6 +100,9 @@ export default function RentalLeadApp() {
   const handleNavigate = (newView, options = {}) => {
     setView(newView);
     setViewOptions(options);
+
+    // Update URL hash to persist the view across refreshes
+    updateUrlHash(newView);
 
     // If initialData is provided, set it as prefilledData
     if (options.initialData) {
@@ -189,15 +246,52 @@ export default function RentalLeadApp() {
               ...userData
             });
 
-            // Redirect based on role if on landing or login page
-            if (view === 'landing' || view === 'login') {
-              if (isAdminRole) {
-                setView('admin-dashboard');
-              } else if (userData.type === 'agent' || userData.role === 'agent') {
-                setView('agent-dashboard');
-              } else {
-                setView('user-dashboard');
+            // Get persisted view from URL hash (if any)
+            const persistedView = getInitialViewFromHash();
+            const hasPersistedView = persistedView !== 'landing' && PERSISTABLE_VIEWS.includes(persistedView);
+
+            // Determine the correct dashboard for this user's role
+            const getUserDashboard = () => {
+              if (isAdminRole) return 'admin-dashboard';
+              if (userData.type === 'agent' || userData.role === 'agent') return 'agent-dashboard';
+              return 'user-dashboard';
+            };
+
+            // Check if the persisted view is valid for this user's role
+            const isViewValidForRole = (targetView) => {
+              // Admin-only views
+              if (targetView === 'admin-dashboard') return isAdminRole;
+              // Agent-only views
+              if (targetView === 'agent-dashboard') {
+                return isAdminRole || userData.type === 'agent' || userData.role === 'agent';
               }
+              // User dashboard - anyone can access
+              if (targetView === 'user-dashboard') return true;
+              // Other views (agents list, properties, etc.) - allow for authenticated users
+              return true;
+            };
+
+            // Only redirect if:
+            // 1. No persisted view from URL hash, OR
+            // 2. Current view is landing/login (user just logged in)
+            // 3. Persisted view is not valid for this user's role
+            if (!hasPersistedView || view === 'landing' || view === 'login') {
+              // Check if there's a valid persisted view we should restore
+              if (hasPersistedView && isViewValidForRole(persistedView)) {
+                // User refreshed - restore their previous view
+                setView(persistedView);
+                updateUrlHash(persistedView);
+              } else {
+                // No valid persisted view - go to role-appropriate dashboard
+                const dashboard = getUserDashboard();
+                setView(dashboard);
+                updateUrlHash(dashboard);
+              }
+            } else if (!isViewValidForRole(view)) {
+              // Current view is not valid for this role - redirect to dashboard
+              const dashboard = getUserDashboard();
+              setView(dashboard);
+              updateUrlHash(dashboard);
             }
           } else {
             // User profile doesn't exist in database - create it
@@ -243,11 +337,12 @@ export default function RentalLeadApp() {
           console.error("Error fetching user profile:", error);
         }
       } else {
-        // User logged out - clear cache
+        // User logged out - clear cache and URL hash
         clearUserCache();
         setCurrentUser(null);
         if (view !== 'landing' && view !== 'login' && view !== 'tenant-form' && view !== 'agent-registration') {
           setView('landing');
+          updateUrlHash('landing'); // Clear URL hash on logout
         }
       }
       // Only finish loading after auth state AND profile fetch are complete
@@ -320,6 +415,7 @@ export default function RentalLeadApp() {
       setCurrentUser(null);
       setIsSubscriptionModalOpen(false);
       setView('landing');
+      updateUrlHash('landing'); // Clear URL hash on logout
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -602,7 +698,7 @@ export default function RentalLeadApp() {
         return (
           <UserDashboard
             onNavigate={handleNavigate}
-            initialTab="dashboard"
+            initialTab={initialTabFromHash || "dashboard"}
             currentUser={currentUser}
             onUpdateUser={handleUpdateUser}
             onLogout={handleLogout}
@@ -645,7 +741,7 @@ export default function RentalLeadApp() {
             isPremium={isPremium}
             onUnlockLead={(lead) => console.log('Lead unlocked:', lead)}
             onOpenSubscription={handleOpenSubscriptionModal}
-            initialTab="leads"
+            initialTab={initialTabFromHash || "leads"}
             currentUser={currentUser}
             onUpdateUser={handleUpdateUser}
             onLogout={handleLogout}
@@ -711,6 +807,7 @@ export default function RentalLeadApp() {
             onNavigate={handleNavigate}
             onLogout={handleLogout}
             onNotificationClick={handleNotificationClick}
+            initialTab={initialTabFromHash || 'overview'}
           />
         );
       case 'properties':

@@ -117,10 +117,17 @@ export const UserDashboard = ({ onNavigate, initialTab = 'dashboard', currentUse
     }
   };
 
+  // Helper to update URL hash with view and tab
+  const updateUrlHashWithTab = (tab) => {
+    if (typeof window === 'undefined') return;
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#user-dashboard/${tab}`);
+  };
+
   // Handle responsive sidebar close
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setIsSidebarOpen(false); // Close sidebar on mobile when navigating
+    updateUrlHashWithTab(tabId);
   };
 
   // Use currentUser if available, otherwise fallback

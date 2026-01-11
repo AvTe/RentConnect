@@ -4,7 +4,8 @@ import {
   Mail, Bell, MessageSquare, Plus, Edit2, Trash2, Save, X,
   Check, AlertCircle, Eye, Copy, ChevronDown, ChevronUp, RefreshCw,
   Phone, Target, Clock, CreditCard, ShieldCheck, ShieldX, HelpCircle,
-  Headphones, Settings, Loader2, FileText, ToggleLeft, ToggleRight
+  Headphones, Settings, Loader2, FileText, ToggleLeft, ToggleRight,
+  Send, Users, UserCheck, Home, CheckCircle2, Search
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import {
@@ -52,6 +53,25 @@ export const NotificationTemplates = () => {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [previewMode, setPreviewMode] = useState(false);
+
+  // Send notification modal state
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendingTemplate, setSendingTemplate] = useState(null);
+  const [sendLoading, setSendLoading] = useState(false);
+  const [sendResult, setSendResult] = useState(null);
+  const [sendConfig, setSendConfig] = useState({
+    targetType: 'all',
+    channels: { email: true, push: true, whatsapp: false },
+    variableValues: {},
+    confirmed: false,
+    selectedUsers: [] // For specific user targeting
+  });
+
+  // User selection state
+  const [availableUsers, setAvailableUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -218,6 +238,189 @@ export const NotificationTemplates = () => {
 
   const getTypeInfo = (type) => {
     return NOTIFICATION_TYPES.find(t => t.value === type) || { label: type, icon: Mail, color: 'gray' };
+  };
+
+  // Open send notification modal
+  const openSendModal = (template) => {
+    setSendingTemplate(template);
+    setSendConfig({
+      targetType: 'all',
+      channels: {
+        email: template.send_email,
+        push: template.send_push,
+        whatsapp: template.send_whatsapp
+      },
+      variableValues: {},
+      confirmed: false,
+      selectedUsers: []
+    });
+    setSendResult(null);
+    setAvailableUsers([]);
+    setUserSearchQuery('');
+    setUserRoleFilter('all');
+    setShowSendModal(true);
+  };
+
+  const closeSendModal = () => {
+    setShowSendModal(false);
+    setSendingTemplate(null);
+    setSendResult(null);
+    setSendConfig({
+      targetType: 'all',
+      channels: { email: true, push: true, whatsapp: false },
+      variableValues: {},
+      confirmed: false,
+      selectedUsers: []
+    });
+    setAvailableUsers([]);
+    setUserSearchQuery('');
+    setUserRoleFilter('all');
+  };
+
+  // Fetch users for specific targeting
+  const fetchUsersForSelection = async (role = 'all', search = '') => {
+    setUsersLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set('role', role);
+      params.set('limit', '100');
+      if (search && search.trim()) {
+        params.set('search', search.trim());
+      }
+      const response = await fetch(`/api/admin/users/list?${params.toString()}`);
+      const result = await response.json();
+      if (result.success) {
+        setAvailableUsers(result.data || []);
+      } else {
+        console.error('Failed to fetch users:', result.error);
+        setAvailableUsers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      setAvailableUsers([]);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  // Handle target type change
+  const handleTargetTypeChange = (newType) => {
+    setSendConfig({ ...sendConfig, targetType: newType, selectedUsers: [] });
+    if (newType === 'specific') {
+      // Fetch users based on the previous role filter
+      fetchUsersForSelection(userRoleFilter, userSearchQuery);
+    }
+  };
+
+  // Handle user role filter change (for specific targeting)
+  const handleUserRoleFilterChange = (role) => {
+    setUserRoleFilter(role);
+    fetchUsersForSelection(role, userSearchQuery);
+  };
+
+  // Handle user search
+  const handleUserSearch = (query) => {
+    setUserSearchQuery(query);
+    // Debounce search
+    clearTimeout(window.userSearchTimeout);
+    window.userSearchTimeout = setTimeout(() => {
+      fetchUsersForSelection(userRoleFilter, query);
+    }, 300);
+  };
+
+  // Toggle user selection
+  const toggleUserSelection = (user) => {
+    const isSelected = sendConfig.selectedUsers.some(u => u.id === user.id);
+    if (isSelected) {
+      setSendConfig({
+        ...sendConfig,
+        selectedUsers: sendConfig.selectedUsers.filter(u => u.id !== user.id)
+      });
+    } else {
+      setSendConfig({
+        ...sendConfig,
+        selectedUsers: [...sendConfig.selectedUsers, user]
+      });
+    }
+  };
+
+  // Remove user from selection
+  const removeUserFromSelection = (userId) => {
+    setSendConfig({
+      ...sendConfig,
+      selectedUsers: sendConfig.selectedUsers.filter(u => u.id !== userId)
+    });
+  };
+
+  // Select all visible users
+  const selectAllUsers = () => {
+    const currentIds = sendConfig.selectedUsers.map(u => u.id);
+    const newUsers = availableUsers.filter(u => !currentIds.includes(u.id));
+    setSendConfig({
+      ...sendConfig,
+      selectedUsers: [...sendConfig.selectedUsers, ...newUsers]
+    });
+  };
+
+  // Clear all selections
+  const clearAllSelections = () => {
+    setSendConfig({ ...sendConfig, selectedUsers: [] });
+  };
+
+  // Get preview with variable substitution
+  const getSendPreview = (text) => {
+    if (!text || !sendingTemplate) return text;
+    let preview = text;
+    (sendingTemplate.variables || []).forEach(v => {
+      const value = sendConfig.variableValues[v] || `[${v}]`;
+      preview = preview.replace(new RegExp(`{{${v}}}`, 'g'), value);
+    });
+    return preview;
+  };
+
+  // Send notification to users
+  const handleSendNotification = async () => {
+    if (!sendConfig.confirmed) {
+      alert('Please confirm that you want to send this notification');
+      return;
+    }
+
+    // Validate specific user selection
+    if (sendConfig.targetType === 'specific' && sendConfig.selectedUsers.length === 0) {
+      alert('Please select at least one user to send the notification to');
+      return;
+    }
+
+    setSendLoading(true);
+    setSendResult(null);
+
+    try {
+      const response = await fetch('/api/admin/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: getSendPreview(sendingTemplate.subject),
+          body: getSendPreview(sendingTemplate.body),
+          channels: sendConfig.channels,
+          targetType: sendConfig.targetType,
+          specificUserIds: sendConfig.selectedUsers.map(u => u.id),
+          variables: sendConfig.variableValues,
+          confirm: true
+        })
+      });
+
+      const result = await response.json();
+      setSendResult(result);
+
+      if (result.success) {
+        console.log('Notification sent successfully:', result);
+      }
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      setSendResult({ success: false, error: error.message });
+    } finally {
+      setSendLoading(false);
+    }
   };
 
   if (loading && templates.length === 0) {
@@ -389,6 +592,15 @@ export const NotificationTemplates = () => {
 
                       {/* Actions */}
                       <div className="flex items-center gap-1 flex-shrink-0">
+                        {template.is_active && (
+                          <button
+                            onClick={() => openSendModal(template)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#FFF2E5] text-[#FE9200]"
+                            title="Send Notification"
+                          >
+                            <Send size={16} />
+                          </button>
+                        )}
                         <button
                           onClick={() => setExpandedId(isExpanded ? null : template.id)}
                           className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 text-gray-500"
@@ -669,6 +881,352 @@ export const NotificationTemplates = () => {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Send Notification Modal */}
+      {showSendModal && sendingTemplate && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#FFF2E5] flex items-center justify-center">
+                  <Send className="w-5 h-5 text-[#FE9200]" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Send Notification</h3>
+                  <p className="text-xs text-gray-400">{sendingTemplate.name}</p>
+                </div>
+              </div>
+              <button onClick={closeSendModal} className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-gray-100 text-gray-500">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {sendResult ? (
+                /* Result View */
+                <div className="space-y-4">
+                  <div className={`p-6 rounded-xl ${sendResult.success ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                    <div className="flex items-center gap-3 mb-4">
+                      {sendResult.success ? (
+                        <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="w-8 h-8 text-red-600" />
+                      )}
+                      <div>
+                        <p className={`font-bold text-lg ${sendResult.success ? 'text-emerald-700' : 'text-red-700'}`}>
+                          {sendResult.success ? 'Notification Sent!' : 'Failed to Send'}
+                        </p>
+                        <p className={`text-sm ${sendResult.success ? 'text-emerald-600' : 'text-red-600'}`}>
+                          {sendResult.message || sendResult.error}
+                        </p>
+                      </div>
+                    </div>
+                    {sendResult.stats && (
+                      <div className="grid grid-cols-3 gap-4 mt-4">
+                        <div className="bg-white p-3 rounded-lg text-center">
+                          <p className="text-2xl font-black text-purple-600">{sendResult.stats.push || 0}</p>
+                          <p className="text-xs text-gray-500">Push Sent</p>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg text-center">
+                          <p className="text-2xl font-black text-blue-600">{sendResult.stats.email || 0}</p>
+                          <p className="text-xs text-gray-500">Emails Sent</p>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg text-center">
+                          <p className="text-2xl font-black text-green-600">{sendResult.stats.whatsapp || 0}</p>
+                          <p className="text-xs text-gray-500">WhatsApp Sent</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <Button onClick={closeSendModal} className="w-full bg-[#FE9200] hover:bg-[#E58300] text-white">
+                    Close
+                  </Button>
+                </div>
+              ) : (
+                /* Configuration View */
+                <>
+                  {/* Target Audience */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Target Audience</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleTargetTypeChange('all')}
+                        className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${sendConfig.targetType === 'all' ? 'border-[#FE9200] bg-[#FFF2E5]' : 'border-gray-100 hover:bg-gray-50'}`}
+                      >
+                        <Users className={`w-4 h-4 ${sendConfig.targetType === 'all' ? 'text-[#FE9200]' : 'text-gray-400'}`} />
+                        <span className={`font-medium text-sm ${sendConfig.targetType === 'all' ? 'text-[#FE9200]' : 'text-gray-600'}`}>All Users</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleTargetTypeChange('agents')}
+                        className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${sendConfig.targetType === 'agents' ? 'border-emerald-200 bg-emerald-50' : 'border-gray-100 hover:bg-gray-50'}`}
+                      >
+                        <UserCheck className={`w-4 h-4 ${sendConfig.targetType === 'agents' ? 'text-emerald-600' : 'text-gray-400'}`} />
+                        <span className={`font-medium text-sm ${sendConfig.targetType === 'agents' ? 'text-emerald-700' : 'text-gray-600'}`}>Agents</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleTargetTypeChange('tenants')}
+                        className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${sendConfig.targetType === 'tenants' ? 'border-blue-200 bg-blue-50' : 'border-gray-100 hover:bg-gray-50'}`}
+                      >
+                        <Home className={`w-4 h-4 ${sendConfig.targetType === 'tenants' ? 'text-blue-600' : 'text-gray-400'}`} />
+                        <span className={`font-medium text-sm ${sendConfig.targetType === 'tenants' ? 'text-blue-700' : 'text-gray-600'}`}>Tenants</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleTargetTypeChange('specific')}
+                        className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all ${sendConfig.targetType === 'specific' ? 'border-purple-200 bg-purple-50' : 'border-gray-100 hover:bg-gray-50'}`}
+                      >
+                        <Target className={`w-4 h-4 ${sendConfig.targetType === 'specific' ? 'text-purple-600' : 'text-gray-400'}`} />
+                        <span className={`font-medium text-sm ${sendConfig.targetType === 'specific' ? 'text-purple-700' : 'text-gray-600'}`}>Specific</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Specific User Selection */}
+                  {sendConfig.targetType === 'specific' && (
+                    <div className="space-y-4">
+                      {/* Role filter and search */}
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleUserRoleFilterChange('all')}
+                            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${userRoleFilter === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                          >
+                            All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUserRoleFilterChange('agent')}
+                            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${userRoleFilter === 'agent' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                          >
+                            Agents
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUserRoleFilterChange('tenant')}
+                            className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${userRoleFilter === 'tenant' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                          >
+                            Tenants
+                          </button>
+                        </div>
+                        <div className="flex-1 relative">
+                          <input
+                            type="text"
+                            value={userSearchQuery}
+                            onChange={(e) => handleUserSearch(e.target.value)}
+                            placeholder="Search by name or email..."
+                            className="w-full px-4 py-2 pl-10 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-[#FE9200] text-sm"
+                          />
+                          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        </div>
+                      </div>
+
+                      {/* Selected users */}
+                      {sendConfig.selectedUsers.length > 0 && (
+                        <div className="bg-purple-50 p-3 rounded-xl">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-purple-700">{sendConfig.selectedUsers.length} user(s) selected</span>
+                            <button type="button" onClick={clearAllSelections} className="text-xs text-purple-600 hover:text-purple-800 font-medium">
+                              Clear all
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {sendConfig.selectedUsers.map(user => (
+                              <span key={user.id} className="inline-flex items-center gap-1 px-2 py-1 bg-white rounded-lg text-xs font-medium text-gray-700">
+                                {user.name || user.email}
+                                <button type="button" onClick={() => removeUserFromSelection(user.id)} className="text-gray-400 hover:text-red-500">
+                                  <X size={12} />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* User list */}
+                      <div className="border-2 border-gray-100 rounded-xl max-h-48 overflow-y-auto">
+                        {usersLoading ? (
+                          <div className="flex items-center justify-center p-8">
+                            <Loader2 className="w-6 h-6 text-[#FE9200] animate-spin" />
+                          </div>
+                        ) : availableUsers.length === 0 ? (
+                          <div className="p-8 text-center text-gray-500 text-sm">
+                            {userSearchQuery ? 'No users found matching your search' : 'Click a filter to load users'}
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-gray-100">
+                            <div className="px-3 py-2 bg-gray-50 sticky top-0 flex items-center justify-between">
+                              <span className="text-xs text-gray-500">{availableUsers.length} users</span>
+                              <button type="button" onClick={selectAllUsers} className="text-xs text-[#FE9200] hover:text-[#E58300] font-medium">
+                                Select all visible
+                              </button>
+                            </div>
+                            {availableUsers.map(user => {
+                              const isSelected = sendConfig.selectedUsers.some(u => u.id === user.id);
+                              return (
+                                <button
+                                  key={user.id}
+                                  type="button"
+                                  onClick={() => toggleUserSelection(user)}
+                                  className={`w-full px-3 py-2 flex items-center gap-3 hover:bg-gray-50 transition-colors ${isSelected ? 'bg-purple-50' : ''}`}
+                                >
+                                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'bg-purple-600 border-purple-600' : 'border-gray-300'}`}>
+                                    {isSelected && <Check size={12} className="text-white" />}
+                                  </div>
+                                  <div className="flex-1 text-left min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">{user.name || 'Unnamed'}</p>
+                                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${user.role === 'agent' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                                      {user.role}
+                                    </span>
+                                    {user.verification_status === 'verified' && (
+                                      <ShieldCheck size={14} className="text-green-500" />
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Delivery Channels */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Delivery Channels</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border-2 transition-all ${sendConfig.channels.email ? 'border-blue-200 bg-blue-50' : 'border-gray-100 hover:bg-gray-50'}`}>
+                        <input
+                          type="checkbox"
+                          checked={sendConfig.channels.email}
+                          onChange={(e) => setSendConfig({ ...sendConfig, channels: { ...sendConfig.channels, email: e.target.checked } })}
+                          className="w-5 h-5 text-blue-600 rounded"
+                        />
+                        <Mail className={`w-5 h-5 ${sendConfig.channels.email ? 'text-blue-600' : 'text-gray-400'}`} />
+                        <span className={`font-medium ${sendConfig.channels.email ? 'text-blue-700' : 'text-gray-600'}`}>Email</span>
+                      </label>
+                      <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border-2 transition-all ${sendConfig.channels.push ? 'border-purple-200 bg-purple-50' : 'border-gray-100 hover:bg-gray-50'}`}>
+                        <input
+                          type="checkbox"
+                          checked={sendConfig.channels.push}
+                          onChange={(e) => setSendConfig({ ...sendConfig, channels: { ...sendConfig.channels, push: e.target.checked } })}
+                          className="w-5 h-5 text-purple-600 rounded"
+                        />
+                        <Bell className={`w-5 h-5 ${sendConfig.channels.push ? 'text-purple-600' : 'text-gray-400'}`} />
+                        <span className={`font-medium ${sendConfig.channels.push ? 'text-purple-700' : 'text-gray-600'}`}>Push</span>
+                      </label>
+                      <label className={`flex items-center gap-3 cursor-pointer p-4 rounded-xl border-2 transition-all ${sendConfig.channels.whatsapp ? 'border-green-200 bg-green-50' : 'border-gray-100 hover:bg-gray-50'}`}>
+                        <input
+                          type="checkbox"
+                          checked={sendConfig.channels.whatsapp}
+                          onChange={(e) => setSendConfig({ ...sendConfig, channels: { ...sendConfig.channels, whatsapp: e.target.checked } })}
+                          className="w-5 h-5 text-green-600 rounded"
+                        />
+                        <MessageSquare className={`w-5 h-5 ${sendConfig.channels.whatsapp ? 'text-green-600' : 'text-gray-400'}`} />
+                        <span className={`font-medium ${sendConfig.channels.whatsapp ? 'text-green-700' : 'text-gray-600'}`}>WhatsApp</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Variable Values */}
+                  {sendingTemplate.variables?.length > 0 && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Variable Values</label>
+                      <div className="space-y-3">
+                        {sendingTemplate.variables.map(v => (
+                          <div key={v}>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">{`{{${v}}}`}</label>
+                            <input
+                              type="text"
+                              value={sendConfig.variableValues[v] || ''}
+                              onChange={(e) => setSendConfig({
+                                ...sendConfig,
+                                variableValues: { ...sendConfig.variableValues, [v]: e.target.value }
+                              })}
+                              className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-[#FE9200] bg-white text-gray-900 placeholder-gray-400 font-medium"
+                              placeholder={`Enter value for ${v}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Preview */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Preview</label>
+                    <div className="bg-gray-50 p-4 rounded-xl space-y-3">
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Subject</p>
+                        <p className="font-bold text-gray-900">{getSendPreview(sendingTemplate.subject)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1">Message</p>
+                        <pre className="text-sm text-gray-600 whitespace-pre-wrap">{getSendPreview(sendingTemplate.body)}</pre>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Confirmation */}
+                  <div className="p-4 bg-amber-50 rounded-xl">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={sendConfig.confirmed}
+                        onChange={(e) => setSendConfig({ ...sendConfig, confirmed: e.target.checked })}
+                        className="w-5 h-5 text-amber-600 rounded mt-0.5"
+                      />
+                      <div>
+                        <p className="font-bold text-amber-800">Confirm Send</p>
+                        <p className="text-sm text-amber-700">
+                          {sendConfig.targetType === 'specific'
+                            ? `I understand this will send notifications to ${sendConfig.selectedUsers.length} selected user(s).`
+                            : `I understand this will send notifications to ${sendConfig.targetType === 'all' ? 'all users' : sendConfig.targetType === 'agents' ? 'all agents' : 'all tenants'}.`
+                          }
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Warning for specific without selection */}
+                  {sendConfig.targetType === 'specific' && sendConfig.selectedUsers.length === 0 && (
+                    <div className="p-3 bg-red-50 rounded-xl flex items-center gap-2 text-red-700">
+                      <AlertCircle size={16} />
+                      <span className="text-sm">Please select at least one user to send the notification to.</span>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">
+                    <Button type="button" onClick={closeSendModal} variant="outline" className="w-full sm:w-auto">
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleSendNotification}
+                      disabled={sendLoading || !sendConfig.confirmed}
+                      className="bg-[#FE9200] hover:bg-[#E58300] text-white w-full sm:w-auto disabled:opacity-50"
+                    >
+                      {sendLoading ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4 mr-2" />
+                      )}
+                      Send Notification
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
