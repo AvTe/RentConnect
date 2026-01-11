@@ -103,74 +103,79 @@ const LeadCard = ({
 
   // Mobile compact card - optimized for 2 cards visible on screen
   // Width: ~45vw to show partial 3rd card (indicating scrollability)
+  // Fixed height for uniform card sizing
   if (isMobile) {
     return (
-      <div className="bg-[#FFF5E6] rounded-xl p-2 w-[46vw] min-w-[160px] max-w-[180px] flex-shrink-0 select-none">
+      <div className="bg-[#FFF5E6] rounded-xl p-2 w-[46vw] min-w-[160px] max-w-[180px] h-[200px] flex-shrink-0 select-none">
         <div className="bg-white rounded-lg overflow-hidden border-b-[3px] border-[#FE9200] h-full flex flex-col shadow-sm">
-          <div className="p-2.5 flex flex-col flex-1">
-            {/* Top badges */}
-            <div className="flex items-center justify-between mb-2 gap-1">
+          <div className="p-2.5 flex flex-col h-full">
+            {/* Top badges - fixed height */}
+            <div className="flex items-center justify-between mb-2 gap-1 h-[22px] flex-shrink-0">
               <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1 rounded-full">
                 <Users size={10} className="text-[#2E7D32]" />
                 <span className="text-[9px] font-semibold text-[#2E7D32]">
                   {contactCount}
                 </span>
               </div>
-              <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-2 py-1 rounded-full text-[9px] font-bold">
+              <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-2 py-1 rounded-full text-[9px] font-bold truncate max-w-[70px]">
                 {formatBudget(budget)}
               </span>
             </div>
 
-            {/* Property info */}
-            <h3 className="text-sm font-bold text-gray-900 mb-0.5 truncate leading-tight">
-              {propertyType}
-            </h3>
-            <p className="text-[11px] text-gray-500 mb-2 truncate">{location}</p>
+            {/* Property info - fixed height */}
+            <div className="flex-shrink-0 h-[38px] mb-1">
+              <h3 className="text-sm font-bold text-gray-900 mb-0.5 truncate leading-tight">
+                {propertyType}
+              </h3>
+              <p className="text-[11px] text-gray-500 truncate">{location}</p>
+            </div>
 
-            {/* Status badges */}
-            <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-              <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1 rounded-full">
+            {/* Status badges - fixed height, no wrap */}
+            <div className="flex items-center gap-1.5 mb-2 h-[22px] flex-shrink-0 overflow-hidden">
+              <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1 rounded-full flex-shrink-0">
                 <CheckCircle size={10} className="text-[#2E7D32]" />
-                <span className="text-[9px] text-[#2E7D32] font-medium capitalize">{status}</span>
+                <span className="text-[9px] text-[#2E7D32] font-medium capitalize truncate max-w-[45px]">{status}</span>
               </div>
-              <div className="flex items-center gap-1 bg-[#FFF5E6] px-2 py-1 rounded-full">
+              <div className="flex items-center gap-1 bg-[#FFF5E6] px-2 py-1 rounded-full flex-shrink-0">
                 <Zap size={10} className="text-[#FE9200]" />
                 <span className="text-[9px] text-gray-600 font-medium">Ready</span>
               </div>
             </div>
 
-            {/* Contact section */}
-            {isPremium ? (
-              <div className="bg-[#E8F5E9] rounded-lg p-2 mt-auto">
-                <div className="flex items-center justify-around">
-                  <button
-                    onClick={() => handleContactClick("phone")}
-                    className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors active:scale-95"
-                  >
-                    <Phone size={14} className="text-white" />
-                  </button>
-                  <div className="w-px h-6 bg-[#2E7D32]/30" />
-                  <button
-                    onClick={() => handleContactClick("email")}
-                    className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors active:scale-95"
-                  >
-                    <Mail size={14} className="text-white" />
-                  </button>
+            {/* Contact section - fills remaining space */}
+            <div className="mt-auto">
+              {isPremium ? (
+                <div className="bg-[#E8F5E9] rounded-lg p-2">
+                  <div className="flex items-center justify-around">
+                    <button
+                      onClick={() => handleContactClick("phone")}
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors active:scale-95"
+                    >
+                      <Phone size={14} className="text-white" />
+                    </button>
+                    <div className="w-px h-6 bg-[#2E7D32]/30" />
+                    <button
+                      onClick={() => handleContactClick("email")}
+                      className="flex items-center justify-center w-8 h-8 rounded-full bg-[#2E7D32] hover:bg-[#1B5E20] transition-colors active:scale-95"
+                    >
+                      <Mail size={14} className="text-white" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <button
-                onClick={handleOverlayClick}
-                className="bg-[#FFF5E6] rounded-lg py-2.5 px-3 border border-[#FE9200] mt-auto hover:bg-[#FFE8CC] transition-colors active:scale-[0.98]"
-              >
-                <div className="flex items-center justify-center gap-1.5">
-                  <Lock size={12} className="text-[#FE9200]" />
-                  <span className="text-[10px] text-[#FE9200] font-semibold">
-                    Subscribe
-                  </span>
-                </div>
-              </button>
-            )}
+              ) : (
+                <button
+                  onClick={handleOverlayClick}
+                  className="w-full bg-[#FFF5E6] rounded-lg py-2.5 px-3 border border-[#FE9200] hover:bg-[#FFE8CC] transition-colors active:scale-[0.98]"
+                >
+                  <div className="flex items-center justify-center gap-1.5">
+                    <Lock size={12} className="text-[#FE9200]" />
+                    <span className="text-[10px] text-[#FE9200] font-semibold">
+                      Subscribe
+                    </span>
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -178,83 +183,91 @@ const LeadCard = ({
   }
 
   // Desktop/tablet card (original design)
+  // Fixed height for uniform card sizing
   return (
-    <div className="bg-[#FFF5E6] rounded-[16px] p-2 w-[240px] flex-shrink-0 select-none">
+    <div className="bg-[#FFF5E6] rounded-[16px] p-2 w-[240px] h-[240px] flex-shrink-0 select-none">
       <div className="bg-white rounded-[12px] overflow-hidden border-b-4 border-[#FE9200] h-full flex flex-col shadow-sm">
-        <div className="p-3 flex flex-col flex-1">
-          <div className="flex items-center justify-between mb-3">
+        <div className="p-3 flex flex-col h-full">
+          {/* Top badges - fixed height */}
+          <div className="flex items-center justify-between mb-3 h-[28px] flex-shrink-0">
             <div className="flex items-center gap-1 bg-[#E8F5E9] px-2 py-1.5 rounded-full">
               <Users size={11} className="text-[#2E7D32]" />
-              <span className="text-[9px] font-semibold text-[#2E7D32]">
+              <span className="text-[9px] font-semibold text-[#2E7D32] truncate max-w-[90px]">
                 {contactCount} Agents Contacted
               </span>
             </div>
-            <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-2 py-1.5 rounded-full text-[9px] font-bold shadow-sm">
+            <span className="bg-gradient-to-r from-[#FE9200] to-[#FF6B00] text-white px-2 py-1.5 rounded-full text-[9px] font-bold shadow-sm truncate max-w-[80px]">
               {formatBudget(budget)}
             </span>
           </div>
 
-          <h3 className="text-base font-bold text-gray-900 mb-0.5 truncate">
-            {propertyType}
-          </h3>
-          <p className="text-xs text-gray-500 mb-3 truncate">{location}</p>
+          {/* Property info - fixed height */}
+          <div className="flex-shrink-0 h-[44px] mb-2">
+            <h3 className="text-base font-bold text-gray-900 mb-0.5 truncate">
+              {propertyType}
+            </h3>
+            <p className="text-xs text-gray-500 truncate">{location}</p>
+          </div>
 
-          {/* Compact info row - no redundancy */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center gap-1 bg-[#F5F5F5] px-2 py-1.5 rounded-full">
+          {/* Compact info row - fixed height, no wrap */}
+          <div className="flex items-center gap-2 mb-3 h-[26px] flex-shrink-0 overflow-hidden">
+            <div className="flex items-center gap-1 bg-[#F5F5F5] px-2 py-1.5 rounded-full flex-shrink-0">
               <CheckCircle size={10} className="text-[#2E7D32]" />
-              <span className="text-[9px] text-[#2E7D32] font-medium capitalize">{status}</span>
+              <span className="text-[9px] text-[#2E7D32] font-medium capitalize truncate max-w-[50px]">{status}</span>
             </div>
-            <div className="flex items-center gap-1 bg-[#F5F5F5] px-2 py-1.5 rounded-full">
+            <div className="flex items-center gap-1 bg-[#F5F5F5] px-2 py-1.5 rounded-full flex-shrink-0">
               <Zap size={10} className="text-[#FE9200]" />
               <span className="text-[9px] text-gray-600 font-medium">Ready to Move</span>
             </div>
           </div>
 
-          {isPremium ? (
-            <div className="bg-[#E8F5E9] rounded-lg p-2.5 border-2 border-[#2E7D32] mt-auto">
-              <div className="flex items-center justify-around">
-                <button
-                  onClick={() => handleContactClick("phone")}
-                  className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity"
-                >
-                  <div className="w-6 h-6 rounded-full bg-[#2E7D32] flex items-center justify-center">
-                    <Phone size={11} className="text-white" />
-                  </div>
-                  <span className="text-[8px] text-[#2E7D32] font-medium">
-                    Call
-                  </span>
-                </button>
-                <div className="w-px h-8 bg-[#2E7D32]/30" />
-                <button
-                  onClick={() => handleContactClick("email")}
-                  className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity"
-                >
-                  <div className="w-6 h-6 rounded-full bg-[#2E7D32] flex items-center justify-center">
-                    <Mail size={11} className="text-white" />
-                  </div>
-                  <span className="text-[8px] text-[#2E7D32] font-medium">
-                    Email
-                  </span>
-                </button>
+          {/* Contact section - fills remaining space */}
+          <div className="mt-auto">
+            {isPremium ? (
+              <div className="bg-[#E8F5E9] rounded-lg p-2.5 border-2 border-[#2E7D32]">
+                <div className="flex items-center justify-around">
+                  <button
+                    onClick={() => handleContactClick("phone")}
+                    className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[#2E7D32] flex items-center justify-center">
+                      <Phone size={11} className="text-white" />
+                    </div>
+                    <span className="text-[8px] text-[#2E7D32] font-medium">
+                      Call
+                    </span>
+                  </button>
+                  <div className="w-px h-8 bg-[#2E7D32]/30" />
+                  <button
+                    onClick={() => handleContactClick("email")}
+                    className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-[#2E7D32] flex items-center justify-center">
+                      <Mail size={11} className="text-white" />
+                    </div>
+                    <span className="text-[8px] text-[#2E7D32] font-medium">
+                      Email
+                    </span>
+                  </button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <button
-              onClick={handleOverlayClick}
-              className="bg-[#FFF5E6] rounded-lg p-3 border-2 border-[#FE9200] mt-auto hover:bg-[#FFE8CC] transition-colors cursor-pointer"
-            >
-              <div className="flex flex-col items-center justify-center gap-0.5">
-                <Lock size={16} className="text-[#FE9200]" />
-                <p className="text-[10px] text-gray-600 text-center">
-                  Contact details available for
-                </p>
-                <p className="text-[11px] text-[#FE9200] font-semibold">
-                  Subscribed Agents
-                </p>
-              </div>
-            </button>
-          )}
+            ) : (
+              <button
+                onClick={handleOverlayClick}
+                className="w-full bg-[#FFF5E6] rounded-lg p-3 border-2 border-[#FE9200] hover:bg-[#FFE8CC] transition-colors cursor-pointer"
+              >
+                <div className="flex flex-col items-center justify-center gap-0.5">
+                  <Lock size={16} className="text-[#FE9200]" />
+                  <p className="text-[10px] text-gray-600 text-center">
+                    Contact details available for
+                  </p>
+                  <p className="text-[11px] text-[#FE9200] font-semibold">
+                    Subscribed Agents
+                  </p>
+                </div>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -264,8 +277,8 @@ const LeadCard = ({
 const SkeletonCardSmall = ({ isMobile }) => {
   if (isMobile) {
     return (
-      <div className="bg-[#FFF5E6] rounded-xl p-2 w-[46vw] min-w-[160px] max-w-[180px] flex-shrink-0 animate-pulse">
-        <div className="bg-white rounded-lg p-2.5 h-[200px]">
+      <div className="bg-[#FFF5E6] rounded-xl p-2 w-[46vw] min-w-[160px] max-w-[180px] h-[200px] flex-shrink-0 animate-pulse">
+        <div className="bg-white rounded-lg p-2.5 h-full flex flex-col">
           <div className="flex justify-between mb-2">
             <div className="h-5 bg-gray-200 rounded-full w-10"></div>
             <div className="h-5 bg-gray-200 rounded-full w-14"></div>
@@ -273,8 +286,8 @@ const SkeletonCardSmall = ({ isMobile }) => {
           <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
           <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
           <div className="flex gap-1.5 mb-2">
-            <div className="h-6 bg-gray-100 rounded-full w-16"></div>
-            <div className="h-6 bg-gray-100 rounded-full w-14"></div>
+            <div className="h-5 bg-gray-100 rounded-full w-14"></div>
+            <div className="h-5 bg-gray-100 rounded-full w-12"></div>
           </div>
           <div className="h-10 bg-gray-100 rounded-lg mt-auto"></div>
         </div>
@@ -283,20 +296,19 @@ const SkeletonCardSmall = ({ isMobile }) => {
   }
 
   return (
-    <div className="bg-[#FFF5E6] rounded-[16px] p-2 w-[240px] flex-shrink-0 animate-pulse">
-      <div className="bg-white rounded-[12px] p-3 h-[280px]">
+    <div className="bg-[#FFF5E6] rounded-[16px] p-2 w-[240px] h-[240px] flex-shrink-0 animate-pulse">
+      <div className="bg-white rounded-[12px] p-3 h-full flex flex-col">
         <div className="flex justify-between mb-3">
-          <div className="h-5 bg-gray-200 rounded-full w-24"></div>
-          <div className="h-5 bg-gray-200 rounded-full w-16"></div>
+          <div className="h-6 bg-gray-200 rounded-full w-24"></div>
+          <div className="h-6 bg-gray-200 rounded-full w-16"></div>
         </div>
-        <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
-        <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-12 bg-gray-100 rounded-lg"></div>
-          ))}
+        <div className="h-5 bg-gray-200 rounded w-3/4 mb-1"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2 mb-3"></div>
+        <div className="flex gap-2 mb-3">
+          <div className="h-6 bg-gray-100 rounded-full w-16"></div>
+          <div className="h-6 bg-gray-100 rounded-full w-20"></div>
         </div>
-        <div className="h-14 bg-gray-100 rounded-lg"></div>
+        <div className="h-16 bg-gray-100 rounded-lg mt-auto"></div>
       </div>
     </div>
   );
@@ -628,19 +640,13 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
               The Smarter Way to Rent
             </h2>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col items-center justify-center gap-3 sm:gap-3 px-4 sm:px-0">
+            {/* CTA Button */}
+            <div className="flex items-center justify-center px-4 sm:px-0">
               <button
                 onClick={() => onNavigate("tenant-form")}
-                className="w-full max-w-xs sm:max-w-none sm:w-auto px-6 sm:px-8 py-3 sm:py-3 rounded-full bg-white/15 backdrop-blur-md border-2 border-[#FE9200] text-white font-semibold hover:bg-[#FE9200] hover:text-white transition-all text-base sm:text-base hover:shadow-lg active:scale-[0.98]"
+                className="px-5 py-2.5 sm:px-8 sm:py-3 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all text-sm sm:text-base hover:shadow-lg active:scale-[0.98]"
               >
                 I Need a Place to Rent
-              </button>
-              <button
-                onClick={() => onNavigate("login", { tab: "agent" })}
-                className="w-full max-w-xs sm:max-w-none sm:w-auto px-6 sm:px-8 py-3 sm:py-3 rounded-full bg-[#FE9200] text-white font-semibold hover:bg-[#E58300] transition-all text-base sm:text-base hover:shadow-lg active:scale-[0.98]"
-              >
-                I Have a Property to List
               </button>
             </div>
           </div>
