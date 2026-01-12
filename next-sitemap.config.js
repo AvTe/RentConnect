@@ -6,8 +6,9 @@ module.exports = {
   changefreq: 'daily',
   priority: 0.7,
   sitemapSize: 5000,
-  
-  // Exclude private/admin routes from sitemap
+
+  // Exclude all auto-generated routes - we'll manually add only the homepage
+  // This is because Yoombaa is a SPA with hash-based routing (/#about, /#contact, etc.)
   exclude: [
     '/admin',
     '/admin/*',
@@ -15,65 +16,49 @@ module.exports = {
     '/private/*',
     '/_next/*',
     '/server-sitemap.xml',
+    '/auth/*',
+    '/payment/*',
+    '/share/*',
+    '/about',
+    '/contact',
+    '/privacy',
+    '/terms',
   ],
-  
-  // Transform function to customize sitemap entries
+
+  // Transform function - only allow homepage
   transform: async (config, path) => {
-    // Set higher priority for important pages
-    let priority = config.priority;
-    let changefreq = config.changefreq;
-    
-    if (path === '/') {
-      priority = 1.0;
-      changefreq = 'daily';
-    } else if (path === '/about' || path === '/contact') {
-      priority = 0.8;
-      changefreq = 'weekly';
-    } else if (path.startsWith('/properties') || path.startsWith('/agents')) {
-      priority = 0.9;
-      changefreq = 'daily';
+    // Only include the homepage since it's a SPA
+    if (path !== '/') {
+      return null; // Exclude this path
     }
-    
+
     return {
       loc: path,
-      changefreq,
-      priority,
+      changefreq: 'daily',
+      priority: 1.0,
       lastmod: new Date().toISOString(),
     };
   },
-  
-  // Additional paths to include
+
+  // Only include the homepage
   additionalPaths: async (config) => {
-    const result = [];
-    
-    // Add static pages
-    const staticPages = [
-      '/',
-      '/about',
-      '/contact',
-      '/privacy',
-      '/terms',
-    ];
-    
-    for (const page of staticPages) {
-      result.push({
-        loc: page,
-        changefreq: 'weekly',
-        priority: page === '/' ? 1.0 : 0.8,
+    return [
+      {
+        loc: '/',
+        changefreq: 'daily',
+        priority: 1.0,
         lastmod: new Date().toISOString(),
-      });
-    }
-    
-    return result;
+      },
+    ];
   },
-  
+
   // Robots.txt options (if generateRobotsTxt is true)
   robotsTxtOptions: {
     policies: [
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/admin/', '/_next/', '/private/'],
+        disallow: ['/api/', '/admin/', '/_next/', '/private/', '/auth/', '/payment/'],
       },
     ],
     additionalSitemaps: [
