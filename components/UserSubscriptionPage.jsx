@@ -3,11 +3,15 @@ import { ArrowLeft, Check, Shield, Phone, Mail, MessageCircle, AlertCircle, Load
 import { Button } from './ui/Button';
 import { useToast } from '@/context/ToastContext';
 import { getAllSubscriptionPlans } from '@/lib/database';
+import { PaymentMethodModal } from './PaymentMethodModal';
 
-export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) => {
+export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe, onSubscribeMpesa }) => {
   const { toast } = useToast();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   useEffect(() => {
     fetchPlans();
@@ -45,14 +49,97 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
       return;
     }
 
+    // Show payment method selection modal
+    setSelectedPlan(plan);
+    setShowPaymentModal(true);
+  };
+
+  const handlePesapalPayment = async (paymentData) => {
+    setPaymentLoading(true);
+    setShowPaymentModal(false);
     await onSubscribe({
       userId: currentUser.uid,
-      planId: plan.id,
-      planName: plan.name,
-      amount: parseInt(plan.price),
-      period: plan.interval,
-      planType: plan.name
+      planId: selectedPlan.id,
+      planName: selectedPlan.name,
+      amount: parseInt(selectedPlan.price),
+      period: selectedPlan.interval,
+      planType: selectedPlan.name
     });
+    setPaymentLoading(false);
+  };
+
+  const handleMpesaPayment = async (paymentData) => {
+    setPaymentLoading(true);
+    try {
+      // Call M-Pesa STK Push API
+      const response = await fetch('/api/mpesa/stk-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumber: paymentData.phoneNumber,
+          amount: parseInt(selectedPlan.price),
+          metadata: {
+            type: 'user_subscription',
+            userId: currentUser.uid,
+            planId: selectedPlan.id,
+            planType: selectedPlan.name,
+            description: `${selectedPlan.name} Subscription`,
+          }
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success('M-Pesa payment request sent! Check your phone.');
+        // Start polling for payment status
+        pollPaymentStatus(result.checkoutRequestId, result.orderId);
+      } else {
+        toast.error(result.error || 'Failed to initiate M-Pesa payment');
+        setShowPaymentModal(false);
+      }
+    } catch (error) {
+      console.error('M-Pesa payment error:', error);
+      toast.error('Failed to process M-Pesa payment');
+      setShowPaymentModal(false);
+    }
+    setPaymentLoading(false);
+  };
+
+  const pollPaymentStatus = async (checkoutRequestId, orderId) => {
+    let attempts = 0;
+    const maxAttempts = 30; // Poll for about 60 seconds (30 * 2s)
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/mpesa/query?orderId=${orderId}`);
+        const result = await response.json();
+
+        if (result.status === 'completed') {
+          toast.success('Payment successful! Your subscription is now active.');
+          setShowPaymentModal(false);
+          onNavigate('agents-listing');
+          return;
+        } else if (result.status === 'failed') {
+          toast.error(result.error || 'Payment failed. Please try again.');
+          setShowPaymentModal(false);
+          return;
+        }
+
+        // Continue polling if still pending
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000); // Poll every 2 seconds
+        } else {
+          toast.info('Payment is still processing. We\'ll update you once confirmed.');
+          setShowPaymentModal(false);
+        }
+      } catch (error) {
+        console.error('Error polling payment status:', error);
+      }
+    };
+
+    poll();
   };
 
   const getFeaturesArray = (plan) => {
@@ -241,6 +328,17 @@ export const UserSubscriptionPage = ({ currentUser, onNavigate, onSubscribe }) =
           </div>
         </div>
       </div>
+
+      {/* Payment Method Modal */}
+      <PaymentMethodModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSelectMpesa={handleMpesaPayment}
+        onSelectPesapal={handlePesapalPayment}
+        paymentData={selectedPlan ? { amount: selectedPlan.price, ...selectedPlan } : null}
+        userPhone={currentUser?.phone}
+        loading={paymentLoading}
+      />
     </div>
   );
 };

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Check, Zap, Shield, Coins, Star, Lock, Smartphone, ArrowRight, Loader2, ShieldCheck, Globe, CreditCard, Gift } from 'lucide-react';
+import { X, Check, Zap, Shield, Coins, Star, Lock, Smartphone, ArrowRight, Loader2, ShieldCheck, Globe, CreditCard, Gift, AlertCircle, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/Button';
 import { getAllCreditBundles } from '@/lib/database';
+import { useToast } from '@/context/ToastContext';
+import Image from 'next/image';
 
 const ACCEPTED_LOGOS = [
     { name: 'M-Pesa', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/256px-M-PESA_LOGO-01.svg.png', h: 'h-5 sm:h-6' },
@@ -11,13 +13,16 @@ const ACCEPTED_LOGOS = [
 ];
 
 export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }) => {
-    const [step, setStep] = useState('selection'); // 'selection' | 'processing'
+    const { toast } = useToast();
+    const [step, setStep] = useState('selection'); // 'selection' | 'payment-method' | 'mpesa-phone' | 'processing'
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [bundles, setBundles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
     const [merchants, setMerchants] = useState([]);
     const [merchantsLoading, setMerchantsLoading] = useState(true);
+    const [phoneNumber, setPhoneNumber] = useState(currentUser?.phone || '');
+    const [phoneError, setPhoneError] = useState('');
 
     useEffect(() => {
         if (isOpen) {
@@ -86,10 +91,96 @@ export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }
 
     const handleContinue = () => {
         if (!selectedPlan) return;
+        setStep('payment-method');
+    };
+
+    const validatePhone = (phone) => {
+        const cleaned = phone.replace(/\D/g, '');
+        if (cleaned.startsWith('254')) return cleaned.length === 12;
+        if (cleaned.startsWith('0')) return cleaned.length === 10;
+        if (cleaned.startsWith('7') || cleaned.startsWith('1')) return cleaned.length === 9;
+        return false;
+    };
+
+    const handleMpesaPayment = async () => {
+        if (!validatePhone(phoneNumber)) {
+            setPhoneError('Please enter a valid M-Pesa phone number (e.g., 0712345678)');
+            return;
+        }
+        setPhoneError('');
+        setStep('processing');
+
+        try {
+            const response = await fetch('/api/mpesa/stk-push', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phoneNumber: phoneNumber,
+                    amount: parseInt(selectedPlan.price),
+                    metadata: {
+                        type: 'credit_purchase',
+                        agentId: currentUser?.uid || currentUser?.id,
+                        credits: selectedPlan.credits,
+                        description: `${selectedPlan.credits} Credits Bundle`,
+                    }
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                toast.success('M-Pesa payment request sent! Check your phone.');
+                pollPaymentStatus(result.checkoutRequestId, result.orderId);
+            } else {
+                toast.error(result.error || 'Failed to initiate M-Pesa payment');
+                setStep('payment-method');
+            }
+        } catch (error) {
+            console.error('M-Pesa payment error:', error);
+            toast.error('Failed to process M-Pesa payment');
+            setStep('payment-method');
+        }
+    };
+
+    const handlePesapalPayment = () => {
         setStep('processing');
         setTimeout(() => {
             onBuyCredits(selectedPlan);
         }, 1500);
+    };
+
+    const pollPaymentStatus = async (checkoutRequestId, orderId) => {
+        let attempts = 0;
+        const maxAttempts = 30;
+
+        const poll = async () => {
+            try {
+                const response = await fetch(`/api/mpesa/query?orderId=${orderId}`);
+                const result = await response.json();
+
+                if (result.status === 'completed') {
+                    toast.success('Payment successful! Credits added to your wallet.');
+                    onClose();
+                    return;
+                } else if (result.status === 'failed') {
+                    toast.error(result.error || 'Payment failed. Please try again.');
+                    setStep('payment-method');
+                    return;
+                }
+
+                attempts++;
+                if (attempts < maxAttempts) {
+                    setTimeout(poll, 2000);
+                } else {
+                    toast.info('Payment is still processing. We\'ll update you once confirmed.');
+                    onClose();
+                }
+            } catch (error) {
+                console.error('Error polling payment status:', error);
+            }
+        };
+
+        poll();
     };
 
     const SelectionStep = () => (
@@ -302,6 +393,127 @@ export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }
         </div>
     );
 
+    // Payment Method Selection Step
+    const PaymentMethodStep = () => (
+        <div className="flex flex-col items-center justify-center py-8 px-6 bg-white h-full min-h-[500px] animate-in fade-in duration-300">
+            <button
+                onClick={() => setStep('selection')}
+                className="absolute top-6 left-6 p-2 hover:bg-slate-100 rounded-xl transition-colors flex items-center gap-2 text-slate-500"
+            >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium">Back</span>
+            </button>
+
+            <div className="text-center mb-8">
+                <h3 className="text-2xl font-black text-slate-900 mb-2">Choose Payment Method</h3>
+                <p className="text-slate-500">
+                    <span className="font-bold">{selectedPlan?.credits} Credits</span> • KSh {selectedPlan ? parseInt(selectedPlan.price).toLocaleString() : '0'}
+                </p>
+            </div>
+
+            <div className="w-full max-w-md space-y-4">
+                {/* M-Pesa Direct Option */}
+                <button
+                    onClick={() => setStep('mpesa-phone')}
+                    className="w-full p-5 rounded-2xl border-2 border-slate-200 hover:border-[#00A84D] hover:bg-[#00A84D]/5 transition-all flex items-center gap-4 group"
+                >
+                    <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border border-slate-100 shadow-sm p-2">
+                        <Image
+                            src="/mpesa-logo.png"
+                            alt="M-Pesa"
+                            width={56}
+                            height={56}
+                            className="object-contain"
+                        />
+                    </div>
+                    <div className="flex-1 text-left">
+                        <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-lg">M-Pesa</span>
+                            <span className="text-[10px] bg-[#00A84D] text-white px-2 py-0.5 rounded-full font-bold">INSTANT</span>
+                        </div>
+                        <p className="text-sm text-slate-500">Pay directly via STK Push</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                {/* Pesapal Option */}
+                <button
+                    onClick={handlePesapalPayment}
+                    className="w-full p-5 rounded-2xl border-2 border-slate-200 hover:border-[#00529B] hover:bg-[#00529B]/5 transition-all flex items-center gap-4 group"
+                >
+                    <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border border-slate-100 shadow-sm p-2">
+                        <Image
+                            src="/pesapal-logo.png"
+                            alt="Pesapal"
+                            width={56}
+                            height={56}
+                            className="object-contain"
+                        />
+                    </div>
+                    <div className="flex-1 text-left">
+                        <span className="font-bold text-slate-900 text-lg">Pesapal</span>
+                        <p className="text-sm text-slate-500">M-Pesa, Visa, Mastercard, Airtel</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                {/* Security badge */}
+                <div className="flex items-center justify-center gap-2 pt-3 text-slate-400 text-xs">
+                    <Shield className="w-4 h-4" />
+                    <span>256-bit SSL encrypted payments</span>
+                </div>
+            </div>
+        </div>
+    );
+
+    // M-Pesa Phone Input Step
+    const MpesaPhoneStep = () => (
+        <div className="flex flex-col items-center justify-center py-8 px-6 bg-white h-full min-h-[500px] animate-in fade-in duration-300">
+            <button
+                onClick={() => setStep('payment-method')}
+                className="absolute top-6 left-6 p-2 hover:bg-slate-100 rounded-xl transition-colors flex items-center gap-2 text-slate-500"
+            >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="text-sm font-medium">Back</span>
+            </button>
+
+            <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center mb-6 border border-slate-100 shadow-sm p-3">
+                <Image
+                    src="/mpesa-logo.png"
+                    alt="M-Pesa"
+                    width={72}
+                    height={72}
+                    className="object-contain"
+                />
+            </div>
+
+            <h3 className="text-2xl font-black text-slate-900 mb-2">Enter M-Pesa Number</h3>
+            <p className="text-slate-500 mb-6">You will receive an STK Push on this number</p>
+
+            <div className="w-full max-w-sm">
+                <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => { setPhoneNumber(e.target.value); setPhoneError(''); }}
+                    placeholder="e.g., 0712345678"
+                    className={`w-full px-4 py-4 rounded-xl border-2 ${phoneError ? 'border-red-400' : 'border-slate-200'} focus:border-[#00A84D] focus:outline-none text-xl font-medium text-center tracking-wider`}
+                />
+                {phoneError && (
+                    <p className="text-red-500 text-sm mt-2 flex items-center justify-center gap-1">
+                        <AlertCircle className="w-4 h-4" /> {phoneError}
+                    </p>
+                )}
+
+                <Button
+                    onClick={handleMpesaPayment}
+                    className="w-full h-14 mt-6 bg-[#00A84D] hover:bg-[#008C41] text-white rounded-xl font-bold text-lg"
+                >
+                    Send STK Push
+                </Button>
+            </div>
+        </div>
+    );
+
     const ProcessingStep = () => (
         <div className="flex flex-col items-center justify-center py-12 sm:py-20 px-6 sm:px-10 text-center animate-in fade-in duration-500 bg-white h-full min-h-[500px] overflow-y-auto">
             <div className="relative mb-10">
@@ -343,6 +555,16 @@ export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }
         </div>
     );
 
+    const renderStep = () => {
+        switch (step) {
+            case 'selection': return <SelectionStep />;
+            case 'payment-method': return <PaymentMethodStep />;
+            case 'mpesa-phone': return <MpesaPhoneStep />;
+            case 'processing': return <ProcessingStep />;
+            default: return <SelectionStep />;
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-6 lg:p-12 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
             <div
@@ -350,7 +572,7 @@ export const SubscriptionModal = ({ isOpen, onClose, onBuyCredits, currentUser }
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex-1 overflow-hidden">
-                    {step === 'selection' ? <SelectionStep /> : <ProcessingStep />}
+                    {renderStep()}
                 </div>
 
                 {/* Desktop Micro-Footer */}
