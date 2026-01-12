@@ -4,6 +4,8 @@ import React from 'react';
 import { XCircle, Home, RefreshCw, ArrowLeft, Shield } from 'lucide-react';
 import Link from 'next/link';
 
+// Note: noindex metadata is handled in layout.js for this route
+
 export default function PaymentCancelledPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 font-sans">
