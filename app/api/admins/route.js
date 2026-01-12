@@ -11,12 +11,20 @@ import {
   adminHasPermission,
   logAdminActivity
 } from '@/lib/database';
+import { logAndGetSafeError, getSafeLimit } from '@/lib/security-utils';
 
 // Create Supabase admin client for sending invites
-const supabaseAdmin = createSupabaseClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+// SECURITY: Require service role key - do not fall back to anon key
+const getSupabaseAdmin = () => {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for admin operations');
+  }
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    serviceRoleKey
+  );
+};
 
 // Helper function to send admin invite email via Supabase Auth
 const sendAdminInviteEmail = async ({ to, name, role, inviteUrl, customMessage, invitedBy }) => {
@@ -26,10 +34,14 @@ const sendAdminInviteEmail = async ({ to, name, role, inviteUrl, customMessage, 
       : role === 'sub_admin' ? 'Sub Admin'
       : role || 'Admin';
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:5000';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    if (!baseUrl) {
+      console.warn('NEXT_PUBLIC_SITE_URL is not set, using localhost as fallback');
+    }
+    const siteUrl = baseUrl || 'http://localhost:3000';
 
     // Use Supabase Auth to invite user
-    console.log(`Sending admin invite to ${to} via Supabase Auth`);
+    const supabaseAdmin = getSupabaseAdmin();
 
     const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(to, {
       data: {
@@ -41,7 +53,7 @@ const sendAdminInviteEmail = async ({ to, name, role, inviteUrl, customMessage, 
         invite_url: inviteUrl,
         user_type: 'admin'
       },
-      redirectTo: `${baseUrl}/admin/accept-invite`
+      redirectTo: `${siteUrl}/admin/accept-invite`
     });
 
     if (error) {
@@ -99,9 +111,10 @@ export async function GET(request) {
       teamName: searchParams.get('team') || ''
     };
 
+    // SECURITY: Apply pagination limits
     const pagination = {
-      page: parseInt(searchParams.get('page') || '1'),
-      limit: parseInt(searchParams.get('limit') || '20'),
+      page: Math.max(1, parseInt(searchParams.get('page') || '1')),
+      limit: getSafeLimit(searchParams.get('limit'), 20, 100),
       sortBy: searchParams.get('sortBy') || 'created_at',
       sortOrder: searchParams.get('sortOrder') || 'desc'
     };
@@ -126,8 +139,8 @@ export async function GET(request) {
       stats: statsResult.data || {}
     });
   } catch (error) {
-    console.error('Error in GET /api/admins:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const { message } = logAndGetSafeError('GET /api/admins', error, 'Failed to fetch admin users');
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
 
@@ -227,7 +240,7 @@ export async function POST(request) {
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Error in POST /api/admins:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const { message } = logAndGetSafeError('POST /api/admins', error, 'Failed to create admin user');
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import {
   getAdminActivityLogs,
   adminHasPermission
 } from '@/lib/database';
+import { getSafeLimit, getSafeOffset, logAndGetSafeError } from '@/lib/security-utils';
 
 // Force dynamic rendering - this route uses cookies for auth
 export const dynamic = 'force-dynamic';
@@ -46,9 +47,10 @@ export async function GET(request) {
       endDate: searchParams.get('endDate') || ''
     };
 
+    // SECURITY: Apply pagination limits to prevent DoS
     const pagination = {
-      page: parseInt(searchParams.get('page') || '1'),
-      limit: parseInt(searchParams.get('limit') || '50'),
+      page: Math.max(1, parseInt(searchParams.get('page') || '1')),
+      limit: getSafeLimit(searchParams.get('limit'), 50, 200), // Max 200 records per request
       sortOrder: searchParams.get('sortOrder') || 'desc'
     };
 
@@ -68,7 +70,7 @@ export async function GET(request) {
       totalPages: result.totalPages
     });
   } catch (error) {
-    console.error('Error in GET /api/admins/logs:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const { message } = logAndGetSafeError('GET /api/admins/logs', error, 'Failed to fetch activity logs');
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

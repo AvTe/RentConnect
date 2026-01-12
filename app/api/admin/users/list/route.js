@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/utils/supabase/server';
+import { escapeIlikePattern } from '@/lib/database';
 
 // Helper to get admin supabase client
 const getSupabaseAdmin = () => {
@@ -54,12 +55,13 @@ export async function GET(request) {
         const adminRoles = ['admin', 'super_admin', 'main_admin'];
         let isAdmin = userData && adminRoles.includes(userData.role);
 
-        // Also check admin_users table
+        // Also check admin_users table - must have active status
         if (!isAdmin) {
             const { data: adminUser, error: adminUserError } = await supabaseAuth
                 .from('admin_users')
-                .select('role, name')
+                .select('role, name, status')
                 .eq('email', user.email)
+                .eq('status', 'active')  // SECURITY: Only allow active admins
                 .single();
 
             if (adminUserError && adminUserError.code !== 'PGRST116') {
@@ -101,8 +103,10 @@ export async function GET(request) {
         }
 
         // Search by name or email (only if search is not empty)
+        // Escape special characters to prevent SQL injection
         if (search && search.trim()) {
-            query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+            const escapedSearch = escapeIlikePattern(search.trim());
+            query = query.or(`name.ilike.%${escapedSearch}%,email.ilike.%${escapedSearch}%`);
         }
 
         const { data: users, error: usersError } = await query;

@@ -126,15 +126,17 @@ export async function POST(request) {
         let failedCount = 0;
 
         // Process variable substitution helper
+        // SECURITY: Use string replacement instead of dynamic regex to prevent ReDoS
         const substituteVariables = (text, userData) => {
             let result = text;
-            // Replace template variables
+            // Replace template variables using safe string split/join instead of regex
             Object.entries(variables).forEach(([key, value]) => {
-                result = result.replace(new RegExp(`{{${key}}}`, 'g'), value);
+                // Use split/join instead of regex to avoid ReDoS
+                result = result.split(`{{${key}}}`).join(String(value || ''));
             });
             // Replace user-specific variables
-            result = result.replace(/{{user_name}}/g, userData.name || 'User');
-            result = result.replace(/{{user_email}}/g, userData.email || '');
+            result = result.split('{{user_name}}').join(userData.name || 'User');
+            result = result.split('{{user_email}}').join(userData.email || '');
             return result;
         };
 
@@ -231,12 +233,31 @@ export async function POST(request) {
     }
 }
 
+/**
+ * HTML-encode a string to prevent XSS attacks
+ * @param {string} str - Input string
+ * @returns {string} - HTML-encoded string
+ */
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+}
+
 // Helper function to generate email HTML
+// SECURITY: All user-provided content is HTML-encoded to prevent XSS
 function generateEmailHtml(subject, body) {
+    const safeSubject = escapeHtml(subject);
+    const safeBody = escapeHtml(body);
+
     return `
 <!DOCTYPE html>
 <html>
-<head><title>${subject}</title></head>
+<head><title>${safeSubject}</title></head>
 <body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: Arial, sans-serif;">
   <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f5;">
     <tr>
@@ -250,10 +271,10 @@ function generateEmailHtml(subject, body) {
           <tr>
             <td style="padding: 0 40px 40px;">
               <h1 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #18181b; text-align: center;">
-                ${subject}
+                ${safeSubject}
               </h1>
               <p style="margin: 0; font-size: 15px; color: #52525b; line-height: 1.6; white-space: pre-wrap;">
-                ${body}
+                ${safeBody}
               </p>
             </td>
           </tr>

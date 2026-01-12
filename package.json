@@ -7,7 +7,12 @@
     "build": "next build",
     "postbuild": "next-sitemap",
     "start": "next start -H 0.0.0.0 -p 5000",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "jest",
+    "test:security": "jest __tests__/security",
+    "test:pesapal": "node scripts/test-pesapal.js",
+    "test:infobip": "node scripts/test-infobip.js",
+    "test:integrations": "node scripts/test-pesapal.js && node scripts/test-infobip.js"
   },
   "dependencies": {
     "@google-cloud/recaptcha-enterprise": "^6.3.1",
@@ -16,6 +21,7 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.86.0",
     "africastalking": "^0.7.8",
+    "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
     "groq-sdk": "^0.37.0",
     "lucide-react": "^0.460.0",
