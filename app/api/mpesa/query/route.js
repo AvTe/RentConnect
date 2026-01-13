@@ -3,6 +3,8 @@
  * Query the status of an STK Push transaction
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { querySTKStatus, isMpesaConfigured } from '@/lib/mpesa';
 import { createClient } from '@supabase/supabase-js';
