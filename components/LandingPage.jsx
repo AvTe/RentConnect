@@ -750,16 +750,40 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
         )
       }
 
-      {/* Footer with Legal Links */}
-      <footer className="bg-white border-t border-gray-100 py-3 sm:py-4">
-        <div className="max-w-[1400px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-xs sm:text-sm">
-          <span className="text-gray-400">© {new Date().getFullYear()} Yoombaa. All rights reserved.</span>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <a href="/privacy-policy" className="text-gray-500 hover:text-[#FE9200] transition-colors">Privacy Policy</a>
-            <span className="text-gray-300">|</span>
-            <a href="/terms-of-service" className="text-gray-500 hover:text-[#FE9200] transition-colors">Terms of Service</a>
-            <span className="text-gray-300">|</span>
-            <a href="/contact" className="text-gray-500 hover:text-[#FE9200] transition-colors">Contact Us</a>
+      {/* Footer with Legal Links - Using absolute URLs for Google OAuth verification */}
+      <footer className="bg-white border-t border-gray-200 py-6 sm:py-8">
+        <div className="max-w-[1400px] mx-auto px-4">
+          <div className="flex flex-col items-center gap-4">
+            {/* Legal Links - Prominent placement for Google verification */}
+            <nav aria-label="Legal" className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm">
+              <a
+                href="https://www.yoombaa.com/privacy-policy"
+                className="text-gray-600 hover:text-[#FE9200] transition-colors font-medium underline"
+                title="Privacy Policy"
+              >
+                Privacy Policy
+              </a>
+              <span className="text-gray-300 hidden sm:inline">|</span>
+              <a
+                href="https://www.yoombaa.com/terms-of-service"
+                className="text-gray-600 hover:text-[#FE9200] transition-colors font-medium underline"
+                title="Terms of Service"
+              >
+                Terms of Service
+              </a>
+              <span className="text-gray-300 hidden sm:inline">|</span>
+              <a
+                href="https://www.yoombaa.com/contact"
+                className="text-gray-600 hover:text-[#FE9200] transition-colors font-medium"
+                title="Contact Us"
+              >
+                Contact Us
+              </a>
+            </nav>
+            {/* Copyright */}
+            <p className="text-gray-400 text-xs sm:text-sm">
+              © {new Date().getFullYear()} Yoombaa. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>
