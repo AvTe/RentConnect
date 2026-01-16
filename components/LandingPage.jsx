@@ -749,6 +749,20 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
           </div>
         )
       }
+
+      {/* Footer with Legal Links */}
+      <footer className="bg-white border-t border-gray-100 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-xs sm:text-sm">
+          <span className="text-gray-400">© 2025 Yoombaa. All rights reserved.</span>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <a href="/privacy-policy" className="text-gray-500 hover:text-[#FE9200] transition-colors">Privacy Policy</a>
+            <span className="text-gray-300">|</span>
+            <a href="/terms-of-service" className="text-gray-500 hover:text-[#FE9200] transition-colors">Terms of Service</a>
+            <span className="text-gray-300">|</span>
+            <a href="/contact" className="text-gray-500 hover:text-[#FE9200] transition-colors">Contact Us</a>
+          </div>
+        </div>
+      </footer>
     </div >
   );
 };
