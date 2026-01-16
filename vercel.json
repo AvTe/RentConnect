@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/:path((?!api/).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "yoombaa.com"
+        }
+      ],
+      "destination": "https://www.yoombaa.com/:path",
+      "permanent": true
+    }
+  ]
+}
+

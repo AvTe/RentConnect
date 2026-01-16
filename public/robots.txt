@@ -1,5 +1,5 @@
 # Yoombaa - Kenya's Leading Rental Marketplace
-# https://yoombaa.com
+# https://www.yoombaa.com
 
 User-agent: *
 Allow: /
@@ -23,6 +23,5 @@ Allow: /*.webp$
 # Crawl delay for respectful crawling
 Crawl-delay: 1
 
-# Sitemap location
-Sitemap: https://yoombaa.com/sitemap.xml
-
+# Sitemap location (use www version)
+Sitemap: https://www.yoombaa.com/sitemap.xml

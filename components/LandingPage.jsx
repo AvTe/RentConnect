@@ -254,14 +254,14 @@ const LeadCard = ({
             ) : (
               <button
                 onClick={handleOverlayClick}
-                className="w-full bg-[#FFF5E6] rounded-lg p-3 border-2 border-[#FE9200] hover:bg-[#FFE8CC] transition-colors cursor-pointer"
+                className="w-full bg-[#FFF5E6] rounded-lg p-2 border-2 border-[#FE9200] hover:bg-[#FFE8CC] transition-colors cursor-pointer"
               >
-                <div className="flex flex-col items-center justify-center gap-0.5">
-                  <Lock size={16} className="text-[#FE9200]" />
-                  <p className="text-[10px] text-gray-600 text-center">
+                <div className="flex flex-col items-center justify-center gap-0">
+                  <Lock size={14} className="text-[#FE9200]" />
+                  <p className="text-[9px] text-gray-600 text-center leading-tight">
                     Contact details available for
                   </p>
-                  <p className="text-[11px] text-[#FE9200] font-semibold">
+                  <p className="text-[10px] text-[#FE9200] font-semibold leading-tight">
                     Subscribed Agents
                   </p>
                 </div>
@@ -682,7 +682,7 @@ export const LandingPage = ({ onNavigate, currentUser, authError, onOpenSubscrip
                 ) : extendedLeads.length > 0 ? (
                   <div
                     ref={trackRef}
-                    className="flex will-change-transform"
+                    className="flex will-change-transform pl-3 sm:pl-6"
                     style={{
                       gap: `${gap}px`,
                       transform: `translateX(${translateX}px)`,

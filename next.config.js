@@ -83,9 +83,21 @@ const nextConfig = {
     ];
   },
 
-  // Redirects for performance
+  // Redirects - Redirect non-www to www for canonical URL consistency
   async redirects() {
-    return [];
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'yoombaa.com',
+          },
+        ],
+        destination: 'https://www.yoombaa.com/:path*',
+        permanent: true, // 301 redirect for SEO
+      },
+    ];
   },
 };
 

@@ -16,18 +16,21 @@ const dmSans = DM_Sans({
   fallback: ['system-ui', 'arial'],
 })
 
+// Canonical domain - use www version consistently
+const CANONICAL_DOMAIN = 'https://www.yoombaa.com';
+
 // JSON-LD Structured Data for SEO
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
     {
       '@type': 'Organization',
-      '@id': 'https://yoombaa.com/#organization',
+      '@id': `${CANONICAL_DOMAIN}/#organization`,
       name: 'Yoombaa',
-      url: 'https://yoombaa.com',
+      url: CANONICAL_DOMAIN,
       logo: {
         '@type': 'ImageObject',
-        url: 'https://yoombaa.com/yoombaa-logo.png',
+        url: `${CANONICAL_DOMAIN}/yoombaa-logo.png`,
         width: 512,
         height: 512,
       },
@@ -51,18 +54,18 @@ const jsonLd = {
     },
     {
       '@type': 'WebSite',
-      '@id': 'https://yoombaa.com/#website',
-      url: 'https://yoombaa.com',
+      '@id': `${CANONICAL_DOMAIN}/#website`,
+      url: CANONICAL_DOMAIN,
       name: 'Yoombaa',
       description: 'Find rental properties and verified tenants in Kenya',
       publisher: {
-        '@id': 'https://yoombaa.com/#organization',
+        '@id': `${CANONICAL_DOMAIN}/#organization`,
       },
       potentialAction: {
         '@type': 'SearchAction',
         target: {
           '@type': 'EntryPoint',
-          urlTemplate: 'https://yoombaa.com/?search={search_term_string}',
+          urlTemplate: `${CANONICAL_DOMAIN}/?search={search_term_string}`,
         },
         'query-input': 'required name=search_term_string',
       },
@@ -70,9 +73,9 @@ const jsonLd = {
     },
     {
       '@type': 'LocalBusiness',
-      '@id': 'https://yoombaa.com/#localbusiness',
+      '@id': `${CANONICAL_DOMAIN}/#localbusiness`,
       name: 'Yoombaa',
-      image: 'https://yoombaa.com/yoombaa-logo.png',
+      image: `${CANONICAL_DOMAIN}/yoombaa-logo.png`,
       '@type': ['LocalBusiness', 'RealEstateAgent'],
       address: {
         '@type': 'PostalAddress',
@@ -84,7 +87,7 @@ const jsonLd = {
         latitude: -1.2921,
         longitude: 36.8219,
       },
-      url: 'https://yoombaa.com',
+      url: CANONICAL_DOMAIN,
       priceRange: 'KSh',
       openingHoursSpecification: {
         '@type': 'OpeningHoursSpecification',
@@ -95,13 +98,13 @@ const jsonLd = {
     },
     {
       '@type': 'BreadcrumbList',
-      '@id': 'https://yoombaa.com/#breadcrumb',
+      '@id': `${CANONICAL_DOMAIN}/#breadcrumb`,
       itemListElement: [
         {
           '@type': 'ListItem',
           position: 1,
           name: 'Home',
-          item: 'https://yoombaa.com',
+          item: CANONICAL_DOMAIN,
         },
       ],
     },
@@ -116,7 +119,7 @@ export const viewport = {
 }
 
 export const metadata = {
-  metadataBase: new URL('https://yoombaa.com'),
+  metadataBase: new URL('https://www.yoombaa.com'),
   title: {
     default: 'Yoombaa - Find Rental Properties & Verified Tenants in Kenya | Nairobi Apartments',
     template: '%s | Yoombaa Kenya'
@@ -145,12 +148,12 @@ export const metadata = {
     'nyumba ya kupanga Kenya',
     'kodi Nairobi',
   ],
-  authors: [{ name: 'Yoombaa', url: 'https://yoombaa.com' }],
+  authors: [{ name: 'Yoombaa', url: 'https://www.yoombaa.com' }],
   creator: 'Yoombaa',
   publisher: 'Yoombaa',
   manifest: '/manifest.json',
   alternates: {
-    canonical: '/',
+    canonical: 'https://www.yoombaa.com',
   },
   robots: {
     index: true,
@@ -166,20 +169,20 @@ export const metadata = {
   openGraph: {
     title: 'Yoombaa - Kenya\'s Leading Rental Marketplace',
     description: 'Connect with trusted agents and find your perfect rental property faster. Kenya\'s smartest way to rent.',
-    url: 'https://yoombaa.com',
+    url: 'https://www.yoombaa.com',
     siteName: 'Yoombaa',
     locale: 'en_KE',
     type: 'website',
     images: [
       {
-        url: '/api/og',
+        url: 'https://www.yoombaa.com/api/og',
         width: 1200,
         height: 630,
         alt: 'Yoombaa - Find Your Perfect Rental Home in Kenya',
         type: 'image/png',
       },
       {
-        url: '/og-image.svg',
+        url: 'https://www.yoombaa.com/og-image.svg',
         width: 1200,
         height: 630,
         alt: 'Yoombaa - Kenya Rental Marketplace',
@@ -190,7 +193,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Yoombaa - Rental Marketplace Kenya',
     description: 'Find verified tenants and rental properties across Kenya.',
-    images: ['/api/og'],
+    images: ['https://www.yoombaa.com/api/og'],
     creator: '@yoombaa',
     site: '@yoombaa',
   },

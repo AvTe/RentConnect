@@ -140,7 +140,7 @@ function initLocationAutocomplete(inputId, dropdownId, loadingId, placeIdInputId
     }
 
     // Input event
-    input.addEventListener('input', function() {
+    input.addEventListener('input', function () {
         const query = this.value.trim();
 
         // Clear previous timer
@@ -163,7 +163,7 @@ function initLocationAutocomplete(inputId, dropdownId, loadingId, placeIdInputId
     });
 
     // Focus event - show dropdown if there's a query
-    input.addEventListener('focus', async function() {
+    input.addEventListener('focus', async function () {
         const query = this.value.trim();
         if (query.length >= 1) {
             filteredLocations = await filterLocations(query);
@@ -174,7 +174,7 @@ function initLocationAutocomplete(inputId, dropdownId, loadingId, placeIdInputId
     });
 
     // Keyboard navigation
-    input.addEventListener('keydown', function(e) {
+    input.addEventListener('keydown', function (e) {
         const items = dropdown.querySelectorAll('.location-dropdown-item');
 
         if (e.key === 'ArrowDown') {
@@ -210,7 +210,7 @@ function initLocationAutocomplete(inputId, dropdownId, loadingId, placeIdInputId
     }
 
     // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (!input.contains(e.target) && !dropdown.contains(e.target)) {
             dropdown.classList.remove('active');
             selectedIndex = -1;
@@ -280,7 +280,7 @@ function initAreasTagsInput() {
     if (!areasInput || !areasTagsContainer || !hiddenInput) return;
 
     // Add area on Enter key
-    areasInput.addEventListener('keydown', function(e) {
+    areasInput.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             const value = this.value.trim();
@@ -292,7 +292,7 @@ function initAreasTagsInput() {
     });
 
     // Add area on blur (optional - when user clicks away)
-    areasInput.addEventListener('blur', function() {
+    areasInput.addEventListener('blur', function () {
         const value = this.value.trim();
         if (value && !agentPreferredAreas.includes(value)) {
             addAreaTag(value);
@@ -335,7 +335,7 @@ function updateHiddenAreasInput() {
 window.removeAreaTag = removeAreaTag;
 
 // Initialize new form features on DOM ready
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initBudgetConditionalLogic();
     initAreasTagsInput();
     initAllLocationAutocompletes();
@@ -381,7 +381,7 @@ window.addEventListener('scroll', () => {
     } else {
         navbar.classList.remove('scrolled');
     }
-    
+
     // Show/hide floating CTA bar after scrolling past hero
     if (floatingCta) {
         if (window.scrollY > 600) {
@@ -390,7 +390,7 @@ window.addEventListener('scroll', () => {
             floatingCta.classList.remove('visible');
         }
     }
-    
+
     lastScrollY = window.scrollY;
 });
 
@@ -489,21 +489,21 @@ async function submitToGoogleSheet(data, type) {
 // ===== Form Handlers =====
 function handleFormSubmit(event) {
     event.preventDefault();
-    
+
     const form = event.target;
     const email = form.querySelector('input[type="email"]').value;
     const userType = form.querySelector('select')?.value || 'tenant';
-    
+
     // Submit to Google Sheets
     submitToGoogleSheet({ email, userType }, 'newsletter');
-    
+
     // Show success modal
     successModal.classList.add('active');
     document.body.classList.add('modal-open');
-    
+
     // Reset form
     form.reset();
-    
+
     // Track conversion (add your analytics here)
     if (typeof gtag !== 'undefined') {
         gtag('event', 'signup', {
@@ -737,13 +737,13 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
         if (href === '#') return;
-        
+
         e.preventDefault();
         const target = document.querySelector(href);
         if (target) {
             const navHeight = navbar.offsetHeight;
             const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - navHeight - 20;
-            
+
             window.scrollTo({
                 top: targetPosition,
                 behavior: 'smooth'
@@ -753,12 +753,12 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 
 // ===== Scroll Reveal Animations =====
-const revealElements = document.querySelectorAll('.feature-card, .step-card, .property-card, .location-card, .testimonial-card, .faq-item, .section-header');
+const revealElements = document.querySelectorAll('.feature-card, .step-card, .property-card, .location-card, .testimonial-card, .faq-item, .section-header, .fade-up, .workflow-step, .workflow-connector');
 
 const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
-            entry.target.classList.add('reveal', 'active');
+            entry.target.classList.add('reveal', 'active', 'visible');
             revealObserver.unobserve(entry.target);
         }
     });
@@ -778,7 +778,7 @@ function animateCounter(element, target, duration = 2000) {
     const start = 0;
     const increment = target / (duration / 16);
     let current = start;
-    
+
     const updateCounter = () => {
         current += increment;
         if (current < target) {
@@ -788,7 +788,7 @@ function animateCounter(element, target, duration = 2000) {
             element.textContent = target + '+';
         }
     };
-    
+
     updateCounter();
 }
 
@@ -833,11 +833,11 @@ if (heroImage && heroImage.src) {
 
 // ===== Form Validation Feedback =====
 document.querySelectorAll('input[type="email"]').forEach(input => {
-    input.addEventListener('invalid', function() {
+    input.addEventListener('invalid', function () {
         this.setCustomValidity('Please enter a valid email address');
     });
 
-    input.addEventListener('input', function() {
+    input.addEventListener('input', function () {
         this.setCustomValidity('');
         // Basic email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -853,7 +853,7 @@ document.querySelectorAll('input[type="email"]').forEach(input => {
         }
     });
 
-    input.addEventListener('blur', function() {
+    input.addEventListener('blur', function () {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (this.value && !emailRegex.test(this.value)) {
             this.setCustomValidity('Please enter a valid email address');
@@ -868,7 +868,7 @@ function initKenyaPhoneValidation() {
     phoneInputs.forEach(input => {
         const wrapper = input.closest('.phone-input-wrapper');
 
-        input.addEventListener('input', function() {
+        input.addEventListener('input', function () {
             // Remove non-digits
             let value = this.value.replace(/\D/g, '');
 
@@ -917,11 +917,11 @@ function initKenyaPhoneValidation() {
             }
         });
 
-        input.addEventListener('invalid', function() {
+        input.addEventListener('invalid', function () {
             this.setCustomValidity('Please enter a valid Kenya phone number (9-10 digits)');
         });
 
-        input.addEventListener('blur', function() {
+        input.addEventListener('blur', function () {
             const digitsOnly = this.value.replace(/\D/g, '');
             if (digitsOnly.length > 0 && (digitsOnly.length < 9 || digitsOnly.length > 10)) {
                 this.setCustomValidity('Please enter a valid Kenya phone number (9-10 digits)');
@@ -949,7 +949,7 @@ function initBudgetFormatting() {
     const budgetInputs = document.querySelectorAll('#budgetMin, #budgetMax');
 
     budgetInputs.forEach(input => {
-        input.addEventListener('input', function() {
+        input.addEventListener('input', function () {
             const cursorPos = this.selectionStart;
             const oldLength = this.value.length;
 
@@ -961,7 +961,7 @@ function initBudgetFormatting() {
             this.setSelectionRange(cursorPos + diff, cursorPos + diff);
         });
 
-        input.addEventListener('blur', function() {
+        input.addEventListener('blur', function () {
             if (this.value) {
                 this.value = formatKESAmount(this.value);
             }
@@ -983,7 +983,7 @@ if ('loading' in HTMLImageElement.prototype) {
 } else {
     // Fallback for older browsers
     const lazyImages = document.querySelectorAll('img[loading="lazy"]');
-    
+
     const lazyImageObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -995,7 +995,7 @@ if ('loading' in HTMLImageElement.prototype) {
             }
         });
     });
-    
+
     lazyImages.forEach(img => lazyImageObserver.observe(img));
 }
 
@@ -1288,8 +1288,36 @@ function initTestimonialsSlider() {
     startAutoPlay();
 }
 
-// Initialize slider on DOM ready
-document.addEventListener('DOMContentLoaded', initTestimonialsSlider);
+// ===== FAQ Accordion Logic =====
+function initFaqAccordion() {
+    const faqItems = document.querySelectorAll('.faq-item');
+    if (!faqItems.length) return;
+
+    faqItems.forEach(item => {
+        const header = item.querySelector('.faq-header');
+        if (!header) return;
+
+        header.addEventListener('click', () => {
+            const isActive = item.classList.contains('active');
+
+            // Close all other items
+            faqItems.forEach(otherItem => {
+                if (otherItem !== item) {
+                    otherItem.classList.remove('active');
+                }
+            });
+
+            // Toggle current item
+            item.classList.toggle('active');
+        });
+    });
+}
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    initFaqAccordion();
+    initTestimonialsSlider();
+});
 
 // ===== Expose functions to window for onclick handlers =====
 window.showTenantForm = showTenantForm;
