@@ -24,7 +24,7 @@ export default function PrivacyPolicyPage() {
       <main className="max-w-4xl mx-auto px-4 py-12">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-          <p className="text-gray-500 mb-8">Last updated: January 16, 2025</p>
+          <p className="text-gray-500 mb-8">Last updated: January 16, {new Date().getFullYear()}</p>
 
           <div className="prose prose-gray max-w-none">
             <section className="mb-8">
