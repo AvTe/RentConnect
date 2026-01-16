@@ -7,24 +7,33 @@ import Image from 'next/image';
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+      {/* Back Button */}
+      <div className="fixed top-4 left-4 z-50">
+        <Link href="/" className="p-2 bg-white shadow-md hover:bg-gray-100 rounded-full transition-colors inline-flex">
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        </Link>
+      </div>
+
+      {/* Hero Section */}
+      <div className="bg-gradient-to-b from-brand-orange/10 to-white pt-12 pb-8">
+        <div className="flex flex-col items-center justify-center">
+          <Link href="/" className="hover:opacity-80 transition-opacity">
+            <Image
+              src="/yoombaa-logo.svg"
+              alt="Yoombaa"
+              width={80}
+              height={80}
+              className="h-20 w-auto"
+            />
           </Link>
-          <div className="flex items-center gap-3">
-            <Image src="/yoombaa-logo.png" alt="Yoombaa" width={32} height={32} className="h-8 w-auto" />
-            <span className="text-xl font-bold text-gray-900">Privacy Policy</span>
-          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mt-4">Privacy Policy</h1>
+          <p className="text-gray-500 mt-2">Last updated: January 16, {new Date().getFullYear()}</p>
         </div>
-      </header>
+      </div>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-4 py-12">
+      <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-12">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-          <p className="text-gray-500 mb-8">Last updated: January 16, {new Date().getFullYear()}</p>
 
           <div className="prose prose-gray max-w-none">
             <section className="mb-8">
