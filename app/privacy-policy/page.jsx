@@ -2,6 +2,7 @@
 
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function PrivacyPolicyPage() {
   return (
@@ -13,7 +14,7 @@ export default function PrivacyPolicyPage() {
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </Link>
           <div className="flex items-center gap-3">
-            <img src="/yoombaa-logo.png" alt="Yoombaa" className="h-8 w-auto" />
+            <Image src="/yoombaa-logo.png" alt="Yoombaa" width={32} height={32} className="h-8 w-auto" />
             <span className="text-xl font-bold text-gray-900">Privacy Policy</span>
           </div>
         </div>
@@ -29,7 +30,7 @@ export default function PrivacyPolicyPage() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
               <p className="text-gray-600 leading-relaxed">
-                Welcome to Yoombaa ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website (www.yoombaa.com) and mobile applications (collectively, the "Platform").
+                Welcome to Yoombaa (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website (www.yoombaa.com) and mobile applications (collectively, the &ldquo;Platform&rdquo;).
               </p>
             </section>
 
@@ -101,12 +102,12 @@ export default function PrivacyPolicyPage() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">8. Third-Party Services</h2>
               <p className="text-gray-600 leading-relaxed">
-                Our Platform integrates with third-party services including Google (for authentication and maps), M-Pesa/Pesapal (for payments), and Africa's Talking (for SMS). These services have their own privacy policies.
+                Our Platform integrates with third-party services including Google (for authentication and maps), M-Pesa/Pesapal (for payments), and Africa&apos;s Talking (for SMS). These services have their own privacy policies.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">9. Children's Privacy</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">9. Children&apos;s Privacy</h2>
               <p className="text-gray-600 leading-relaxed">
                 Our Platform is not intended for children under 18 years of age. We do not knowingly collect personal information from children.
               </p>
@@ -115,7 +116,7 @@ export default function PrivacyPolicyPage() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">10. Changes to This Policy</h2>
               <p className="text-gray-600 leading-relaxed">
-                We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "Last updated" date.
+                We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the &ldquo;Last updated&rdquo; date.
               </p>
             </section>
 

@@ -2,6 +2,7 @@
 
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function TermsOfServicePage() {
   return (
@@ -13,7 +14,7 @@ export default function TermsOfServicePage() {
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </Link>
           <div className="flex items-center gap-3">
-            <img src="/yoombaa-logo.png" alt="Yoombaa" className="h-8 w-auto" />
+            <Image src="/yoombaa-logo.png" alt="Yoombaa" width={32} height={32} className="h-8 w-auto" />
             <span className="text-xl font-bold text-gray-900">Terms of Service</span>
           </div>
         </div>
@@ -29,7 +30,7 @@ export default function TermsOfServicePage() {
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
               <p className="text-gray-600 leading-relaxed">
-                By accessing or using Yoombaa's website (www.yoombaa.com) and mobile applications (collectively, the "Platform"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Platform.
+                By accessing or using Yoombaa&apos;s website (www.yoombaa.com) and mobile applications (collectively, the &ldquo;Platform&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Platform.
               </p>
             </section>
 
